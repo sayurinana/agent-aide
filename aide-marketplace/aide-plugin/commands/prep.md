@@ -16,6 +16,12 @@ argument-hint: [任务原文档路径]
 
 ## 开始
 
+### 启动流程追踪
+
+```bash
+aide flow start task-optimize "开始任务准备: <任务简述>"
+```
+
 ### 确定任务文档
 
 ```bash
@@ -27,12 +33,6 @@ aide config get task.source
 ```
 
 读取任务文档内容。如文档不存在，询问用户提供任务内容或指定文档路径。
-
-### 启动流程追踪
-
-```bash
-aide flow start task-optimize "开始任务准备: <任务简述>"
-```
 
 ---
 
@@ -169,6 +169,10 @@ aide flow next-step "用户确认任务细则"
 ## 完成
 
 任务准备完成，任务细则已保存。
+
+```bash
+aide flow next-step "任务准备完成"
+```
 
 提示用户：
 ```

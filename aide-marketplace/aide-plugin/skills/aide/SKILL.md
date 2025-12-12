@@ -27,8 +27,15 @@ Aide 是一套命令行工具，用于支持 Aide 工作流体系。所有 aide 
 检测并修复开发环境。
 
 ```bash
+# 检查项目开发环境
 aide env ensure
+
+# 仅检查 aide 运行时环境（不依赖配置文件）
+aide env ensure --runtime
 ```
+
+**参数**：
+- `--runtime`：仅检查 aide 程序自身运行所需的环境（Python 等），不读取项目配置文件
 
 **输出示例**：
 ```
@@ -60,7 +67,7 @@ aide flow start <环节名> "<总结>"
 ```
 
 **参数**：
-- `<环节名>`：flow-design / impl / verify / docs / finish
+- `<环节名>`：task-optimize / flow-design / impl / verify / docs / finish
 - `<总结>`：本次操作的简要说明
 
 **示例**：
@@ -148,13 +155,14 @@ aide flow error "数据库连接失败，无法继续"
 
 ### 环节名称列表
 
-| 环节名 | 说明 |
-|-------|------|
-| `flow-design` | 流程设计 |
-| `impl` | 迭代实现 |
-| `verify` | 验证交付 |
-| `docs` | 文档更新 |
-| `finish` | 收尾 |
+| 环节名 | 说明 | 使用场景 |
+|-------|------|---------|
+| `task-optimize` | 任务优化 | prep 阶段使用 |
+| `flow-design` | 流程设计 | exec 阶段使用 |
+| `impl` | 迭代实现 | exec 阶段使用 |
+| `verify` | 验证交付 | exec 阶段使用 |
+| `docs` | 文档更新 | exec 阶段使用 |
+| `finish` | 收尾 | exec 阶段使用 |
 
 ### 流程校验
 
@@ -326,23 +334,31 @@ aide init
 
 ## 常见用法示例
 
-### 开始新任务
+### prep 阶段示例
 
 ```bash
-aide flow start flow-design "开始任务: 实现用户认证模块"
+# 开始任务准备
+aide flow start task-optimize "开始任务准备: 实现用户认证模块"
+
+# 记录分析进度
+aide flow next-step "任务分析完成"
+aide flow next-step "任务优化完成，生成待定项"
+aide flow next-step "用户完成待定项确认"
+aide flow next-step "任务准备完成"
 ```
 
-### 记录实现进度
+### exec 阶段示例
 
 ```bash
+# 开始流程设计
+aide flow start flow-design "开始任务: 实现用户认证模块"
+
+# 记录实现进度
 aide flow next-step "完成 User 模型定义"
 aide flow next-step "完成密码加密工具"
 aide flow next-step "完成登录接口"
-```
 
-### 进入下一环节
-
-```bash
+# 进入下一环节
 aide flow next-part verify "实现完成，开始验证"
 ```
 
