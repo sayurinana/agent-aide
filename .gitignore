@@ -1,1 +1,3 @@
 anthropic-agent-skills/
+.aide/
+__pycache__/
