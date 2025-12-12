@@ -16,7 +16,7 @@ claude code正在辅助我完成一项任务
 
 ## 细节补充
 
-前面已经根据 @aide-requirements.md 产出了 discuss/ 目录下的信息，当前完成了01报告中的Phase 1和Phase 2，产出了 aide-marketplace/ 和02报告，然后我提出了 @reply/re-03.md 中所述的意见，现在re-03已经完成了commands部分的内容，还有skills部分没有开始调整，
+前面已经根据 @aide-requirements.md 产出了 discuss/ 目录下的信息，当前完成了01报告中的Phase 1和Phase 2，产出了 aide-marketplace/ 和02报告，然后我提出了 @reply/re-03.md 中所述的意见，现在re-03已经完成，
 
 # 要求
 
@@ -24,4 +24,4 @@ claude code正在辅助我完成一项任务
 
 你必须亲自完整仔细的阅读所有提及的文件、目录及其子目录下所包含的所有文件内容（除了anthropic-agent-skills/仅要按需学习即可），必须一行不漏的完全审阅了所有文件，然后继续完成任务，
 
-根据re-03的意见调整skills内容，然后根据re-03中意见的语义，更新 @aide-requirements.md
+在aide-program/目录下，实现aide程序系统（入口脚本封装+python实现，但不要考虑、不要实现aide flow和aide decide，它们留到后面单独讨论细节），
