@@ -1,0 +1,9 @@
+{
+  "name": "aide-plugin",
+  "description": "Aide 工作流体系插件，提供任务准备和执行的标准化流程",
+  "version": "1.0.0",
+  "author": {
+    "name": "Aide Team"
+  },
+  "keywords": ["workflow", "task", "aide", "productivity"]
+}

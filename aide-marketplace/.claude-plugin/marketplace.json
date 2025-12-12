@@ -1,0 +1,17 @@
+{
+  "name": "aide-marketplace",
+  "owner": {
+    "name": "Aide Team"
+  },
+  "metadata": {
+    "description": "Aide 工作流体系插件市场",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "aide-plugin",
+      "source": "./aide-plugin",
+      "description": "Aide 工作流体系插件，提供任务准备和执行的标准化流程"
+    }
+  ]
+}
