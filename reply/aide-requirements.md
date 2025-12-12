@@ -91,13 +91,13 @@
 **触发时机**：进入项目开始工作时
 
 **职责**：
-1. 介绍 aide 流程体系
-2. 列出可用能力（Skills）
-3. 说明环境和版本控制约定
+1. 触发 LLM 对项目内容的主动认知
+2. 检测开发环境并自动修复问题
+3. 介绍 aide 流程体系和可用能力
 
 **特点**：
-- 不执行实际操作
-- 提供认知框架
+- 环境问题在此阶段解决，避免后续业务逻辑被打扰
+- 沉没成本小：发现严重问题可重开对话
 
 ### 4.2 /aide:prep - 任务准备
 
@@ -106,7 +106,7 @@
 **职责**：
 1. 任务分析（理解目标、识别复杂度、分析环境）
 2. 任务优化（准确性、简洁性、可执行性）
-3. 待定项处理（通过 aide 程序化呈现）
+3. 待定项处理（通过 `aide decide` 程序化呈现）
 4. 结果生成（LLM 自由发挥，产出 task-spec.md）
 
 **核心原则**：
@@ -129,84 +129,59 @@
 
 **核心原则**：
 - 业务代码编写：LLM 自由发挥，不加程序约束
-- 状态管理、版本控制：通过 aide 程序处理，避免信息污染
+- 状态管理、版本控制：通过 `aide flow` 程序处理，避免信息污染
 
 ---
 
 ## 五、技能清单
 
-### 5.1 aide-env - 环境管理
+### 5.1 aide flow - 进度追踪
 
-**用途**：检测和修复项目开发环境
+**用途**：记录任务执行状态 + Git 自动提交 + 流程校验
 
 **核心命令**：
-- `aide env check` - 检测环境（只读）
-- `aide env ensure` - 检测并修复
+- `aide flow start <环节名> <总结>` - 新任务开始
+- `aide flow next-step <总结>` - 小步骤前进
+- `aide flow back-step <总结>` - 小步骤回退
+- `aide flow next-part <环节名> <总结>` - 大环节前进
+- `aide flow back-part <环节名> <总结>` - 大环节回退
+- `aide flow issue <描述>` - 记录问题
+- `aide flow error <描述>` - 记录严重错误
+
+**设计要点**：
+- 集成 git 操作：每次步骤变化自动 `git add . && git commit`
+- 流程校验：检测环节跳转是否符合预期流程
+- 环节特定行为：
+  - flow-design 环节：检验 PlantUML 语法
+  - docs-upgrade 环节：检验 CHANGELOG 更新
+- 静默原则：无输出 = 正常
+
+### 5.2 aide decide - 待定项确认
+
+**用途**：程序化呈现待定项，通过 Web 界面获取用户确认
+
+**核心命令**：
+- `aide decide '<json>'` - 提交待定项数据，启动 Web 服务
+- `aide decide result` - 获取用户决策结果
+
+**设计要点**：
+- LLM 传入精简 JSON 数据
+- 程序启动 Web 服务，输出访问链接
+- Web 界面渲染原文高亮、选项卡片
+- 用户操作后存储决策
+- LLM 读取精简决策结果
+
+### 5.3 aide env - 环境管理
+
+**用途**：检测并修复项目开发环境
+
+**核心命令**：
+- `aide env ensure` - 检测环境并自动修复
 
 **设计要点**：
 - 成功时输出极简：`✓ 环境就绪 (python:3.12)`
 - 自动修复小问题时简短提示
 - 仅无法修复时才需要 LLM 关注
-
-### 5.2 aide-undetermined - 待定项处理
-
-**用途**：程序化呈现待定项，获取用户确认
-
-**核心命令**：
-- `aide undetermined add '<json>'` - 添加待定项
-- `aide undetermined confirm` - 生成确认报告（给用户）
-- `aide undetermined result` - 获取结果（给 LLM）
-
-**设计要点**：
-- LLM 传入精简 JSON 数据
-- 程序渲染美化界面给用户
-- 返回精简决策结果给 LLM
-
-### 5.3 aide-workspace - 工作目录管理
-
-**用途**：管理任务工作目录
-
-**核心命令**：
-- `aide workspace init <name>` - 创建工作目录
-- `aide workspace clean --keep=N` - 清理旧目录
-
-### 5.4 aide-progress - 进度管理
-
-**用途**：记录任务执行状态
-
-**核心命令**：
-- `aide progress init <name>` - 初始化状态
-- `aide progress update <phase> <status>` - 更新状态
-
-**设计要点**：
-- 替代手动编辑 CSV
-- 提供动态反馈和步骤引导
-- 避免 LLM "跑飞"
-
-### 5.5 aide-version - 版本控制
-
-**用途**：管理 CHANGELOG 和 Git 操作
-
-**核心命令**：
-- `aide version add <type> "<desc>"` - 添加变更
-- `aide version commit "<msg>"` - Git 提交
-- `aide version release [level]` - 发布版本
-
-**设计要点**：
-- 封装 Git 操作，减少情况分析复杂度
-- 通过有限参数控制不同需求
-
-### 5.6 aide-build - 构建工具
-
-**用途**：编译 PlantUML 等
-
-**核心命令**：
-- `aide build plantuml <src>` - 编译
-- `aide build plantuml <src> -c` - 语法检查
-
-**设计要点**：
-- 集成语法检查、编译、简要输出
-- 替代冗长的 java -jar 命令
 
 ---
 
@@ -219,10 +194,11 @@ LLM                    程序                    用户
  │                      │                      │
  │  JSON (精简数据)     │                      │
  │─────────────────────→│                      │
- │                      │  渲染美化界面         │
+ │                      │  启动Web服务          │
+ │                      │  输出访问链接         │
  │                      │─────────────────────→│
  │                      │                      │
- │                      │  用户选择             │
+ │                      │  Web界面交互          │
  │                      │←─────────────────────│
  │  JSON (决策结果)     │                      │
  │←─────────────────────│                      │
@@ -237,6 +213,13 @@ LLM                    程序                    用户
 | 警告 | 告知但可继续：`⚠ 警告内容` |
 | 失败 | 详细原因：`✗ 失败原因及建议` |
 
+### 6.3 错误恢复机制
+
+| 级别 | 处理方式 |
+|------|----------|
+| ⚠ 警告 | 记录，分析是否影响继续，记录"继续-xxx"或"解决阻塞-xxx" |
+| ✗ 错误 | 必须先记录并解决。默认自行取最优解，3次尝试失败则停止等待用户。成功解决时在 discuss/ 创建分析文档 |
+
 ---
 
 ## 七、LLM 自由发挥边界
@@ -245,9 +228,7 @@ LLM                    程序                    用户
 
 - 环境检测与修复
 - 待定项呈现与确认
-- 状态记录与更新
-- 版本控制操作
-- 构建工具调用
+- 状态记录与更新（含 git 提交）
 
 ### 7.2 不需要程序约束的场景
 
@@ -268,16 +249,28 @@ LLM                    程序                    用户
 
 ```json
 {
+  "task": "任务简述",
+  "source": "now-task.md",
   "items": [
     {
-      "id": "唯一标识符",
-      "question": "问题标题",
-      "description": "详细说明（可选）",
+      "id": 1,
+      "title": "问题标题",
+      "location": {
+        "file": "now-task.md",
+        "start": 5,
+        "end": 7
+      },
+      "context": "详细说明（可选）",
       "options": [
-        {"value": "程序值", "label": "显示文本", "score": 0-100}
+        {
+          "value": "option_a",
+          "label": "选项A描述",
+          "score": 85,
+          "pros": ["优点1", "优点2"],
+          "cons": ["缺点1"]
+        }
       ],
-      "recommend": "推荐选项的 value",
-      "reason": "推荐理由"
+      "recommend": "option_a"
     }
   ]
 }
@@ -288,10 +281,13 @@ LLM                    程序                    用户
 ```json
 {
   "decisions": [
-    {"id": "标识符", "chosen": "选择的 value", "custom": "自定义内容或 null"}
+    {"id": 1, "chosen": "option_a"},
+    {"id": 2, "chosen": "option_b", "note": "用户备注"}
   ]
 }
 ```
+
+> 注：`note` 字段仅在用户有备注时出现
 
 ### 8.2 输出前缀规范
 
@@ -303,114 +299,99 @@ LLM                    程序                    用户
 | → | `info` | 进行中 |
 | [n/m] | `step` | 步骤进度 |
 
-### 8.3 配置文件 aide.toml
+---
 
-```toml
-[env]
-modules = ["python", "uv"]
+## 九、数据存储
 
-[env.python]
-version = ">=3.10"
-venv = ".venv"
-requirements = "requirements.txt"
+### 9.1 存储位置
 
-[workspace]
-output = "ai-agent-output"
-format = "{timestamp}_{name}"
+所有 aide 自动创建和管理的数据文件统一存放在项目路径下的 `.aide/` 目录：
 
-[progress]
-phases = ["规划", "实现", "验证", "文档", "收尾"]
-
-[version]
-changelog = "CHANGELOG.md"
 ```
+.aide/
+├── config.toml          # 项目配置（自文档化，带注释）
+├── flow-status.json     # 当前任务进度状态
+├── decisions/           # 待定项决策记录
+│   └── {timestamp}.json
+└── logs/                # 操作日志
+```
+
+### 9.2 .gitignore 处理
+
+- `aide init` 时自动检查 `.gitignore`
+- 默认添加 `.aide/` 为忽略项
+- 可在配置中指定不忽略
+
+### 9.3 配置机制
+
+- 配置文件不存在时输出 `⚠ 配置文件不存在，使用默认配置`
+- `aide init` 时自动创建默认配置
+- 配置文件自带详细注释（自文档化）
+- **LLM 不允许直接读取配置文件**（避免污染上下文）
+- 通过 `aide config get <key>` 读取配置
+- 每次设置/获取都集成验证
 
 ---
 
-## 九、实施结构
+## 十、实施结构
 
-### 9.1 插件目录结构
+### 10.1 最终产出
+
+1. **README.md** - 用户入口文档
+2. **插件市场目录** - 可快速安装的 Claude Code 插件
+3. **aide 程序目录** - 运行时脚本系统
+
+### 10.2 插件目录结构
 
 ```
-aide-plugin/
+aide-marketplace/
 ├── .claude-plugin/
-│   └── plugin.json
-├── commands/
-│   ├── init.md
-│   ├── prep.md
-│   └── exec.md
-└── skills/
-    ├── aide-env/SKILL.md
-    ├── aide-undetermined/SKILL.md
-    ├── aide-workspace/SKILL.md
-    ├── aide-progress/SKILL.md
-    ├── aide-version/SKILL.md
-    └── aide-build/SKILL.md
+│   └── marketplace.json
+└── aide-plugin/
+    ├── .claude-plugin/
+    │   └── plugin.json
+    ├── commands/
+    │   ├── init.md
+    │   ├── prep.md
+    │   └── exec.md
+    └── skills/
+        └── aide/
+            └── SKILL.md
 ```
 
-### 9.2 运行时脚本结构
+### 10.3 程序目录结构
 
 ```
 aide/
-├── aide.sh                 # 统一入口
-├── lib/
-│   ├── output.sh           # 输出函数（ok/warn/err/info/step）
-│   └── config.py           # 配置读取
-├── env/
-│   └── check.py            # 环境检测
-├── undetermined/
-│   └── handler.py          # 待定项处理
-├── workspace/
-│   └── manager.py          # 工作目录管理
-├── progress/
-│   └── tracker.py          # 进度管理
-├── version/
-│   ├── changelog.py        # CHANGELOG 管理
-│   └── git.sh              # Git 操作
-└── build/
-    └── plantuml.sh         # PlantUML 编译
+├── aide.sh                  # Linux/Mac 入口
+├── aide.bat                 # Windows 入口
+├── main.py                  # Python 主入口
+├── core/
+│   ├── config.py            # 配置读写
+│   └── output.py            # 输出格式（✓/⚠/✗）
+├── flow/                    # aide flow
+│   ├── tracker.py           # 进度追踪
+│   ├── git.py               # git 自动提交
+│   └── validator.py         # 流程校验
+├── decide/                  # aide decide
+│   ├── server.py            # HTTP 服务
+│   └── web/                 # 静态 React 前端
+└── env/
+    └── ensure.py            # 环境检测修复
 ```
 
-### 9.3 安装方式
+### 10.4 分发方式
 
-```bash
-export AIDE_ROOT="/path/to/aide"
-ln -s "$AIDE_ROOT/aide.sh" ~/.local/bin/aide
-```
+初期：打包压缩包分享，验证可用后考虑远程仓库 + 包托管
 
 ---
 
-## 十、实施检查清单
+## 十一、待设计内容
 
-### 10.1 插件部分
+以下内容将在后续讨论中逐步细化：
 
-- [ ] plugin.json 元数据
-- [ ] commands/init.md - 认知初始化
-- [ ] commands/prep.md - 任务准备方法论
-- [ ] commands/exec.md - 任务执行方法论
-- [ ] skills/aide-env/SKILL.md
-- [ ] skills/aide-undetermined/SKILL.md
-- [ ] skills/aide-workspace/SKILL.md
-- [ ] skills/aide-progress/SKILL.md
-- [ ] skills/aide-version/SKILL.md
-- [ ] skills/aide-build/SKILL.md
-
-### 10.2 运行时部分
-
-- [ ] aide.sh 入口脚本
-- [ ] lib/output.sh 输出函数
-- [ ] lib/config.py 配置读取
-- [ ] env/check.py 环境检测
-- [ ] undetermined/handler.py 待定项处理
-- [ ] workspace/manager.py 工作目录
-- [ ] progress/tracker.py 进度管理
-- [ ] version/changelog.py CHANGELOG
-- [ ] version/git.sh Git 操作
-- [ ] build/plantuml.sh PlantUML
-
-### 10.3 验收标准
-
-1. 三个 Command 能正确触发对应流程
-2. 六个 Skill 的 aide 命令能正常执行
-3. 待定项能正确渲染和返回结果
-4. 输出符合精简原则
+- [ ] Commands 详细内容（init.md / prep.md / exec.md）
+- [ ] SKILL.md 详细内容
+- [ ] aide flow 子命令详细设计
+- [ ] aide decide Web 界面设计
+- [ ] 配置文件完整字段定义
