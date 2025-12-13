@@ -67,8 +67,10 @@ ccoptimize/
 │       │   ├── prep.md
 │       │   └── exec.md
 │       ├── skills/
-│       │   └── aide/
-│       │       └── SKILL.md
+│       │   ├── aide/
+│       │   │   └── SKILL.md      # 基础命令指南
+│       │   └── env-config/
+│       │       └── SKILL.md      # 环境配置详细指南（按需触发）
 │       └── docs/             # 设计文档（给人）
 │           ├── README.md
 │           ├── commands/
@@ -94,10 +96,11 @@ ccoptimize/
     │       ├── registry.py   # 模块注册表
     │       └── modules/      # 环境检测模块
     │           ├── base.py
-    │           ├── python.py
-    │           ├── uv.py
-    │           ├── venv.py
-    │           └── requirements.py
+    │           ├── python.py, uv.py
+    │           ├── rust.py, node.py, flutter.py
+    │           ├── android.py, node_deps.py
+    │           ├── venv.py, requirements.py
+    │           └── ...
     └── docs/                 # 设计文档（给人）
         ├── README.md
         ├── commands/
@@ -121,9 +124,14 @@ ccoptimize/
 | /aide:init | ✅ 设计完成 | 项目认知与环境初始化 |
 | /aide:prep | ✅ 设计完成 | 任务准备流程 |
 | /aide:exec | ✅ 设计完成 | 任务执行流程 |
-| aide skill | ✅ 设计完成 | aide 命令使用指南 |
+| aide skill | ✅ 设计完成 | aide 基础命令指南 |
+| env-config skill | ✅ 设计完成 | 环境配置详细指南（按需触发） |
 
-执行文件位于 `aide-marketplace/aide-plugin/commands/` 和 `skills/aide/SKILL.md`
+执行文件位于 `aide-marketplace/aide-plugin/commands/` 和 `skills/`
+
+**Skill 设计理念**：
+- `aide` skill：始终加载，提供基础命令用法
+- `env-config` skill：按需触发，仅在 `aide env ensure` 失败时使用
 
 ### 3.2 aide-program
 
@@ -132,6 +140,7 @@ ccoptimize/
 | aide init | ✅ 已实现 | 初始化 .aide 目录和配置 |
 | aide env list | ✅ 已实现 | 列出所有可用模块 |
 | aide env ensure | ✅ 已实现 | 模块化环境检测与修复 |
+| aide env set | ✅ 已实现 | 设置环境配置（带验证） |
 | aide env ensure --runtime | ✅ 已实现 | 运行时环境检测 |
 | aide env ensure --modules | ✅ 已实现 | 指定模块检测 |
 | aide env ensure --all | ✅ 已实现 | 全量检测（仅检查） |
@@ -148,11 +157,17 @@ ccoptimize/
 |------|------|------|------|
 | python | A | check | Python 解释器版本 |
 | uv | A | check | uv 包管理器 |
+| rust | A | check | Rust 工具链（rustc + cargo） |
+| node | A | check | Node.js 运行时 |
+| flutter | A | check | Flutter SDK |
+| android | A | check | Android SDK |
 | venv | B | check, ensure | Python 虚拟环境 |
 | requirements | B | check, ensure | Python 依赖管理 |
+| node_deps | B | check, ensure | Node.js 项目依赖 |
 
 - 类型A：无需配置即可检测
 - 类型B：需要配置路径才能检测
+- 支持模块实例化命名：`模块类型:实例名`（如 `node_deps:react`）
 
 ### 3.4 设计文档
 
@@ -216,11 +231,11 @@ ccoptimize/
 ### 5.3 扩展环境模块（可选）
 
 可按需添加更多环境检测模块：
-- node - Node.js 版本检测
-- npm - npm 依赖管理
 - java - Java JDK 检测
 - go - Go 语言检测
-- rust - Rust 工具链检测
+- docker - Docker 环境检测
+- cargo_deps - Rust 项目依赖（类似 node_deps）
+- pub_deps - Flutter/Dart 项目依赖
 
 ### 5.4 整体验证
 
@@ -254,7 +269,11 @@ ccoptimize/
 
 ## 七、版本信息
 
-- 文档版本：1.1.0
+- 文档版本：1.2.0
 - 更新日期：2025-12-14
 - 项目阶段：设计完成，部分实现
-- 最近更新：aide env 模块化重构
+- 最近更新：
+  - aide env set 命令实现
+  - 新增环境模块：rust, node, flutter, android, node_deps
+  - 支持模块实例化命名（多项目场景）
+  - Skill 拆分：aide（基础）+ env-config（按需）

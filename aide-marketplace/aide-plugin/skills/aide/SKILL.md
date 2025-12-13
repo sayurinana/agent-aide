@@ -22,46 +22,16 @@ Aide 是一套命令行工具，用于支持 Aide 工作流体系。所有 aide 
 
 ## aide env - 环境管理
 
-### aide env list
-
-列出所有可用的环境检测模块。
-
-```bash
-aide env list
-```
-
-**输出示例**：
-```
-可用模块:
-  模块          描述                    能力               需要配置
-  ────────────────────────────────────────────────────────────
-  python       Python 解释器版本         check            否
-  uv           uv 包管理器              check            否
-  venv         Python 虚拟环境          check, ensure    是 [path]
-  requirements Python 依赖管理          check, ensure    是 [path]
-
-当前启用: python, uv, venv, requirements
-```
-
 ### aide env ensure
 
 检测并修复开发环境。
 
 ```bash
-# 检查项目开发环境（按配置启用的模块）
-aide env ensure
-
-# 仅检查 aide 运行时环境（不依赖配置文件）
+# 仅检查 aide 运行时环境（init 流程使用）
 aide env ensure --runtime
 
-# 检测指定模块
-aide env ensure --modules python,uv
-
-# 检测所有已启用模块（仅检查不修复）
-aide env ensure --all
-
-# 显示详细配置信息（供人工确认）
-aide env ensure --verbose
+# 检查项目开发环境（按配置启用的模块）
+aide env ensure
 ```
 
 **参数**：
@@ -79,25 +49,31 @@ aide env ensure --verbose
 # 成功
 ✓ python: 3.14.2 (>=3.11)
 ✓ uv: uv 0.9.16
-✓ venv: .venv
-✓ requirements: requirements.txt
-✓ 环境就绪 (python:3.14.2, uv:uv 0.9.16, venv:.venv, requirements:requirements.txt)
+✓ 环境就绪 (python:3.14.2, uv:uv 0.9.16)
 ```
 
 ```
-# 自动修复
-✓ python: 3.14.2 (>=3.11)
-✓ uv: uv 0.9.16
-→ venv: 虚拟环境不存在: .venv，尝试修复...
-✓ venv: 已创建
-✓ 环境就绪 (...)
-```
-
-```
-# 失败（启用模块缺少配置）
-✓ python: 3.14.2 (>=3.11)
-✓ uv: uv 0.9.16
+# 失败
 ✗ venv: 已启用但缺少配置项: path
+```
+
+**失败处理**：当 `aide env ensure` 输出 `✗` 时，触发 `env-config` skill 获取详细配置指导。
+
+### aide env list
+
+列出所有可用的环境检测模块。
+
+```bash
+aide env list
+```
+
+### aide env set
+
+设置环境配置（详细用法见 `env-config` skill）。
+
+```bash
+aide env set modules <模块列表>
+aide env set <模块名>.<配置项> <值>
 ```
 
 ---

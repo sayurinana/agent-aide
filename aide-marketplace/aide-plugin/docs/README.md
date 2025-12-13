@@ -82,11 +82,17 @@ Commands 只告诉 LLM：
 
 ## 三、Skill 索引
 
-| Skill | 设计文档 | 执行文件 | 职责 |
-|-------|----------|----------|------|
-| aide | [skill/aide.md](skill/aide.md) | [../../skills/aide/SKILL.md](../skills/aide/SKILL.md) | aide 命令行工具使用指南 |
+| Skill | 执行文件 | 职责 | 触发时机 |
+|-------|----------|------|----------|
+| aide | [../skills/aide/SKILL.md](../skills/aide/SKILL.md) | aide 基础命令指南 | 始终加载 |
+| env-config | [../skills/env-config/SKILL.md](../skills/env-config/SKILL.md) | 环境配置详细指南 | `aide env ensure` 失败时 |
 
 ### 3.1 Skill 设计原则
+
+**按需触发，避免信息过载**
+
+- `aide` skill：始终加载，提供基础命令用法
+- `env-config` skill：按需触发，仅在环境检测失败时使用
 
 **纯工具说明，便于快速查阅**
 
@@ -96,6 +102,20 @@ Skill 只包含：
 - 典型使用示例
 
 不包含流程指导和业务逻辑。
+
+### 3.2 Skill 触发逻辑
+
+```
+aide env ensure
+    │
+    ├─ 全部 ✓ → 继续流程（无需额外 skill）
+    │
+    └─ 有 ✗ → 触发 env-config skill
+              │
+              ├─ 分析项目类型
+              ├─ aide env set 配置
+              └─ 重试 aide env ensure
+```
 
 ---
 
@@ -134,11 +154,13 @@ Skill 只包含：
 
 ### 5.2 修改 Skill
 
-1. 阅读 [skill/aide.md](skill/aide.md)
-2. 理解各子命令的接口
-3. 修改执行文件 `../skills/aide/SKILL.md`
-4. 更新设计文档
-5. 如涉及 aide-program 变更，同步更新 [aide-program 文档](../../../aide-program/docs/README.md)
+1. 确定要修改的 skill（aide 或 env-config）
+2. 修改对应执行文件 `../skills/<skill>/SKILL.md`
+3. 如涉及 aide-program 变更，同步更新 [aide-program 文档](../../../aide-program/docs/README.md)
+
+**注意**：
+- `aide` skill 保持精简，仅包含基础命令用法
+- 详细配置指导放在 `env-config` skill
 
 ### 5.3 新增 Command
 

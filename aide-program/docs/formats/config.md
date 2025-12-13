@@ -89,10 +89,20 @@ phases = ["task-optimize", "flow-design", "impl", "verify", "docs", "finish"]
 | `modules` | array | `["python", "uv", "venv", "requirements"]` | 启用的环境检测模块 |
 
 **可用模块**：
-- `python` - Python 解释器版本检测
-- `uv` - uv 包管理器检测
-- `venv` - Python 虚拟环境管理
-- `requirements` - Python 依赖管理
+
+| 模块 | 类型 | 说明 |
+|------|------|------|
+| `python` | A | Python 解释器版本检测 |
+| `uv` | A | uv 包管理器检测 |
+| `rust` | A | Rust 工具链检测（rustc + cargo） |
+| `node` | A | Node.js 运行时检测 |
+| `flutter` | A | Flutter SDK 检测 |
+| `android` | A | Android SDK 检测 |
+| `venv` | B | Python 虚拟环境管理 |
+| `requirements` | B | Python 依赖管理 |
+| `node_deps` | B | Node.js 项目依赖管理 |
+
+**模块实例化命名**：支持 `模块类型:实例名` 格式，用于同类型多实例场景。
 
 #### 4.3.2 模块配置
 
@@ -111,6 +121,24 @@ path = ".venv"          # 虚拟环境目录路径
 
 [env.requirements]
 path = "requirements.txt"  # 依赖文件路径
+
+[env.node_deps]
+path = "frontend"       # package.json 所在目录
+manager = "npm"         # 可选：npm/pnpm/yarn/bun，默认自动检测
+```
+
+**实例化模块配置**（多项目场景）：
+
+```toml
+[env]
+modules = ["node", "node_deps:react", "node_deps:vue"]
+
+[env."node_deps:react"]
+path = "react-demo"
+
+[env."node_deps:vue"]
+path = "vue-demo"
+manager = "pnpm"
 ```
 
 **使用场景**：

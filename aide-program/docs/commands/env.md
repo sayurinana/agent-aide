@@ -28,6 +28,7 @@
 aide env                         # 等同于 aide env ensure
 aide env ensure [options]        # 检测并修复
 aide env list                    # 列出所有可用模块
+aide env set <key> <value>       # 设置环境配置（带验证）
 ```
 
 ### 2.1 aide env ensure
@@ -47,6 +48,45 @@ aide env list                    # 列出所有可用模块
 
 列出所有可用的环境检测模块及其状态。
 
+### 2.3 aide env set
+
+设置环境配置，带模块名称验证。
+
+**用法：**
+
+```bash
+aide env set modules <模块列表>      # 设置启用的模块（逗号分隔）
+aide env set <模块名>.<配置项> <值>  # 设置模块配置
+```
+
+**示例：**
+
+```bash
+# 设置启用的模块
+aide env set modules python,uv,rust,node
+
+# 设置模块配置
+aide env set venv.path .venv
+aide env set requirements.path requirements.txt
+
+# 设置实例化模块（多项目场景）
+aide env set modules rust,node,flutter,android,node_deps:react
+aide env set node_deps:react.path react-demo
+```
+
+**验证规则：**
+
+- 设置 `modules` 时，验证每个模块类型是否存在
+- 设置模块配置时，验证模块类型是否存在
+- 无效模块名会报错并显示可用模块列表
+
+**错误示例：**
+
+```
+✗ 未知模块: fortran, cobol
+→ 可用模块: python, uv, venv, requirements, rust, node, flutter, node_deps, android
+```
+
 ---
 
 ## 三、模块系统
@@ -59,6 +99,10 @@ aide env list                    # 列出所有可用模块
 |------|------|------|
 | `python` | Python 解释器版本 | check |
 | `uv` | uv 包管理器 | check |
+| `rust` | Rust 工具链（rustc + cargo） | check |
+| `node` | Node.js 运行时 | check |
+| `flutter` | Flutter SDK | check |
+| `android` | Android SDK | check |
 
 **类型B：路径依赖模块（必须有配置才能检测）**
 
@@ -66,11 +110,35 @@ aide env list                    # 列出所有可用模块
 |------|------|------|----------|
 | `venv` | Python 虚拟环境 | check, ensure | `path` |
 | `requirements` | Python 依赖管理 | check, ensure | `path` |
+| `node_deps` | Node.js 项目依赖 | check, ensure | `path` |
 
 ### 3.2 模块能力
 
 - `check`：检测环境是否可用
 - `ensure`：检测失败时尝试自动修复
+
+### 3.3 模块实例化命名
+
+支持 `模块类型:实例名` 格式，用于同类型多实例场景：
+
+```toml
+# 多个 Node.js 项目
+modules = ["node", "node_deps:react", "node_deps:vue"]
+
+[env."node_deps:react"]
+path = "react-demo"
+
+[env."node_deps:vue"]
+path = "vue-demo"
+manager = "pnpm"
+```
+
+**输出示例：**
+```
+✓ node: 24.11.1 (npm 11.6.2)
+✓ node_deps:react: react-demo (npm)
+✓ node_deps:vue: vue-demo (pnpm)
+```
 
 ---
 
@@ -95,7 +163,32 @@ path = ".venv"
 path = "requirements.txt"
 ```
 
-### 4.2 配置兼容性
+### 4.2 多项目配置示例
+
+```toml
+[env]
+modules = ["rust", "node", "flutter", "android", "node_deps:react"]
+
+# Node.js 项目依赖（实例化命名）
+[env."node_deps:react"]
+path = "react-demo"
+# manager = "npm"  # 可选，默认自动检测
+```
+
+### 4.3 node_deps 模块配置
+
+| 配置项 | 必需 | 说明 |
+|--------|------|------|
+| `path` | 是 | package.json 所在目录 |
+| `manager` | 否 | 包管理器：npm/pnpm/yarn/bun，默认自动检测 |
+
+**自动检测逻辑**（按锁文件判断）：
+- `pnpm-lock.yaml` → pnpm
+- `yarn.lock` → yarn
+- `bun.lockb` → bun
+- `package-lock.json` 或无锁文件 → npm
+
+### 4.4 配置兼容性
 
 支持旧格式配置：
 
@@ -129,88 +222,6 @@ requirements = "requirements.txt"
 - 未启用模块失败 = 警告(⚠) = 可忽略
 - 启用的B类模块无配置 = 错误(✗) = 配置错误
 
-### 5.2 业务流程
-
-```
-@startuml
-skinparam defaultFontName "PingFang SC"
-
-start
-
-:读取配置;
-:获取启用模块列表;
-
-if (--runtime?) then (是)
-  :target = [python, uv];
-else if (--modules?) then (是)
-  :target = 指定模块;
-else if (--all?) then (是)
-  :target = 启用模块;
-  :check_only = true;
-else (否)
-  :target = 启用模块;
-endif
-
-if (verbose?) then (是)
-  :输出详细头部信息;
-endif
-
-:遍历 target 模块;
-
-repeat
-  :获取模块实例;
-  :获取模块配置;
-
-  if (verbose?) then (是)
-    :输出模块配置详情;
-  endif
-
-  if (B类模块 && 无配置?) then (是)
-    if (在启用列表?) then (是)
-      :输出错误;
-      stop
-    else (否)
-      :输出警告，跳过;
-    endif
-  endif
-
-  :执行 check();
-
-  if (成功?) then (是)
-    :输出成功;
-  else (否)
-    if (check_only?) then (是)
-      :输出警告;
-    else if (可修复?) then (是)
-      :执行 ensure();
-      if (修复成功?) then (是)
-        :输出成功;
-      else (否)
-        if (在启用列表?) then (是)
-          :输出错误;
-          stop
-        else (否)
-          :输出警告;
-        endif
-      endif
-    else (否)
-      if (在启用列表?) then (是)
-        :输出错误;
-        stop
-      else (否)
-        :输出警告;
-      endif
-    endif
-  endif
-
-repeat while (还有模块?)
-
-:输出环境就绪;
-
-stop
-@enduml
-```
-
 ---
 
 ## 六、输出示例
@@ -219,93 +230,48 @@ stop
 
 ```
 可用模块:
-  模块          描述                    能力               需要配置
+  模块           描述                   能力               需要配置
   ────────────────────────────────────────────────────────────
-  python       Python 解释器版本         check            否
-  uv           uv 包管理器              check            否
-  venv         Python 虚拟环境          check, ensure    是 [path]
-  requirements Python 依赖管理          check, ensure    是 [path]
+  python        Python 解释器版本       check            否
+  uv            uv 包管理器            check            否
+  venv          Python 虚拟环境        check, ensure    是 [path]
+  requirements  Python 依赖管理        check, ensure    是 [path]
+  rust          Rust 工具链           check            否
+  node          Node.js 运行时        check            否
+  flutter       Flutter SDK          check            否
+  node_deps     Node.js 项目依赖      check, ensure    是 [path]
+  android       Android SDK          check            否
 
-当前启用: python, uv, venv, requirements
+当前启用: rust, node, flutter, android, node_deps:react
 ```
 
-### 6.2 aide env ensure
-
-**成功：**
-```
-✓ python: 3.14.2 (>=3.11)
-✓ uv: uv 0.9.16
-✓ venv: .venv
-✓ requirements: requirements.txt
-✓ 环境就绪 (python:3.14.2, uv:uv 0.9.16, venv:.venv, requirements:requirements.txt)
-```
-
-**需修复：**
-```
-✓ python: 3.14.2 (>=3.11)
-✓ uv: uv 0.9.16
-→ venv: 虚拟环境不存在: .venv，尝试修复...
-✓ venv: 已创建
-✓ requirements: requirements.txt
-✓ 环境就绪 (...)
-```
-
-**启用模块失败：**
-```
-✓ python: 3.14.2 (>=3.11)
-✓ uv: uv 0.9.16
-✗ venv: 已启用但缺少配置项: path
-```
-
-### 6.3 aide env ensure --verbose
+### 6.2 aide env ensure（多项目场景）
 
 ```
-============================================================
-环境检测详细信息
-============================================================
-
-  工作目录: /home/user/myproject
-  配置文件: /home/user/myproject/.aide/config.toml
-  配置存在: 是
-
-  启用模块: python, uv, venv, requirements
-
-  目标模块: python, uv, venv, requirements
-
-  [python] 配置:
-    min_version: 3.11
-✓ python: 3.14.2 (>=3.11)
-  [uv] 配置:
-    (无配置)
-✓ uv: uv 0.9.16
-  [venv] 配置:
-    path: .venv
-    path (绝对): /home/user/myproject/.venv
-    path (存在): 是
-✓ venv: .venv
-  [requirements] 配置:
-    path: requirements.txt
-    path (绝对): /home/user/myproject/requirements.txt
-    path (存在): 是
-✓ requirements: requirements.txt
-✓ 环境就绪 (...)
+✓ rust: 1.94.0-nightly (cargo 1.94.0-nightly)
+✓ node: 24.11.1 (npm 11.6.2)
+✓ flutter: 3.38.4 (dart 3.10.3)
+✓ android: /home/user/android-sdk (adb 1.0.41, build-tools 36.1.0, API 36)
+→ node_deps:react: node_modules 不存在，尝试修复...
+✓ node_deps:react: 已安装 (npm)
+✓ 环境就绪 (rust:1.94.0-nightly, node:24.11.1, flutter:3.38.4, android:/home/user/android-sdk, node_deps:react:react-demo)
 ```
 
-### 6.4 aide env ensure --runtime
+### 6.3 aide env set 示例
 
-```
-✓ python: 3.14.2 (>=3.11)
-✓ uv: uv 0.9.16
-✓ 环境就绪 (python:3.14.2, uv:uv 0.9.16)
-```
+```bash
+# 设置多种环境模块
+$ aide env set modules rust,node,flutter,android,node_deps:react
+✓ 已更新 env.modules = ['rust', 'node', 'flutter', 'android', 'node_deps:react']
 
-### 6.5 aide env ensure --all
+# 设置实例化模块配置
+$ aide env set node_deps:react.path react-demo
+✓ 已更新 env."node_deps:react".path = 'react-demo'
 
-```
-✓ python: 3.14.2 (>=3.11)
-✓ uv: uv 0.9.16
-✓ venv: .venv
-✓ requirements: requirements.txt
+# 验证失败示例
+$ aide env set modules python,fortran
+✗ 未知模块: fortran
+→ 可用模块: python, uv, venv, requirements, rust, node, flutter, node_deps, android
 ```
 
 ---
@@ -323,7 +289,12 @@ aide/env/
     ├── python.py           # Python 模块
     ├── uv.py               # uv 模块
     ├── venv.py             # venv 模块
-    └── requirements.py     # requirements 模块
+    ├── requirements.py     # requirements 模块
+    ├── rust.py             # Rust 模块
+    ├── node.py             # Node.js 模块
+    ├── flutter.py          # Flutter 模块
+    ├── node_deps.py        # Node.js 项目依赖模块
+    └── android.py          # Android SDK 模块
 ```
 
 ### 7.1 模块基类

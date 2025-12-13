@@ -43,8 +43,12 @@ class ModuleRegistry:
 
 def register_builtin_modules() -> None:
     """注册内置模块。"""
-    from aide.env.modules import python, uv, venv, requirements
+    from aide.env.modules import (
+        python, uv, venv, requirements,
+        rust, node, flutter,
+        node_deps, android,
+    )
 
-    for mod in [python, uv, venv, requirements]:
+    for mod in [python, uv, venv, requirements, rust, node, flutter, node_deps, android]:
         if hasattr(mod, "module"):
             ModuleRegistry.register(mod.module)

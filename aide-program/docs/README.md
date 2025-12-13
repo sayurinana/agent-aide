@@ -43,10 +43,28 @@ aide-program 是 Aide 工作流体系的命令行工具，为 aide-plugin 提供
 | 子命令 | 设计文档 | 实现状态 | 职责 |
 |--------|----------|----------|------|
 | `aide init` | [commands/init.md](commands/init.md) | ✅ 已实现 | 初始化 .aide 目录 |
-| `aide env` | [commands/env.md](commands/env.md) | ✅ 已实现 | 环境检测与修复 |
+| `aide env ensure` | [commands/env.md](commands/env.md) | ✅ 已实现 | 环境检测与修复 |
+| `aide env list` | [commands/env.md](commands/env.md) | ✅ 已实现 | 列出可用模块 |
+| `aide env set` | [commands/env.md](commands/env.md) | ✅ 已实现 | 设置环境配置（带验证） |
 | `aide config` | [formats/config.md](formats/config.md) | ✅ 已实现 | 配置读写 |
 | `aide flow` | [commands/flow.md](commands/flow.md) | ⏳ 待实现 | 进度追踪与 git 集成 |
 | `aide decide` | [commands/decide.md](commands/decide.md) | ⏳ 待实现 | 待定项 Web 确认 |
+
+### 2.1 环境检测模块
+
+| 模块 | 类型 | 说明 |
+|------|------|------|
+| python, uv | A | Python 运行时 |
+| rust | A | Rust 工具链 |
+| node | A | Node.js 运行时 |
+| flutter | A | Flutter SDK |
+| android | A | Android SDK |
+| venv, requirements | B | Python 项目依赖 |
+| node_deps | B | Node.js 项目依赖 |
+
+- 类型A：无需配置即可检测
+- 类型B：需要配置路径
+- 支持模块实例化命名：`模块类型:实例名`
 
 ---
 
@@ -71,21 +89,21 @@ aide-program/
     ├── __main__.py          # 支持 python -m aide
     ├── main.py              # CLI 解析与命令分发
     ├── core/
-    │   ├── __init__.py
     │   ├── config.py        # 配置读写
     │   └── output.py        # 输出格式（✓/⚠/✗/→）
     ├── env/
-    │   ├── __init__.py
-    │   └── ensure.py        # 环境检测与修复
+    │   ├── manager.py       # 环境管理器
+    │   ├── registry.py      # 模块注册表
+    │   └── modules/         # 环境检测模块
+    │       ├── base.py      # 模块基类
+    │       ├── python.py, uv.py, rust.py
+    │       ├── node.py, flutter.py, android.py
+    │       ├── venv.py, requirements.py
+    │       └── node_deps.py
     ├── flow/                # 待实现
-    │   ├── __init__.py
-    │   ├── tracker.py       # 进度追踪
-    │   ├── git.py           # git 自动提交
-    │   └── validator.py     # 流程校验
+    │   └── ...
     └── decide/              # 待实现
-        ├── __init__.py
-        ├── server.py        # HTTP 服务
-        └── web/             # 静态前端
+        └── ...
 ```
 
 ---

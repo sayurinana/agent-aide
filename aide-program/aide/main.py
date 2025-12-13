@@ -69,6 +69,12 @@ def build_parser() -> argparse.ArgumentParser:
     list_parser = env_sub.add_parser("list", help="列出所有可用模块")
     list_parser.set_defaults(func=handle_env_list)
 
+    # aide env set
+    set_parser = env_sub.add_parser("set", help="设置环境配置（带验证）")
+    set_parser.add_argument("key", help="配置键：modules 或 模块名.配置项")
+    set_parser.add_argument("value", help="配置值")
+    set_parser.set_defaults(func=handle_env_set)
+
     # aide env（无子命令时等同于 ensure）
     env_parser.set_defaults(func=handle_env_default)
 
@@ -135,6 +141,34 @@ def handle_env_list(args: argparse.Namespace) -> bool:
     manager = EnvManager(root, cfg)
     manager.list_modules()
     return True
+
+
+def handle_env_set(args: argparse.Namespace) -> bool:
+    """aide env set 处理。"""
+    root = Path.cwd()
+    cfg = ConfigManager(root)
+    manager = EnvManager(root, cfg)
+
+    key = args.key
+    value = args.value
+
+    if key == "modules":
+        # 设置启用的模块列表
+        module_names = [m.strip() for m in value.split(",") if m.strip()]
+        return manager.set_modules(module_names)
+    elif "." in key:
+        # 设置模块配置，如 venv.path
+        parts = key.split(".", 1)
+        module_name = parts[0]
+        config_key = parts[1]
+        parsed_value = _parse_value(value)
+        return manager.set_module_config(module_name, config_key, parsed_value)
+    else:
+        # 无效的键格式
+        output.err(f"无效的配置键: {key}")
+        output.info("用法: aide env set modules <模块列表>")
+        output.info("      aide env set <模块名>.<配置项> <值>")
+        return False
 
 
 def handle_config_get(args: argparse.Namespace) -> bool:

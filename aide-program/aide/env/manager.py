@@ -16,6 +16,40 @@ RUNTIME_MODULES = ["python", "uv"]
 DEFAULT_MODULES = ["python", "uv", "venv", "requirements"]
 
 
+def parse_module_name(name: str) -> tuple[str, str | None]:
+    """解析模块名称，支持实例化命名。
+
+    Args:
+        name: 模块名称，如 "node_deps" 或 "node_deps:react"
+
+    Returns:
+        (模块类型, 实例名) - 实例名可能为 None
+    """
+    if ":" in name:
+        parts = name.split(":", 1)
+        return parts[0], parts[1]
+    return name, None
+
+
+def validate_modules(module_names: list[str]) -> tuple[bool, list[str]]:
+    """验证模块名称是否有效。
+
+    Args:
+        module_names: 要验证的模块名称列表
+
+    Returns:
+        (是否全部有效, 无效的模块类型列表)
+    """
+    register_builtin_modules()
+    available = set(ModuleRegistry.names())
+    invalid = []
+    for name in module_names:
+        module_type, _ = parse_module_name(name)
+        if module_type not in available:
+            invalid.append(module_type)
+    return len(invalid) == 0, invalid
+
+
 class EnvManager:
     """环境管理器。"""
 
@@ -163,11 +197,19 @@ class EnvManager:
         return env_config.get("modules", DEFAULT_MODULES)
 
     def _get_module_config(self, name: str, config: dict[str, Any]) -> dict[str, Any]:
-        """获取模块配置。"""
+        """获取模块配置。
+
+        支持实例化命名，如 node_deps:react 会查找 [env."node_deps:react"]
+        """
         env_config = config.get("env", {})
 
-        # 尝试新格式 [env.模块名]
+        # 支持实例化命名：先尝试完整名称（如 node_deps:react）
         module_config = env_config.get(name, {})
+
+        # 如果没找到且是实例化命名，尝试不带引号的格式
+        if not module_config and ":" in name:
+            # TOML 中可能存储为 env."node_deps:react" 或嵌套格式
+            pass  # 已经在上面尝试过了
 
         # 兼容旧格式：如果值是字符串而不是字典，转换为 {"path": value}
         if isinstance(module_config, str):
@@ -204,10 +246,15 @@ class EnvManager:
     ) -> tuple[bool, str]:
         """处理单个模块的检测/修复。
 
+        支持实例化命名，如 node_deps:react
+
         Returns:
             (是否成功, 版本/路径信息)
         """
-        module = ModuleRegistry.get(name)
+        # 解析模块名称，支持实例化命名
+        module_type, instance_name = parse_module_name(name)
+
+        module = ModuleRegistry.get(module_type)
         if not module:
             if is_enabled:
                 output.err(f"{name}: 未知模块")
@@ -216,6 +263,7 @@ class EnvManager:
                 output.warn(f"{name}: 未知模块")
                 return True, ""
 
+        # 获取配置时使用完整名称（包含实例名）
         module_config = self._get_module_config(name, config)
 
         # verbose: 输出模块配置
@@ -272,3 +320,54 @@ class EnvManager:
             else:
                 output.warn(f"{name}: {result.message}")
                 return True, ""
+
+    def set_modules(self, module_names: list[str]) -> bool:
+        """设置启用的模块列表（带验证）。
+
+        Args:
+            module_names: 要启用的模块名称列表
+
+        Returns:
+            是否设置成功
+        """
+        # 验证模块名称
+        valid, invalid = validate_modules(module_names)
+        if not valid:
+            available = ModuleRegistry.names()
+            output.err(f"未知模块: {', '.join(invalid)}")
+            output.info(f"可用模块: {', '.join(available)}")
+            return False
+
+        # 设置配置
+        self.cfg.set_value("env.modules", module_names)
+        return True
+
+    def set_module_config(self, module_name: str, key: str, value: Any) -> bool:
+        """设置模块配置（带验证）。
+
+        支持实例化命名，如 node_deps:react.path
+
+        Args:
+            module_name: 模块名称（可包含实例名，如 node_deps:react）
+            key: 配置键
+            value: 配置值
+
+        Returns:
+            是否设置成功
+        """
+        # 解析模块名称，支持实例化命名
+        module_type, _ = parse_module_name(module_name)
+
+        # 验证模块类型是否存在
+        module = ModuleRegistry.get(module_type)
+        if not module:
+            available = ModuleRegistry.names()
+            output.err(f"未知模块: {module_type}")
+            output.info(f"可用模块: {', '.join(available)}")
+            return False
+
+        # 设置配置，使用完整模块名（包含实例名）
+        # 注意：TOML 中带冒号的键需要引号，但 set_value 会自动处理
+        config_key = f"env.{module_name}.{key}"
+        self.cfg.set_value(config_key, value)
+        return True

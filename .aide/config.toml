@@ -1,8 +1,9 @@
 # Aide 默认配置（由 aide init 生成）
 # runtime: aide 自身运行要求
 # task: 任务文档路径
-# env: 虚拟环境与依赖配置
+# env: 环境模块配置
 # flow: 环节名称列表，供流程校验使用
+
 [runtime]
 python_min = "3.11"
 use_uv = true
@@ -12,8 +13,20 @@ source = "task-now.md"
 spec = "task-spec.md"
 
 [env]
-venv = ".venv"
-requirements = "requirements.txt"
+# 启用的模块列表
+modules = ["python", "uv", "venv", "requirements"]
+
+# Python 版本要求（可选，默认使用 runtime.python_min）
+# [env.python]
+# min_version = "3.11"
+
+# 虚拟环境配置（类型B模块，必须配置）
+[env.venv]
+path = ".venv"
+
+# 依赖文件配置（类型B模块，必须配置）
+[env.requirements]
+path = "requirements.txt"
 
 [flow]
 phases = ["task-optimize", "flow-design", "impl", "verify", "docs", "finish"]
