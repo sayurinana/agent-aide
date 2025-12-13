@@ -30,7 +30,7 @@ aide-plugin (Claude Code 插件)
   ▼ 调用
 aide-program (命令行工具)
   ├── aide init   - 初始化配置
-  ├── aide env    - 环境检测
+  ├── aide env    - 环境检测（模块化）
   ├── aide config - 配置读写
   ├── aide flow   - 进度追踪 + git 集成（待实现）
   └── aide decide - 待定项 Web 确认（待实现）
@@ -79,8 +79,9 @@ ccoptimize/
 │               └── aide.md
 │
 └── aide-program/             # Aide 命令行工具
-    ├── aide.sh               # Linux/Mac 入口
-    ├── aide.bat              # Windows 入口
+    ├── bin/
+    │   ├── aide.sh           # Linux/Mac 入口
+    │   └── aide.bat          # Windows 入口
     ├── aide/                 # Python 代码
     │   ├── __init__.py
     │   ├── __main__.py
@@ -89,7 +90,14 @@ ccoptimize/
     │   │   ├── config.py     # 配置管理
     │   │   └── output.py     # 输出格式
     │   └── env/
-    │       └── ensure.py     # 环境检测
+    │       ├── manager.py    # 环境管理器
+    │       ├── registry.py   # 模块注册表
+    │       └── modules/      # 环境检测模块
+    │           ├── base.py
+    │           ├── python.py
+    │           ├── uv.py
+    │           ├── venv.py
+    │           └── requirements.py
     └── docs/                 # 设计文档（给人）
         ├── README.md
         ├── commands/
@@ -122,15 +130,31 @@ ccoptimize/
 | 子命令 | 状态 | 说明 |
 |--------|------|------|
 | aide init | ✅ 已实现 | 初始化 .aide 目录和配置 |
-| aide env ensure | ✅ 已实现 | 环境检测与修复 |
+| aide env list | ✅ 已实现 | 列出所有可用模块 |
+| aide env ensure | ✅ 已实现 | 模块化环境检测与修复 |
 | aide env ensure --runtime | ✅ 已实现 | 运行时环境检测 |
+| aide env ensure --modules | ✅ 已实现 | 指定模块检测 |
+| aide env ensure --all | ✅ 已实现 | 全量检测（仅检查） |
+| aide env ensure --verbose | ✅ 已实现 | 详细配置输出 |
 | aide config get/set | ✅ 已实现 | 配置读写 |
 | aide flow | ⏳ 待实现 | 进度追踪 + git 集成 |
 | aide decide | ⏳ 待实现 | 待定项 Web 确认 |
 
 代码位于 `aide-program/aide/`
 
-### 3.3 设计文档
+### 3.3 环境检测模块
+
+| 模块 | 类型 | 能力 | 说明 |
+|------|------|------|------|
+| python | A | check | Python 解释器版本 |
+| uv | A | check | uv 包管理器 |
+| venv | B | check, ensure | Python 虚拟环境 |
+| requirements | B | check, ensure | Python 依赖管理 |
+
+- 类型A：无需配置即可检测
+- 类型B：需要配置路径才能检测
+
+### 3.4 设计文档
 
 | 区块 | 状态 | 位置 |
 |------|------|------|
@@ -189,7 +213,16 @@ ccoptimize/
 - 实现 `aide/decide/web/` - React 前端
 - 在 `main.py` 添加 CLI 路由
 
-### 5.3 整体验证
+### 5.3 扩展环境模块（可选）
+
+可按需添加更多环境检测模块：
+- node - Node.js 版本检测
+- npm - npm 依赖管理
+- java - Java JDK 检测
+- go - Go 语言检测
+- rust - Rust 工具链检测
+
+### 5.4 整体验证
 
 完成 flow 和 decide 后，需要进行完整工作流验证：
 1. `/aide:init` → `/aide:prep` → `/aide:exec` 完整流程测试
@@ -221,6 +254,7 @@ ccoptimize/
 
 ## 七、版本信息
 
-- 文档版本：1.0.0
-- 更新日期：2025-01-15
+- 文档版本：1.1.0
+- 更新日期：2025-12-14
 - 项目阶段：设计完成，部分实现
+- 最近更新：aide env 模块化重构

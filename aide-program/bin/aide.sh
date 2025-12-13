@@ -10,6 +10,6 @@ if [ ! -x "$VENV_PY" ]; then
   exit 1
 fi
 
-cd "$PROJECT_ROOT"
-export PYTHONPATH="${PROJECT_ROOT}/aide-program${PYTHONPATH:+:$PYTHONPATH}"
+# 不切换目录，保持用户的工作目录
+export PYTHONPATH="${PROJECT_ROOT}${PYTHONPATH:+:$PYTHONPATH}"
 exec "$VENV_PY" -m aide "$@"

@@ -9,83 +9,127 @@
 | 环境不一致 | 命令执行失败，打断业务流程 |
 | 手动检查繁琐 | 每次都要检查 Python、虚拟环境、依赖 |
 | 修复方式不统一 | 不同人有不同的修复习惯 |
+| 检测项不可扩展 | 无法按需添加新的环境检测 |
 
 ### 1.2 设计目标
 
-提供**统一的环境检测与修复**：
-- 自动检测环境问题
+提供**模块化、可配置的环境检测与修复**：
+- 模块化检测项，支持扩展
+- 可配置启用哪些模块
 - 能修复的自动修复
 - 不能修复的给出明确建议
+- 详细模式供人工确认
 
 ---
 
-## 二、职责
+## 二、命令结构
 
-### 2.1 做什么
+```
+aide env                         # 等同于 aide env ensure
+aide env ensure [options]        # 检测并修复
+aide env list                    # 列出所有可用模块
+```
 
-1. 检测 Python 版本是否满足要求
-2. 检测 uv 是否可用
-3. 检测/创建虚拟环境
-4. 安装依赖
-5. 输出项目配置信息
+### 2.1 aide env ensure
 
-### 2.2 不做什么
+检测环境并尝试修复问题。
 
-- 不修改业务代码
-- 不执行业务逻辑
-- 不进行流程追踪
+**参数：**
+
+| 参数 | 说明 |
+|------|------|
+| `--runtime` | 仅检测 aide 运行时环境（python + uv） |
+| `--modules M1,M2` | 指定要检测的模块（逗号分隔） |
+| `--all` | 检测所有已启用模块，仅检查不修复 |
+| `-v, --verbose` | 显示详细配置信息 |
+
+### 2.2 aide env list
+
+列出所有可用的环境检测模块及其状态。
 
 ---
 
-## 三、接口规格
+## 三、模块系统
 
-### 3.1 命令语法
+### 3.1 模块分类
 
-```
-aide env ensure [--runtime]
-```
+**类型A：自包含模块（无需配置即可检测）**
 
-### 3.2 参数
-
-| 参数 | 类型 | 说明 |
+| 模块 | 描述 | 能力 |
 |------|------|------|
-| `--runtime` | 可选 | 仅检查 aide 运行时环境，不依赖配置文件 |
+| `python` | Python 解释器版本 | check |
+| `uv` | uv 包管理器 | check |
 
-### 3.3 输出
+**类型B：路径依赖模块（必须有配置才能检测）**
 
-**成功（runtime 模式）**：
-```
-✓ 运行时环境就绪 (python:3.12, uv:0.4.0)
-```
+| 模块 | 描述 | 能力 | 必需配置 |
+|------|------|------|----------|
+| `venv` | Python 虚拟环境 | check, ensure | `path` |
+| `requirements` | Python 依赖管理 | check, ensure | `path` |
 
-**成功（完整模式）**：
-```
-→ 任务原文档: task-now.md
-→ 任务细则文档: task-spec.md
-✓ 环境就绪 (python:3.12, uv:0.4.0, venv:.venv)
-```
+### 3.2 模块能力
 
-**自动修复**：
-```
-→ 创建虚拟环境: .venv
-✓ 已创建虚拟环境
-⚠ 未找到 requirements.txt，已创建空文件
-→ 安装依赖（uv pip install -r requirements.txt）
-✓ 环境就绪 (python:3.12, uv:0.4.0, venv:.venv)
-```
-
-**失败**：
-```
-✗ Python 版本不足，要求>=3.11，当前 3.9
-```
-
-```
-✗ 未检测到 uv，请先安装（FileNotFoundError）
-```
+- `check`：检测环境是否可用
+- `ensure`：检测失败时尝试自动修复
 
 ---
 
-## 四、业务流程
+## 四、配置
+
+### 4.1 配置结构
+
+```toml
+[env]
+# 启用的模块列表
+modules = ["python", "uv", "venv", "requirements"]
+
+# 类型A模块配置（可选）
+[env.python]
+min_version = "3.11"
+
+# 类型B模块配置（必需）
+[env.venv]
+path = ".venv"
+
+[env.requirements]
+path = "requirements.txt"
+```
+
+### 4.2 配置兼容性
+
+支持旧格式配置：
+
+```toml
+[env]
+venv = ".venv"
+requirements = "requirements.txt"
+```
+
+读取时自动转换为新格式。
+
+---
+
+## 五、执行逻辑
+
+### 5.1 输出级别规则
+
+| 场景 | 在启用列表 | 有配置 | 结果 | 输出 | 行为 |
+|------|-----------|--------|------|------|------|
+| ensure | ✓ | ✓/NA | 成功 | ✓ | 继续 |
+| ensure | ✓ | ✓/NA | 失败+可修复 | → | 修复 |
+| ensure | ✓ | ✓/NA | 失败+不可修复 | ✗ | **停止** |
+| ensure | ✓ | ✗(B类) | - | ✗ | **停止** |
+| --modules | ✗ | ✓/NA | 成功 | ✓ | 继续 |
+| --modules | ✗ | ✓/NA | 失败 | ⚠ | 继续 |
+| --modules | ✗ | ✗(B类) | - | ⚠ | 跳过 |
+| --all | any | any | any | ✓/⚠ | 仅检测 |
+
+**核心原则：**
+- 启用模块失败 = 错误(✗) = 必须解决
+- 未启用模块失败 = 警告(⚠) = 可忽略
+- 启用的B类模块无配置 = 错误(✗) = 配置错误
+
+### 5.2 业务流程
 
 ```
 @startuml
@@ -93,60 +137,74 @@ skinparam defaultFontName "PingFang SC"
 
 start
 
-if (--runtime 参数?) then (是)
-  :required_py = "3.11" (硬编码);
+:读取配置;
+:获取启用模块列表;
+
+if (--runtime?) then (是)
+  :target = [python, uv];
+else if (--modules?) then (是)
+  :target = 指定模块;
+else if (--all?) then (是)
+  :target = 启用模块;
+  :check_only = true;
 else (否)
-  :从配置文件读取 required_py;
+  :target = 启用模块;
 endif
 
-:检查 Python 版本;
-if (版本满足?) then (是)
-else (否)
-  :输出错误信息;
-  stop
+if (verbose?) then (是)
+  :输出详细头部信息;
 endif
 
-:检查 uv 可用性;
-if (uv 可用?) then (是)
-else (否)
-  :输出错误信息;
-  stop
-endif
+:遍历 target 模块;
 
-if (--runtime 参数?) then (是)
-  :输出运行时环境就绪;
-  stop
-endif
+repeat
+  :获取模块实例;
+  :获取模块配置;
 
-:读取配置文件;
-:确保 .gitignore 包含 .aide/;
-
-:读取 venv 路径配置;
-if (虚拟环境存在?) then (是)
-else (否)
-  :使用 uv venv 创建;
-  if (创建成功?) then (是)
-  else (否)
-    :输出错误信息;
-    stop
+  if (verbose?) then (是)
+    :输出模块配置详情;
   endif
-endif
 
-:读取 requirements 路径配置;
-if (requirements.txt 存在?) then (是)
-else (否)
-  :创建空文件;
-  :输出警告;
-endif
+  if (B类模块 && 无配置?) then (是)
+    if (在启用列表?) then (是)
+      :输出错误;
+      stop
+    else (否)
+      :输出警告，跳过;
+    endif
+  endif
 
-:使用 uv pip install 安装依赖;
-if (安装成功?) then (是)
-else (否)
-  :输出错误信息;
-  stop
-endif
+  :执行 check();
 
-:输出任务文档路径配置;
+  if (成功?) then (是)
+    :输出成功;
+  else (否)
+    if (check_only?) then (是)
+      :输出警告;
+    else if (可修复?) then (是)
+      :执行 ensure();
+      if (修复成功?) then (是)
+        :输出成功;
+      else (否)
+        if (在启用列表?) then (是)
+          :输出错误;
+          stop
+        else (否)
+          :输出警告;
+        endif
+      endif
+    else (否)
+      if (在启用列表?) then (是)
+        :输出错误;
+        stop
+      else (否)
+        :输出警告;
+      endif
+    endif
+  endif
+
+repeat while (还有模块?)
+
 :输出环境就绪;
 
 stop
@@ -155,103 +213,147 @@ stop
 
 ---
 
-## 五、数据结构
+## 六、输出示例
 
-### 5.1 配置依赖
-
-从 `.aide/config.toml` 读取：
+### 6.1 aide env list
 
 ```
-[runtime]
-python_min     # Python 最低版本要求
+可用模块:
+  模块          描述                    能力               需要配置
+  ────────────────────────────────────────────────────────────
+  python       Python 解释器版本         check            否
+  uv           uv 包管理器              check            否
+  venv         Python 虚拟环境          check, ensure    是 [path]
+  requirements Python 依赖管理          check, ensure    是 [path]
 
-[env]
-venv           # 虚拟环境路径
-requirements   # 依赖文件路径
-
-[task]
-source         # 任务原文档路径
-spec           # 任务细则文档路径
+当前启用: python, uv, venv, requirements
 ```
 
-### 5.2 方法签名原型
+### 6.2 aide env ensure
+
+**成功：**
+```
+✓ python: 3.14.2 (>=3.11)
+✓ uv: uv 0.9.16
+✓ venv: .venv
+✓ requirements: requirements.txt
+✓ 环境就绪 (python:3.14.2, uv:uv 0.9.16, venv:.venv, requirements:requirements.txt)
+```
+
+**需修复：**
+```
+✓ python: 3.14.2 (>=3.11)
+✓ uv: uv 0.9.16
+→ venv: 虚拟环境不存在: .venv，尝试修复...
+✓ venv: 已创建
+✓ requirements: requirements.txt
+✓ 环境就绪 (...)
+```
+
+**启用模块失败：**
+```
+✓ python: 3.14.2 (>=3.11)
+✓ uv: uv 0.9.16
+✗ venv: 已启用但缺少配置项: path
+```
+
+### 6.3 aide env ensure --verbose
 
 ```
-class EnvManager:
-    root: Path              # 项目根目录
+============================================================
+环境检测详细信息
+============================================================
 
-    ensure(runtime_only: bool, cfg: ConfigManager) -> bool
-        # 主入口，返回是否成功
+  工作目录: /home/user/myproject
+  配置文件: /home/user/myproject/.aide/config.toml
+  配置存在: 是
 
-    _get_required_python(cfg: ConfigManager, runtime_only: bool) -> str
-        # 获取 Python 版本要求
+  启用模块: python, uv, venv, requirements
 
-    _parse_version(version: str) -> tuple[int, ...]
-        # 解析版本号字符串
+  目标模块: python, uv, venv, requirements
 
-    _check_python_version(required: str) -> bool
-        # 检查 Python 版本
+  [python] 配置:
+    min_version: 3.11
+✓ python: 3.14.2 (>=3.11)
+  [uv] 配置:
+    (无配置)
+✓ uv: uv 0.9.16
+  [venv] 配置:
+    path: .venv
+    path (绝对): /home/user/myproject/.venv
+    path (存在): 是
+✓ venv: .venv
+  [requirements] 配置:
+    path: requirements.txt
+    path (绝对): /home/user/myproject/requirements.txt
+    path (存在): 是
+✓ requirements: requirements.txt
+✓ 环境就绪 (...)
+```
 
-    _check_uv() -> str | None
-        # 检查 uv，返回版本号或 None
+### 6.4 aide env ensure --runtime
 
-    _ensure_venv(venv_path: Path) -> bool
-        # 确保虚拟环境存在
+```
+✓ python: 3.14.2 (>=3.11)
+✓ uv: uv 0.9.16
+✓ 环境就绪 (python:3.14.2, uv:uv 0.9.16)
+```
 
-    _ensure_requirements_file(req_path: Path) -> None
-        # 确保 requirements.txt 存在
+### 6.5 aide env ensure --all
 
-    _install_requirements(venv_path: Path, req_path: Path) -> bool
-        # 安装依赖
+```
+✓ python: 3.14.2 (>=3.11)
+✓ uv: uv 0.9.16
+✓ venv: .venv
+✓ requirements: requirements.txt
 ```
 
 ---
 
-## 六、依赖
+## 七、代码结构
 
-| 依赖项 | 类型 | 说明 |
-|--------|------|------|
-| ConfigManager | 内部模块 | 配置读写 |
-| output | 内部模块 | 输出格式化 |
-| uv | 外部工具 | 虚拟环境和依赖管理 |
+```
+aide/env/
+├── __init__.py
+├── manager.py              # 环境管理器主入口
+├── registry.py             # 模块注册表
+└── modules/
+    ├── __init__.py
+    ├── base.py             # 模块基类
+    ├── python.py           # Python 模块
+    ├── uv.py               # uv 模块
+    ├── venv.py             # venv 模块
+    └── requirements.py     # requirements 模块
+```
+
+### 7.1 模块基类
+
+```python
+class BaseModule(ABC):
+    @property
+    @abstractmethod
+    def info(self) -> ModuleInfo: ...
+
+    @abstractmethod
+    def check(self, config: dict, root: Path) -> CheckResult: ...
+
+    def ensure(self, config: dict, root: Path) -> CheckResult: ...
+
+    def validate_config(self, config: dict) -> tuple[bool, str | None]: ...
+```
+
+### 7.2 添加新模块
+
+1. 在 `aide/env/modules/` 创建模块文件
+2. 继承 `BaseModule` 实现 `info` 和 `check` 方法
+3. 如支持修复，实现 `ensure` 方法
+4. 导出 `module` 实例
+5. 在 `registry.py` 的 `register_builtin_modules()` 中注册
 
 ---
 
-## 七、被依赖
-
-| 依赖方 | 说明 |
-|--------|------|
-| /aide:init | 调用 env ensure --runtime 和 env ensure |
-| aide init | 内部可能调用 env 检查 |
-
----
-
-## 八、修改指南
-
-### 8.1 修改检测逻辑
-
-1. 更新本文档的业务流程图
-2. 修改 `aide/env/ensure.py`
-3. 如有新的输出，更新输出示例
-
-### 8.2 添加新的检测项
-
-1. 在本文档添加检测项说明
-2. 在 `EnvManager` 添加对应方法
-3. 在 `ensure()` 中调用
-4. 更新 [aide skill 设计文档](../../../aide-marketplace/aide-plugin/docs/skill/aide.md)
-
-### 8.3 修改配置依赖
-
-1. 更新本文档的"配置依赖"章节
-2. 修改代码实现
-3. 同步更新 [配置格式文档](../formats/config.md)
-
----
-
-## 九、相关文档
+## 八、相关文档
 
 - [program 导览](../README.md)
 - [配置格式文档](../formats/config.md)
 - [aide skill 设计文档](../../../aide-marketplace/aide-plugin/docs/skill/aide.md)
-- [/aide:init 命令设计](../../../aide-marketplace/aide-plugin/docs/commands/init.md)

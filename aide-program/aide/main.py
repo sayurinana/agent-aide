@@ -9,7 +9,7 @@ from typing import Any
 
 from aide.core import output
 from aide.core.config import ConfigManager
-from aide.env.ensure import EnvManager
+from aide.env.manager import EnvManager
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -32,17 +32,50 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="aide", description="Aide 工作流辅助工具")
     subparsers = parser.add_subparsers(dest="command")
 
+    # aide init
     init_parser = subparsers.add_parser("init", help="初始化 .aide 目录与默认配置")
     init_parser.set_defaults(func=handle_init)
 
+    # aide env
     env_parser = subparsers.add_parser("env", help="环境管理")
     env_sub = env_parser.add_subparsers(dest="env_command")
+
+    # aide env ensure
     ensure_parser = env_sub.add_parser("ensure", help="检测并修复运行环境")
-    ensure_parser.add_argument("--runtime", action="store_true", help="仅检查 aide 运行时环境")
+    ensure_parser.add_argument(
+        "--runtime",
+        action="store_true",
+        help="仅检查 aide 运行时环境（python + uv）",
+    )
+    ensure_parser.add_argument(
+        "--modules",
+        type=str,
+        help="指定要检测的模块（逗号分隔）",
+    )
+    ensure_parser.add_argument(
+        "--all",
+        action="store_true",
+        dest="check_all",
+        help="检测所有已启用模块（仅检查不修复）",
+    )
+    ensure_parser.add_argument(
+        "-v", "--verbose",
+        action="store_true",
+        help="显示详细配置信息",
+    )
     ensure_parser.set_defaults(func=handle_env_ensure)
 
+    # aide env list
+    list_parser = env_sub.add_parser("list", help="列出所有可用模块")
+    list_parser.set_defaults(func=handle_env_list)
+
+    # aide env（无子命令时等同于 ensure）
+    env_parser.set_defaults(func=handle_env_default)
+
+    # aide config
     config_parser = subparsers.add_parser("config", help="配置管理")
     config_sub = config_parser.add_subparsers(dest="config_command")
+
     get_parser = config_sub.add_parser("get", help="读取配置值")
     get_parser.add_argument("key", help="使用点号分隔的键名，如 task.source")
     get_parser.set_defaults(func=handle_config_get)
@@ -65,14 +98,43 @@ def handle_init(args: argparse.Namespace) -> bool:
     return True
 
 
+def handle_env_default(args: argparse.Namespace) -> bool:
+    """aide env（无子命令）等同于 aide env ensure。"""
+    if args.env_command is None:
+        # 无子命令，执行默认的 ensure
+        root = Path.cwd()
+        cfg = ConfigManager(root)
+        manager = EnvManager(root, cfg)
+        return manager.ensure()
+    return True
+
+
 def handle_env_ensure(args: argparse.Namespace) -> bool:
-    if args.env_command != "ensure":
-        output.err("请指定 env 子命令，如: aide env ensure")
-        return False
+    """aide env ensure 处理。"""
     root = Path.cwd()
     cfg = ConfigManager(root)
-    manager = EnvManager(root)
-    return manager.ensure(runtime_only=args.runtime, cfg=cfg)
+    manager = EnvManager(root, cfg)
+
+    # 解析 --modules 参数
+    modules = None
+    if args.modules:
+        modules = [m.strip() for m in args.modules.split(",") if m.strip()]
+
+    return manager.ensure(
+        runtime_only=args.runtime,
+        modules=modules,
+        check_only=args.check_all,
+        verbose=args.verbose,
+    )
+
+
+def handle_env_list(args: argparse.Namespace) -> bool:
+    """aide env list 处理。"""
+    root = Path.cwd()
+    cfg = ConfigManager(root)
+    manager = EnvManager(root, cfg)
+    manager.list_modules()
+    return True
 
 
 def handle_config_get(args: argparse.Namespace) -> bool:

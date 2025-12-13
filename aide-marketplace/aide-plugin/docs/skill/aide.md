@@ -71,42 +71,88 @@ LLM 在执行任务时需要调用各种工具，但：
 
 ## 五、子命令接口规格
 
-### 5.1 aide env ensure
+### 5.1 aide env list
+
+**用途**：列出所有可用的环境检测模块
+
+**语法**：
+```
+aide env list
+```
+
+**输出**：
+```
+可用模块:
+  模块          描述                    能力               需要配置
+  ────────────────────────────────────────────────────────────
+  python       Python 解释器版本         check            否
+  uv           uv 包管理器              check            否
+  venv         Python 虚拟环境          check, ensure    是 [path]
+  requirements Python 依赖管理          check, ensure    是 [path]
+
+当前启用: python, uv, venv, requirements
+```
+
+### 5.2 aide env ensure
 
 **用途**：检测并修复开发环境
 
 **语法**：
 ```
-aide env ensure [--runtime]
+aide env ensure [--runtime] [--modules M1,M2] [--all] [-v]
 ```
 
 **参数**：
 
 | 参数 | 说明 |
 |------|------|
-| `--runtime` | 仅检查 aide 运行时环境，不依赖配置文件 |
+| `--runtime` | 仅检查 aide 运行时环境（python + uv），不依赖配置文件 |
+| `--modules M1,M2` | 指定要检测的模块（逗号分隔） |
+| `--all` | 检测所有已启用模块，仅检查不修复 |
+| `-v, --verbose` | 显示详细配置信息（工作目录、配置路径、模块配置等） |
 
 **输出**：
 
 ```
 # 成功
-✓ 环境就绪 (python:3.12, uv:0.4.0)
-
-# 成功（完整检查）
-→ 任务原文档: task-now.md
-→ 任务细则文档: task-spec.md
-✓ 环境就绪 (python:3.12, uv:0.4.0, venv:.venv)
+✓ python: 3.14.2 (>=3.11)
+✓ uv: uv 0.9.16
+✓ venv: .venv
+✓ requirements: requirements.txt
+✓ 环境就绪 (python:3.14.2, uv:uv 0.9.16, venv:.venv, requirements:requirements.txt)
 
 # 自动修复
-⚠ 已修复: 创建虚拟环境 .venv
-✓ 环境就绪 (python:3.12)
+✓ python: 3.14.2 (>=3.11)
+✓ uv: uv 0.9.16
+→ venv: 虚拟环境不存在: .venv，尝试修复...
+✓ venv: 已创建
+✓ 环境就绪 (...)
 
-# 失败
-✗ Python 版本不满足要求 (需要 >=3.10, 当前 3.8)
-  建议: 安装 Python 3.10+ 或使用 pyenv 管理版本
+# 失败（启用模块缺少配置）
+✓ python: 3.14.2 (>=3.11)
+✓ uv: uv 0.9.16
+✗ venv: 已启用但缺少配置项: path
+
+# --verbose 输出（供人工确认）
+============================================================
+环境检测详细信息
+============================================================
+
+  工作目录: /home/user/myproject
+  配置文件: /home/user/myproject/.aide/config.toml
+  配置存在: 是
+
+  启用模块: python, uv, venv, requirements
+  目标模块: python, uv, venv, requirements
+
+  [venv] 配置:
+    path: .venv
+    path (绝对): /home/user/myproject/.venv
+    path (存在): 是
+...
 ```
 
-### 5.2 aide init
+### 5.3 aide init
 
 **用途**：初始化 .aide 目录和默认配置
 
@@ -126,7 +172,7 @@ aide init
 ✓ 初始化完成，.aide/ 与默认配置已准备就绪
 ```
 
-### 5.3 aide flow
+### 5.4 aide flow
 
 **用途**：进度追踪 + Git 自动提交 + 流程校验
 
@@ -248,7 +294,7 @@ aide flow 会自动校验环节跳转是否合理：
 - `impl` → `flow-design` ✓（回退）
 - `flow-design` → `finish` ✗（跳过环节）
 
-### 5.4 aide decide
+### 5.5 aide decide
 
 **用途**：通过 Web 界面处理待定项确认
 
@@ -287,7 +333,7 @@ aide decide result
 
 > 注：`note` 字段仅在用户添加备注时出现
 
-### 5.5 aide config
+### 5.6 aide config
 
 **用途**：配置读写
 
