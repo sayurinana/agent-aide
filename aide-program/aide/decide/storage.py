@@ -115,3 +115,49 @@ class DecideStorage:
         except Exception as exc:
             raise DecideError(f"无法解析 {path.name}: {exc}")
 
+    # ========== 服务状态管理 ==========
+
+    @property
+    def server_info_path(self) -> Path:
+        """服务状态文件路径。"""
+        return self.decisions_dir / "server.json"
+
+    def save_server_info(self, pid: int, port: int, url: str) -> None:
+        """保存后台服务信息。"""
+        self.ensure_ready()
+        info = {
+            "pid": pid,
+            "port": port,
+            "url": url,
+            "started_at": datetime.now().astimezone().isoformat(timespec="seconds"),
+        }
+        self._save_atomic(self.server_info_path, info)
+
+    def load_server_info(self) -> dict[str, Any] | None:
+        """读取服务信息，不存在返回 None。"""
+        if not self.server_info_path.exists():
+            return None
+        try:
+            return self._load_json(self.server_info_path)
+        except DecideError:
+            return None
+
+    def clear_server_info(self) -> None:
+        """清理服务状态文件。"""
+        if self.server_info_path.exists():
+            try:
+                self.server_info_path.unlink()
+            except OSError:
+                pass
+
+    def is_server_running(self) -> bool:
+        """检查后台服务是否运行中。"""
+        info = self.load_server_info()
+        if not info or "pid" not in info:
+            return False
+        try:
+            os.kill(info["pid"], 0)  # 检查进程是否存在
+            return True
+        except (ProcessLookupError, PermissionError, OSError):
+            return False
+

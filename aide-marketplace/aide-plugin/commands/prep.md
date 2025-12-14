@@ -14,6 +14,14 @@ argument-hint: [任务原文档路径]
 
 ---
 
+## 前置准备
+
+**首先触发 `aide` skill 学习 aide 命令的使用方法。**
+
+这是必要步骤，确保你了解 `aide flow` 等命令的正确用法。
+
+---
+
 ## 开始
 
 ### 启动流程追踪
@@ -95,15 +103,15 @@ aide flow next-step "任务优化完成，生成待定项"
 
 ### 有待定项时
 
-提交待定项数据：
+1. 将待定项数据写入 JSON 文件（如 `.aide/pending-items.json`）
+2. 提交待定项数据：
 
 ```bash
-aide decide submit '<json数据>'
+aide decide submit .aide/pending-items.json
 ```
 
-告知用户访问链接进行确认。
-
-用户完成后获取结果：
+3. 告知用户访问输出的链接进行确认
+4. 用户完成后获取结果：
 
 ```bash
 aide decide result

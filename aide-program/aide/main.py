@@ -9,7 +9,6 @@ from typing import Any
 
 from aide.core import output
 from aide.core.config import ConfigManager
-from aide.decide import cmd_decide
 from aide.env.manager import EnvManager
 from aide.flow.tracker import FlowTracker
 
@@ -134,9 +133,9 @@ def build_parser() -> argparse.ArgumentParser:
     decide_parser = subparsers.add_parser("decide", help="待定项确认与决策记录")
     decide_subparsers = decide_parser.add_subparsers(dest="decide_cmd")
 
-    # aide decide submit '<json>'
+    # aide decide submit <file>
     decide_submit_parser = decide_subparsers.add_parser("submit", help="提交待定项数据并启动 Web 服务")
-    decide_submit_parser.add_argument("data", help="待定项 JSON 数据")
+    decide_submit_parser.add_argument("file", help="待定项 JSON 数据文件路径")
     decide_submit_parser.set_defaults(func=handle_decide_submit)
 
     # aide decide result
@@ -302,18 +301,18 @@ def handle_decide_help(args: argparse.Namespace) -> bool:
     print("usage: aide decide {submit,result} ...")
     print("")
     print("子命令:")
-    print("  submit <json>  提交待定项数据并启动 Web 服务")
+    print("  submit <file>  从文件读取待定项数据，启动后台 Web 服务")
     print("  result         获取用户决策结果")
     print("")
     print("示例:")
-    print("  aide decide submit '{\"task\":\"...\",\"source\":\"...\",\"items\":[...]}'")
+    print("  aide decide submit ./pending-items.json")
     print("  aide decide result")
     return True
 
 
 def handle_decide_submit(args: argparse.Namespace) -> bool:
     from aide.decide import cmd_decide_submit
-    return cmd_decide_submit(args.data)
+    return cmd_decide_submit(args.file)
 
 
 def handle_decide_result(args: argparse.Namespace) -> bool:

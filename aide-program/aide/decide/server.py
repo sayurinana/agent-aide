@@ -95,6 +95,51 @@ class DecideServer:
         self.should_close = True
         self.close_reason = reason
 
+    def start_daemon(self, pid: int) -> bool:
+        """作为后台进程启动服务（由 daemon.py 调用）。
+
+        与 start() 的区别：
+        - 不输出到 stdout（后台运行）
+        - 保存服务信息到 server.json
+        - 退出时清理 server.json
+        """
+        try:
+            config = ConfigManager(self.root).load_config()
+            start_port = _get_int(config, "decide", "port", default=3721)
+            self.timeout = _get_int(config, "decide", "timeout", default=0)
+            self.bind = _get_str(config, "decide", "bind", default="127.0.0.1")
+            self.url = _get_str(config, "decide", "url", default="")
+
+            available = self._find_available_port(start_port)
+            if available is None:
+                return False
+            self.port = available
+
+            handlers = DecideHandlers(
+                storage=self.storage,
+                web_dir=self.web_dir,
+                stop_callback=self.stop,
+            )
+            RequestHandler = self._build_request_handler(handlers)
+            self.httpd = DecideHTTPServer((self.bind, self.port), RequestHandler, handlers)
+            self.httpd.timeout = 1.0
+
+            # 生成访问地址
+            access_url = self.url if self.url else f"http://localhost:{self.port}"
+
+            # 保存服务信息（供 CLI 读取）
+            self.storage.save_server_info(pid, self.port, access_url)
+
+            # 阻塞等待用户操作
+            self._serve_forever()
+
+            # 清理服务信息
+            self.storage.clear_server_info()
+            return True
+        except Exception:
+            self.storage.clear_server_info()
+            return False
+
     def _find_available_port(self, start: int) -> int | None:
         attempts = 10
         for offset in range(attempts):

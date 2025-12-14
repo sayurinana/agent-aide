@@ -208,25 +208,31 @@ aide flow 会自动校验环节跳转是否合理：
 
 ## aide decide - 待定项确认
 
-通过 Web 界面处理待定项确认。
+通过 Web 界面处理待定项确认。服务在后台运行，用户完成决策后自动关闭。
 
 ```
 aide decide {submit,result} ...
 
 子命令:
-  submit <json>  提交待定项数据并启动 Web 服务
+  submit <file>  从文件读取待定项数据，启动后台 Web 服务
   result         获取用户决策结果
 ```
 
 ### aide decide submit
 
-提交待定项数据并启动 Web 服务。
+从 JSON 文件读取待定项数据，启动后台 Web 服务，立即返回。
 
 ```bash
-aide decide submit '<json数据>'
+aide decide submit <json文件路径>
 ```
 
-**JSON 格式**：
+**使用流程**：
+1. 将待定项数据写入 JSON 文件
+2. 执行 `aide decide submit <文件路径>` 启动服务
+3. 告知用户访问 Web 界面进行决策
+4. 用户完成后执行 `aide decide result` 获取结果
+
+**JSON 文件格式**：
 ```json
 {
   "task": "任务简述",
@@ -267,7 +273,7 @@ aide decide submit '<json数据>'
 
 | 配置项 | 默认值 | 说明 |
 |--------|--------|------|
-| `port` | 3721 | 起始端口 |
+| `port` | 3721 | 起始端口（自动探测可用端口） |
 | `bind` | `"127.0.0.1"` | 监听地址，设为 `"0.0.0.0"` 可允许外部访问 |
 | `url` | `""` | 自定义访问地址，为空时自动生成 |
 | `timeout` | 0 | 超时时间（秒），0 表示不超时 |
@@ -276,9 +282,10 @@ aide decide submit '<json数据>'
 ```
 → Web 服务已启动
 → 请访问: http://localhost:3721
-→ 等待用户完成决策...
-✓ 决策已完成
+→ 用户完成决策后执行 aide decide result 获取结果
 ```
+
+> 注：服务在后台运行，命令立即返回。用户提交决策后服务自动关闭。
 
 ### aide decide result
 
@@ -297,6 +304,10 @@ aide decide result
   ]
 }
 ```
+
+**错误情况**：
+- 尚无决策结果（服务运行中）：提示等待用户完成操作
+- 尚无决策结果（服务已关闭）：提示重新执行 submit
 
 > 注：`note` 字段仅在用户添加备注时出现
 > 注：如果数据中有 `recommend` 字段，对应选项会默认选中
