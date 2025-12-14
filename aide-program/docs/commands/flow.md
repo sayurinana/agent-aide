@@ -1,5 +1,17 @@
 # aide flow 子命令设计文档
 
+## 零、详细设计文档包
+
+本文档为概览设计；更细的实现交接规格见：
+
+- [aide-program/docs/commands/flow/README.md](flow/README.md)
+- [aide-program/docs/commands/flow/cli.md](flow/cli.md)
+- [aide-program/docs/commands/flow/state-and-storage.md](flow/state-and-storage.md)
+- [aide-program/docs/commands/flow/validation.md](flow/validation.md)
+- [aide-program/docs/commands/flow/git.md](flow/git.md)
+- [aide-program/docs/commands/flow/hooks.md](flow/hooks.md)
+- [aide-program/docs/commands/flow/verification.md](flow/verification.md)
+
 ## 一、背景
 
 ### 1.1 解决的问题
@@ -53,7 +65,7 @@ aide flow start <环节名> "<总结>"
 
 | 参数 | 说明 |
 |------|------|
-| `<环节名>` | task-optimize / flow-design |
+| `<环节名>` | 来自 `flow.phases`（默认：task-optimize / flow-design / impl / verify / docs / finish） |
 | `<总结>` | 本次操作的简要说明 |
 
 **输出**：
@@ -155,6 +167,9 @@ start
 
 :接收命令和参数;
 
+:读取配置;
+note right: flow.phases
+
 :读取当前状态;
 note right: .aide/flow-status.json
 
@@ -165,17 +180,27 @@ else (否)
   stop
 endif
 
-:更新状态文件;
+if (需要环节钩子?) then (是)
+  :执行 pre-commit hooks;
+  if (通过?) then (是)
+  else (否)
+    :输出错误信息;
+    stop
+  endif
+endif
 
 :执行 git add .;
 
 :生成提交信息;
 note right: [aide] <环节>: <总结>
 
-:执行 git commit;
+:执行 git commit（若启用）;
+note right: 无变更可提交时不视为失败\ngit_commit = null
 
-if (环节特定行为?) then (是)
-  :执行特定行为;
+:更新并原子落盘状态文件;
+
+if (需要环节钩子?) then (是)
+  :执行 post-commit hooks;
 endif
 
 :输出结果;
@@ -244,7 +269,7 @@ HistoryEntry:
     phase: str                # 环节名
     step: int                 # 步骤序号
     summary: str              # 总结/原因
-    git_commit: str | None    # git commit hash
+    git_commit: str | None    # git commit hash（无变更可提交/未启用 git 时为空）
 ```
 
 ### 5.2 方法签名原型
@@ -311,8 +336,7 @@ class GitIntegration:
 
 ```
 class FlowValidator:
-    PHASE_ORDER: list[str]    # 环节顺序定义
-    VALID_TRANSITIONS: dict   # 有效跳转映射
+    phases: list[str]         # 从配置 flow.phases 读取
 
     validate_start(phase: str) -> bool
         # 校验 start 操作
@@ -333,6 +357,8 @@ class FlowValidator:
 | 离开 flow-design | 校验 PlantUML 语法，生成 PNG |
 | 进入 docs | 输出提示：请更新 CHANGELOG |
 | 离开 docs | 校验 CHANGELOG 是否已更新 |
+
+详细触发点与顺序见：[aide-program/docs/commands/flow/hooks.md](flow/hooks.md)
 
 ---
 
@@ -360,9 +386,10 @@ class FlowValidator:
 
 ### 9.1 修改环节定义
 
-1. 更新本文档的流程校验规则图
-2. 修改 `FlowValidator.PHASE_ORDER` 和 `VALID_TRANSITIONS`
-3. 同步更新 [aide skill 设计文档](../../../aide-marketplace/aide-plugin/docs/skill/aide.md)
+1. 修改 `flow.phases`（见 `aide-program/docs/formats/config.md`）
+2. 更新本文档的流程校验规则图（如需）
+3. 更新 `aide-program/docs/commands/flow/validation.md`（默认状态机示例）
+4. 同步更新 [aide skill 设计文档](../../../aide-marketplace/aide-plugin/docs/skill/aide.md)
 
 ### 9.2 添加环节特定行为
 
@@ -381,6 +408,7 @@ class FlowValidator:
 ## 十、相关文档
 
 - [program 导览](../README.md)
+- [flow 详细设计（交接包）](flow/README.md)
 - [数据格式文档](../formats/data.md)
 - [aide skill 设计文档](../../../aide-marketplace/aide-plugin/docs/skill/aide.md)
 - [/aide:prep 命令设计](../../../aide-marketplace/aide-plugin/docs/commands/prep.md)
