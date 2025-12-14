@@ -14,6 +14,13 @@ async function init() {
         AppState.source = data.source || "";
         AppState.items = Array.isArray(data.items) ? data.items : [];
 
+        // 如果有推荐项，默认选中推荐项
+        AppState.items.forEach((item) => {
+            if (item.recommend) {
+                AppState.decisions[item.id] = item.recommend;
+            }
+        });
+
         renderItems(data);
         bindEvents();
     } catch (error) {

@@ -265,6 +265,10 @@ body {
     backdrop-filter: blur(2px);
 }
 
+.success-overlay[hidden] {
+    display: none;
+}
+
 .success-message {
     background: var(--color-card);
     padding: var(--spacing-xl);
@@ -292,6 +296,10 @@ body {
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-md);
     min-width: 220px;
+}
+
+.error-toast[hidden] {
+    display: none;
 }
 
 .error-icon {

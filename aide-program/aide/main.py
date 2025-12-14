@@ -132,8 +132,18 @@ def build_parser() -> argparse.ArgumentParser:
 
     # aide decide
     decide_parser = subparsers.add_parser("decide", help="待定项确认与决策记录")
-    decide_parser.add_argument("data", help="待定项 JSON 数据或 result")
-    decide_parser.set_defaults(func=handle_decide)
+    decide_subparsers = decide_parser.add_subparsers(dest="decide_cmd")
+
+    # aide decide submit '<json>'
+    decide_submit_parser = decide_subparsers.add_parser("submit", help="提交待定项数据并启动 Web 服务")
+    decide_submit_parser.add_argument("data", help="待定项 JSON 数据")
+    decide_submit_parser.set_defaults(func=handle_decide_submit)
+
+    # aide decide result
+    decide_result_parser = decide_subparsers.add_parser("result", help="获取用户决策结果")
+    decide_result_parser.set_defaults(func=handle_decide_result)
+
+    decide_parser.set_defaults(func=handle_decide_help)
 
     parser.add_argument("--version", action="version", version="aide dev")
     return parser
@@ -288,8 +298,27 @@ def handle_flow_error(args: argparse.Namespace) -> bool:
     return tracker.error(args.description)
 
 
-def handle_decide(args: argparse.Namespace) -> bool:
-    return cmd_decide(args)
+def handle_decide_help(args: argparse.Namespace) -> bool:
+    print("usage: aide decide {submit,result} ...")
+    print("")
+    print("子命令:")
+    print("  submit <json>  提交待定项数据并启动 Web 服务")
+    print("  result         获取用户决策结果")
+    print("")
+    print("示例:")
+    print("  aide decide submit '{\"task\":\"...\",\"source\":\"...\",\"items\":[...]}'")
+    print("  aide decide result")
+    return True
+
+
+def handle_decide_submit(args: argparse.Namespace) -> bool:
+    from aide.decide import cmd_decide_submit
+    return cmd_decide_submit(args.data)
+
+
+def handle_decide_result(args: argparse.Namespace) -> bool:
+    from aide.decide import cmd_decide_result
+    return cmd_decide_result()
 
 
 def _parse_value(raw: str) -> Any:

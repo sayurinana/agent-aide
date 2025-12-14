@@ -167,10 +167,22 @@ manager = "pnpm"
 |------|------|--------|------|
 | `port` | int | `3721` | Web 服务起始端口，端口被占用时向后探测最多 10 次 |
 | `timeout` | int | `0` | 服务超时时间（秒），0 表示不启用超时 |
+| `bind` | string | `"127.0.0.1"` | 服务监听地址，设为 `"0.0.0.0"` 可允许外部访问 |
+| `url` | string | `""` | 自定义访问地址，为空时自动生成 `http://localhost:{port}` |
 
 **使用场景**：
 - `aide decide '<json>'` 读取 `port` 作为起始端口
 - `aide decide '<json>'` 读取 `timeout` 控制服务最长等待时间
+- `aide decide '<json>'` 读取 `bind` 作为监听地址
+- `aide decide '<json>'` 读取 `url` 作为输出的访问地址（支持自定义域名）
+
+**示例配置**：
+```toml
+[decide]
+port = 3721
+bind = "0.0.0.0"           # 监听所有网络接口
+url = "http://example.dev.net:3721"  # 自定义访问地址
+```
 
 ---
 

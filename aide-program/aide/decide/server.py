@@ -6,6 +6,7 @@ import json
 import socket
 import time
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from pathlib import Path
 
 from aide.core import output
 from aide.core.config import ConfigManager
@@ -30,7 +31,10 @@ class DecideServer:
         self.storage = storage
         self.port = 3721
         self.timeout = 0
-        self.web_dir = root / "aide" / "decide" / "web"
+        self.bind = "127.0.0.1"
+        self.url = ""
+        # web 资源位于 aide 包目录下，而非项目根目录
+        self.web_dir = Path(__file__).parent / "web"
         self.should_close = False
         self.close_reason: str | None = None
         self.httpd: DecideHTTPServer | None = None
@@ -40,6 +44,8 @@ class DecideServer:
             config = ConfigManager(self.root).load_config()
             start_port = _get_int(config, "decide", "port", default=3721)
             self.timeout = _get_int(config, "decide", "timeout", default=0)
+            self.bind = _get_str(config, "decide", "bind", default="127.0.0.1")
+            self.url = _get_str(config, "decide", "url", default="")
             end_port = start_port + 9
             available = self._find_available_port(start_port)
             if available is None:
@@ -54,11 +60,17 @@ class DecideServer:
                 stop_callback=self.stop,
             )
             RequestHandler = self._build_request_handler(handlers)
-            self.httpd = DecideHTTPServer(("127.0.0.1", self.port), RequestHandler, handlers)
+            self.httpd = DecideHTTPServer((self.bind, self.port), RequestHandler, handlers)
             self.httpd.timeout = 1.0
 
+            # 生成访问地址：优先使用自定义 url，否则自动生成
+            if self.url:
+                access_url = self.url
+            else:
+                access_url = f"http://localhost:{self.port}"
+
             output.info("Web 服务已启动")
-            output.info(f"请访问: http://localhost:{self.port}")
+            output.info(f"请访问: {access_url}")
             output.info("等待用户完成决策...")
 
             self._serve_forever()
@@ -90,7 +102,7 @@ class DecideServer:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
                 sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                 try:
-                    sock.bind(("127.0.0.1", port))
+                    sock.bind((self.bind, port))
                     return port
                 except OSError:
                     continue
@@ -138,7 +150,7 @@ class DecideServer:
                         content_length = int(length) if length else 0
                     except ValueError:
                         self._send_response(
-                            (400, handlers._cors_headers({"Content-Type": "application/json; charset=utf-8"}), b'{"error":"决策数据无效","detail":"无效的 Content-Length"}')
+                            (400, handlers._cors_headers({"Content-Type": "application/json; charset=utf-8"}), '{"error":"决策数据无效","detail":"无效的 Content-Length"}'.encode("utf-8"))
                         )
                         return
                     if content_length > 1024 * 1024:
@@ -146,7 +158,7 @@ class DecideServer:
                             (
                                 413,
                                 handlers._cors_headers({"Content-Type": "application/json; charset=utf-8"}),
-                                b'{"error":"请求体过大","detail":"单次提交限制 1MB"}',
+                                '{"error":"请求体过大","detail":"单次提交限制 1MB"}'.encode("utf-8"),
                             )
                         )
                         return
@@ -156,10 +168,10 @@ class DecideServer:
                     response = handlers.handle(method, self.path, body)
                 except Exception as exc:  # pragma: no cover - 兜底防御
                     payload = (
-                        b'{"error":"服务器内部错误","detail":'
-                        + json.dumps(str(exc), ensure_ascii=False).encode("utf-8")
-                        + b"}"
-                    )
+                        '{"error":"服务器内部错误","detail":'
+                        + json.dumps(str(exc), ensure_ascii=False)
+                        + "}"
+                    ).encode("utf-8")
                     response = (
                         500,
                         handlers._cors_headers({"Content-Type": "application/json; charset=utf-8"}),
@@ -197,6 +209,17 @@ def _get_int(config: dict, section: str, key: str, default: int) -> int:
         if isinstance(value, (int, float)):
             as_int = int(value)
             return as_int if as_int >= 0 else default
+    except Exception:
+        return default
+    return default
+
+
+def _get_str(config: dict, section: str, key: str, default: str) -> str:
+    try:
+        section_data = config.get(section, {}) if isinstance(config, dict) else {}
+        value = section_data.get(key, default)
+        if isinstance(value, str):
+            return value
     except Exception:
         return default
     return default

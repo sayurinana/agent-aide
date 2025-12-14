@@ -119,24 +119,46 @@ stop
 @enduml
 ```
 
-## 三、端口配置
+## 三、网络配置
 
-### 3.1 端口探测策略
+### 3.1 配置项
 
 | 配置项 | 默认值 | 说明 |
 |--------|--------|------|
 | `decide.port` | 3721 | 起始端口 |
+| `decide.bind` | `"127.0.0.1"` | 监听地址，设为 `"0.0.0.0"` 可允许外部访问 |
+| `decide.url` | `""` | 自定义访问地址，为空时自动生成 `http://localhost:{port}` |
 | 最大尝试次数 | 10 | 从起始端口开始尝试 |
+
+### 3.2 配置示例
+
+```toml
+[decide]
+port = 3721
+bind = "0.0.0.0"                      # 监听所有网络接口
+url = "http://example.dev.net:3721"   # 自定义访问地址
+```
+
+### 3.3 端口探测策略
 
 **探测逻辑**：
 
 1. 从 `decide.port` 开始
-2. 尝试绑定端口
+2. 尝试绑定到 `decide.bind:port`
 3. 若失败，尝试下一个端口
 4. 最多尝试 10 次
 5. 全部失败则返回错误
 
-### 3.2 端口占用检测
+### 3.4 访问地址生成
+
+```
+if decide.url 不为空:
+    access_url = decide.url
+else:
+    access_url = f"http://localhost:{actual_port}"
+```
+
+### 3.5 端口占用检测
 
 ```
 check_port_available(port: int) -> bool:
@@ -144,7 +166,7 @@ check_port_available(port: int) -> bool:
     检查端口是否可用
 
     1. 创建 socket
-    2. 尝试绑定到 127.0.0.1:port
+    2. 尝试绑定到 {bind}:{port}
     3. 成功则端口可用，关闭 socket 返回 True
     4. 失败则端口被占用，返回 False
     """
