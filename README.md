@@ -32,7 +32,7 @@ aide-program (命令行工具)
   ├── aide init   - 初始化配置
   ├── aide env    - 环境检测（模块化）
   ├── aide config - 配置读写
-  ├── aide flow   - 进度追踪 + git 集成（待实现）
+  ├── aide flow   - 进度追踪 + git 集成（已实现）
   └── aide decide - 待定项 Web 确认（待实现）
 ```
 
@@ -91,7 +91,7 @@ ccoptimize/
     │   ├── core/
     │   │   ├── config.py     # 配置管理
     │   │   └── output.py     # 输出格式
-    │   └── env/
+    │   ├── env/
     │       ├── manager.py    # 环境管理器
     │       ├── registry.py   # 模块注册表
     │       └── modules/      # 环境检测模块
@@ -101,11 +101,14 @@ ccoptimize/
     │           ├── android.py, node_deps.py
     │           ├── venv.py, requirements.py
     │           └── ...
+    │   └── flow/             # 进度追踪（已实现）
+    │       └── ...
     └── docs/                 # 设计文档（给人）
         ├── README.md
         ├── commands/
         │   ├── env.md
         │   ├── flow.md
+        │   ├── flow/          # flow 详细设计（交接包）
         │   ├── decide.md
         │   └── init.md
         └── formats/
@@ -146,7 +149,7 @@ ccoptimize/
 | aide env ensure --all | ✅ 已实现 | 全量检测（仅检查） |
 | aide env ensure --verbose | ✅ 已实现 | 详细配置输出 |
 | aide config get/set | ✅ 已实现 | 配置读写 |
-| aide flow | ⏳ 待实现 | 进度追踪 + git 集成 |
+| aide flow | ✅ 已实现 | 进度追踪 + git 集成 |
 | aide decide | ⏳ 待实现 | 待定项 Web 确认 |
 
 代码位于 `aide-program/aide/`
@@ -188,13 +191,14 @@ ccoptimize/
 
 ### 4.2 了解/修改 Commands 或 Skill
 
-1. 阅读 `aide-marketplace/aide-plugin/docs/README.md` - plugin 导览
+1. 阅读 [aide-plugin 导览](aide-marketplace/aide-plugin/docs/README.md)
 2. 阅读对应 command 的设计文档
 
 ### 4.3 了解/修改 aide 程序
 
-1. 阅读 `aide-program/docs/README.md` - program 导览
-2. 阅读对应子命令的设计文档
+1. 阅读 [aide-program 导览](aide-program/docs/README.md)
+2. 阅读对应子命令的设计文档（如 [flow 子命令概览](aide-program/docs/commands/flow.md)）
+3. 深入 flow 实现细节：[`aide-program/docs/commands/flow/README.md`](aide-program/docs/commands/flow/README.md)
 
 ### 4.4 了解数据格式
 
@@ -205,19 +209,7 @@ ccoptimize/
 
 ## 五、待完成工作
 
-### 5.1 aide flow 实现
-
-**功能**：进度追踪 + git 自动提交 + 流程校验
-
-**设计文档**：`aide-program/docs/commands/flow.md`
-
-**主要工作**：
-- 实现 `aide/flow/tracker.py` - 状态追踪
-- 实现 `aide/flow/git.py` - git 集成
-- 实现 `aide/flow/validator.py` - 流程校验
-- 在 `main.py` 添加 CLI 路由
-
-### 5.2 aide decide 实现
+### 5.1 aide decide 实现
 
 **功能**：待定项 Web 确认界面
 
@@ -228,7 +220,7 @@ ccoptimize/
 - 实现 `aide/decide/web/` - React 前端
 - 在 `main.py` 添加 CLI 路由
 
-### 5.3 扩展环境模块（可选）
+### 5.2 扩展环境模块（可选）
 
 可按需添加更多环境检测模块：
 - java - Java JDK 检测
@@ -237,9 +229,9 @@ ccoptimize/
 - cargo_deps - Rust 项目依赖（类似 node_deps）
 - pub_deps - Flutter/Dart 项目依赖
 
-### 5.4 整体验证
+### 5.3 整体验证
 
-完成 flow 和 decide 后，需要进行完整工作流验证：
+完成 decide 后，需要进行完整工作流验证：
 1. `/aide:init` → `/aide:prep` → `/aide:exec` 完整流程测试
 2. 验证 git 自动提交功能
 3. 验证待定项 Web 界面
@@ -271,9 +263,11 @@ ccoptimize/
 
 - 文档版本：1.2.0
 - 更新日期：2025-12-14
-- 项目阶段：设计完成，部分实现
+- 项目阶段：设计完成，部分实现（flow 已实现，decide 待实现）
 - 最近更新：
   - aide env set 命令实现
+  - aide flow 子命令实现
+  - 新增 CHANGELOG.md（用于 docs 阶段校验）
   - 新增环境模块：rust, node, flutter, android, node_deps
   - 支持模块实例化命名（多项目场景）
   - Skill 拆分：aide（基础）+ env-config（按需）

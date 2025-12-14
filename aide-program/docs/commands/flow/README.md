@@ -2,6 +2,10 @@
 
 本目录为 `aide flow` 子命令的**详细设计**。目标是让接手开发者在不阅读额外上下文的情况下，能够依据本文档集完成实现、联调与验证。
 
+实现位置：
+- 核心实现：`aide-program/aide/flow/`
+- CLI 入口：`aide-program/aide/main.py` 的 `aide flow ...` 子命令树
+
 上游/关联文档：
 - 概览设计：[`aide-program/docs/commands/flow.md`](../flow.md)
 - 数据格式规范（状态文件、提交信息）：[`aide-program/docs/formats/data.md`](../../formats/data.md)
@@ -42,7 +46,7 @@
 
 ## 四、推荐实现模块划分（仅文件/职责约定）
 
-建议在 `aide-program/aide/flow/` 下按职责拆分：
+实现位于 `aide-program/aide/flow/`，按职责拆分为：
 
 - `tracker`：编排一次 flow 操作（校验 → hooks → git → 落盘 → 输出）
 - `validator`：环节/动作校验（基于 phases 列表）

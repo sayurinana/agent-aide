@@ -83,6 +83,7 @@ Aide 是一套面向 Claude Code 的工作流辅助体系，旨在解决 AI 辅�
 | **导览** | [aide-program/docs/README.md](../aide-program/docs/README.md) | program 整体介绍和索引 |
 | env 子命令 | [aide-program/docs/commands/env.md](../aide-program/docs/commands/env.md) | 环境检测与修复 |
 | flow 子命令 | [aide-program/docs/commands/flow.md](../aide-program/docs/commands/flow.md) | 进度追踪与 git 集成 |
+| flow 详细设计 | [aide-program/docs/commands/flow/README.md](../aide-program/docs/commands/flow/README.md) | flow 实现细节与验证清单 |
 | decide 子命令 | [aide-program/docs/commands/decide.md](../aide-program/docs/commands/decide.md) | 待定项 Web 确认 |
 | init 子命令 | [aide-program/docs/commands/init.md](../aide-program/docs/commands/init.md) | 初始化 .aide 目录 |
 | 配置格式 | [aide-program/docs/formats/config.md](../aide-program/docs/formats/config.md) | config.toml 规范 |

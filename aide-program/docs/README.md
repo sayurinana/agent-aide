@@ -47,8 +47,10 @@ aide-program 是 Aide 工作流体系的命令行工具，为 aide-plugin 提供
 | `aide env list` | [commands/env.md](commands/env.md) | ✅ 已实现 | 列出可用模块 |
 | `aide env set` | [commands/env.md](commands/env.md) | ✅ 已实现 | 设置环境配置（带验证） |
 | `aide config` | [formats/config.md](formats/config.md) | ✅ 已实现 | 配置读写 |
-| `aide flow` | [commands/flow.md](commands/flow.md) | ⏳ 待实现 | 进度追踪与 git 集成 |
+| `aide flow` | [commands/flow.md](commands/flow.md) | ✅ 已实现 | 进度追踪与 git 集成 |
 | `aide decide` | [commands/decide.md](commands/decide.md) | ⏳ 待实现 | 待定项 Web 确认 |
+
+补充：flow 的实现细节与验证清单见 `commands/flow/README.md`。
 
 ### 2.1 环境检测模块
 
@@ -72,13 +74,16 @@ aide-program 是 Aide 工作流体系的命令行工具，为 aide-plugin 提供
 
 ```
 aide-program/
-├── aide.sh                  # Linux/Mac 入口脚本
-├── aide.bat                 # Windows 入口脚本
+├── bin/                     # 入口脚本
+│   ├── aide.sh              # Linux/Mac
+│   ├── aide.bat             # Windows
+│   └── aide                 # 软链接（指向 aide.sh）
 ├── docs/                    # 设计文档（本目录）
 │   ├── README.md            # 导览（本文件）
 │   ├── commands/            # 子命令设计文档
 │   │   ├── env.md
 │   │   ├── flow.md
+│   │   ├── flow/            # flow 详细设计（交接包）
 │   │   ├── decide.md
 │   │   └── init.md
 │   └── formats/             # 数据格式文档
@@ -100,7 +105,13 @@ aide-program/
     │       ├── node.py, flutter.py, android.py
     │       ├── venv.py, requirements.py
     │       └── node_deps.py
-    ├── flow/                # 待实现
+    ├── flow/                # 进度追踪（已实现）
+    │   ├── tracker.py
+    │   ├── validator.py
+    │   ├── storage.py
+    │   ├── git.py
+    │   ├── hooks.py
+    │   ├── types.py
     │   └── ...
     └── decide/              # 待实现
         └── ...
@@ -173,17 +184,18 @@ aide-program/
 
 ```bash
 # Linux/Mac
-./aide-program/aide.sh <command> [args]
+./aide-program/bin/aide.sh <command> [args]
 
 # Windows
-aide-program\aide.bat <command> [args]
+aide-program\bin\aide.bat <command> [args]
 ```
 
 ### 6.2 通过 Python 模块
 
 ```bash
-# 需要先激活虚拟环境或设置 PYTHONPATH
-python -m aide <command> [args]
+# 需要先使用 uv 创建并安装依赖，或直接使用入口脚本 ./aide-program/bin/aide.sh
+# 这里展示“直接使用虚拟环境的 python”运行模块：
+aide-program/.venv/bin/python -m aide <command> [args]
 ```
 
 ### 6.3 依赖要求

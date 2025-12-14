@@ -175,4 +175,6 @@ aide env ensure
 
 - [总导览](../../../docs/aide-overview.md)
 - [aide-program 导览](../../../aide-program/docs/README.md)
+- [aide flow 子命令](../../../aide-program/docs/commands/flow.md)
+- [aide flow 详细设计](../../../aide-program/docs/commands/flow/README.md)
 - [Claude Code 插件指南](../../../docs/03-插件指南.md)
