@@ -57,7 +57,7 @@ class DecideStorage:
         """保存用户决策为历史记录。"""
         pending = self.load_pending()
         if pending is None:
-            raise DecideError("未找到待定项数据，请先执行 aide decide '<json>'")
+            raise DecideError("未找到待定项数据，请先执行 aide decide submit '<json>'")
         if pending.meta is None:
             raise DecideError("pending.json 缺少 _meta.session_id")
         record = DecisionRecord(

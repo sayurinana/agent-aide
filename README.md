@@ -32,8 +32,10 @@ aide-program (命令行工具)
   ├── aide init   - 初始化配置
   ├── aide env    - 环境检测（模块化）
   ├── aide config - 配置读写
-  ├── aide flow   - 进度追踪 + git 集成（已实现）
-  └── aide decide - 待定项 Web 确认（待实现）
+  ├── aide flow   - 进度追踪 + git 集成
+  └── aide decide - 待定项 Web 确认
+      ├── aide decide submit '<json>' - 提交待定项并启动 Web 服务
+      └── aide decide result          - 获取用户决策结果
 ```
 
 ---
@@ -150,7 +152,8 @@ ccoptimize/
 | aide env ensure --verbose | ✅ 已实现 | 详细配置输出 |
 | aide config get/set | ✅ 已实现 | 配置读写 |
 | aide flow | ✅ 已实现 | 进度追踪 + git 集成 |
-| aide decide | ⏳ 待实现 | 待定项 Web 确认 |
+| aide decide submit | ✅ 已实现 | 提交待定项并启动 Web 服务 |
+| aide decide result | ✅ 已实现 | 获取用户决策结果 |
 
 代码位于 `aide-program/aide/`
 
@@ -209,18 +212,7 @@ ccoptimize/
 
 ## 五、待完成工作
 
-### 5.1 aide decide 实现
-
-**功能**：待定项 Web 确认界面
-
-**设计文档**：`aide-program/docs/commands/decide.md`
-
-**主要工作**：
-- 实现 `aide/decide/server.py` - HTTP 服务
-- 实现 `aide/decide/web/` - React 前端
-- 在 `main.py` 添加 CLI 路由
-
-### 5.2 扩展环境模块（可选）
+### 5.1 扩展环境模块（可选）
 
 可按需添加更多环境检测模块：
 - java - Java JDK 检测
@@ -229,12 +221,12 @@ ccoptimize/
 - cargo_deps - Rust 项目依赖（类似 node_deps）
 - pub_deps - Flutter/Dart 项目依赖
 
-### 5.3 整体验证
+### 5.2 整体验证
 
-完成 decide 后，需要进行完整工作流验证：
+进行完整工作流验证：
 1. `/aide:init` → `/aide:prep` → `/aide:exec` 完整流程测试
 2. 验证 git 自动提交功能
-3. 验证待定项 Web 界面
+3. 验证待定项 Web 界面（aide decide）
 
 ---
 
@@ -261,13 +253,15 @@ ccoptimize/
 
 ## 七、版本信息
 
-- 文档版本：1.2.0
-- 更新日期：2025-12-14
-- 项目阶段：设计完成，部分实现（flow 已实现，decide 待实现）
+- 文档版本：1.3.0
+- 更新日期：2025-12-15
+- 项目阶段：设计完成，核心功能已实现
 - 最近更新：
-  - aide env set 命令实现
+  - aide decide 子命令实现（submit/result）
+  - 支持 Web 界面待定项确认
+  - 支持自定义监听地址（bind）和访问地址（url）配置
+  - 推荐选项默认选中
   - aide flow 子命令实现
-  - 新增 CHANGELOG.md（用于 docs 阶段校验）
   - 新增环境模块：rust, node, flutter, android, node_deps
   - 支持模块实例化命名（多项目场景）
   - Skill 拆分：aide（基础）+ env-config（按需）

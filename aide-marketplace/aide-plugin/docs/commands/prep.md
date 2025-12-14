@@ -99,7 +99,7 @@ partition "阶段2: 任务优化" {
 
 partition "阶段3: 待定项处理" {
   if (有待定项?) then (是)
-    :aide decide '<json>';
+    :aide decide submit '<json>';
     :告知用户访问链接;
     :aide decide result;
     :aide flow next-step "用户完成待定项确认";
@@ -163,7 +163,7 @@ stop
 
 **处理流程**：
 1. 准备待定项 JSON 数据
-2. 调用 `aide decide '<json>'` 启动 Web 服务
+2. 调用 `aide decide submit '<json>'` 启动 Web 服务
 3. 告知用户访问链接进行确认
 4. 调用 `aide decide result` 获取决策结果
 
@@ -228,7 +228,7 @@ aide config get task.source
 
 **命令**：
 ```bash
-aide decide '<json数据>'
+aide decide submit '<json数据>'
 aide decide result
 ```
 

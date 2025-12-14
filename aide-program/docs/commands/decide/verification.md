@@ -14,7 +14,7 @@
 
 **步骤**：
 
-1. 执行 `aide decide '<valid_json>'`
+1. 执行 `aide decide submit '<valid_json>'`
 
 **期望**：
 
@@ -28,7 +28,7 @@
 
 **步骤**：
 
-1. 执行 `aide decide 'invalid json'`
+1. 执行 `aide decide submit 'invalid json'`
 
 **期望**：
 
@@ -41,7 +41,7 @@
 
 **步骤**：
 
-1. 执行 `aide decide '{"task":"test"}'`（缺少必填字段）
+1. 执行 `aide decide submit '{"task":"test"}'`（缺少必填字段）
 
 **期望**：
 
@@ -65,7 +65,7 @@
 
 **步骤**：
 
-1. 执行 `aide decide '<json>'` 并立即中断（Ctrl+C）
+1. 执行 `aide decide submit '<json>'` 并立即中断（Ctrl+C）
 2. 执行 `aide decide result`
 
 **期望**：
@@ -94,7 +94,7 @@
 **步骤**：
 
 1. 占用端口 3721（如 `nc -l 3721`）
-2. 执行 `aide decide '<json>'`
+2. 执行 `aide decide submit '<json>'`
 
 **期望**：
 
@@ -106,7 +106,7 @@
 **步骤**：
 
 1. 占用端口 3721-3730
-2. 执行 `aide decide '<json>'`
+2. 执行 `aide decide submit '<json>'`
 
 **期望**：
 
@@ -294,7 +294,7 @@
 
 **步骤**：
 
-1. 执行 `aide decide '<json>'`
+1. 执行 `aide decide submit '<json>'`
 2. 检查 `.aide/decisions/pending.json`
 
 **期望**：
@@ -321,9 +321,9 @@
 
 **步骤**：
 
-1. 执行 `aide decide '<json1>'`
+1. 执行 `aide decide submit '<json1>'`
 2. 中断服务
-3. 执行 `aide decide '<json2>'`
+3. 执行 `aide decide submit '<json2>'`
 4. 检查 pending.json
 
 **期望**：
@@ -349,7 +349,7 @@
 
 **步骤**：
 
-1. 执行 `aide decide '<json>'`
+1. 执行 `aide decide submit '<json>'`
 2. 在浏览器中打开链接
 3. 选择所有选项
 4. 添加备注
@@ -384,7 +384,7 @@
 **步骤**：
 
 1. 删除 .aide 目录
-2. 执行 `aide decide '<json>'`
+2. 执行 `aide decide submit '<json>'`
 
 **期望**：
 
@@ -408,7 +408,7 @@
 **步骤**：
 
 1. 构造包含 100 个待定项的 JSON
-2. 执行 `aide decide '<json>'`
+2. 执行 `aide decide submit '<json>'`
 
 **期望**：
 

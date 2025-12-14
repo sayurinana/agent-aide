@@ -35,7 +35,7 @@
    - Web 前端：使用纯 HTML/CSS/JavaScript，无需构建工具，直接嵌入 Python 代码或作为静态资源
 
 2. **服务生命周期**：
-   - `aide decide '<json>'` 启动服务并阻塞等待
+   - `aide decide submit '<json>'` 启动服务并阻塞等待
    - 用户在 Web 界面提交决策后，服务自动关闭
    - 服务关闭后，LLM 调用 `aide decide result` 获取结果
 
@@ -159,7 +159,7 @@ participant "Web Browser" as Browser
 participant User
 
 == 提交待定项 ==
-LLM -> CLI : aide decide '<json>'
+LLM -> CLI : aide decide submit '<json>'
 CLI -> CLI : 解析并验证 JSON
 CLI -> CLI : 保存到 pending.json
 CLI -> Server : 启动 HTTP 服务

@@ -13,7 +13,7 @@
 
 ### 2.1 输入格式（LLM → aide decide）
 
-LLM 调用 `aide decide '<json>'` 时传入的数据格式。
+LLM 调用 `aide decide submit '<json>'` 时传入的数据格式。
 
 ```
 DecideInput:

@@ -171,10 +171,10 @@ manager = "pnpm"
 | `url` | string | `""` | 自定义访问地址，为空时自动生成 `http://localhost:{port}` |
 
 **使用场景**：
-- `aide decide '<json>'` 读取 `port` 作为起始端口
-- `aide decide '<json>'` 读取 `timeout` 控制服务最长等待时间
-- `aide decide '<json>'` 读取 `bind` 作为监听地址
-- `aide decide '<json>'` 读取 `url` 作为输出的访问地址（支持自定义域名）
+- `aide decide submit '<json>'` 读取 `port` 作为起始端口
+- `aide decide submit '<json>'` 读取 `timeout` 控制服务最长等待时间
+- `aide decide submit '<json>'` 读取 `bind` 作为监听地址
+- `aide decide submit '<json>'` 读取 `url` 作为输出的访问地址（支持自定义域名）
 
 **示例配置**：
 ```toml

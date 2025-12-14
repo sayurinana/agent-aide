@@ -98,7 +98,7 @@ aide flow next-step "任务优化完成，生成待定项"
 提交待定项数据：
 
 ```bash
-aide decide '<json数据>'
+aide decide submit '<json数据>'
 ```
 
 告知用户访问链接进行确认。

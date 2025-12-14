@@ -48,9 +48,12 @@ aide-program 是 Aide 工作流体系的命令行工具，为 aide-plugin 提供
 | `aide env set` | [commands/env.md](commands/env.md) | ✅ 已实现 | 设置环境配置（带验证） |
 | `aide config` | [formats/config.md](formats/config.md) | ✅ 已实现 | 配置读写 |
 | `aide flow` | [commands/flow.md](commands/flow.md) | ✅ 已实现 | 进度追踪与 git 集成 |
-| `aide decide` | [commands/decide.md](commands/decide.md) | ⏳ 待实现 | 待定项 Web 确认 |
+| `aide decide submit` | [commands/decide.md](commands/decide.md) | ✅ 已实现 | 提交待定项并启动 Web 服务 |
+| `aide decide result` | [commands/decide.md](commands/decide.md) | ✅ 已实现 | 获取用户决策结果 |
 
-补充：flow 的实现细节与验证清单见 [commands/flow/README.md](commands/flow/README.md)。
+补充：
+- flow 的实现细节与验证清单见 [commands/flow/README.md](commands/flow/README.md)
+- decide 的实现细节与验证清单见 [commands/decide/README.md](commands/decide/README.md)
 
 ### 2.1 环境检测模块
 
@@ -113,8 +116,16 @@ aide-program/
     │   ├── hooks.py
     │   ├── types.py
     │   └── ...
-    └── decide/              # 待实现
-        └── ...
+    └── decide/              # 待定项确认（已实现）
+        ├── cli.py           # CLI 入口
+        ├── server.py        # HTTP 服务
+        ├── storage.py       # 数据存储
+        ├── handlers.py      # API 处理器
+        ├── types.py         # 数据类型
+        └── web/             # 前端资源
+            ├── index.html
+            ├── style.css
+            └── app.js
 ```
 
 ---

@@ -298,11 +298,11 @@ aide flow 会自动校验环节跳转是否合理：
 
 **用途**：通过 Web 界面处理待定项确认
 
-#### aide decide（提交数据）
+#### aide decide submit（提交数据）
 
 **语法**：
 ```
-aide decide '<json数据>'
+aide decide submit '<json数据>'
 ```
 
 **输入格式**：见 [数据格式文档](../../../../aide-program/docs/formats/data.md)
@@ -397,7 +397,7 @@ aide flow next-step "任务分析完成"
 aide flow next-step "任务优化完成，生成待定项"
 
 # 处理待定项
-aide decide '{"task":"...", "items":[...]}'
+aide decide submit '{"task":"...", "items":[...]}'
 aide decide result
 
 aide flow next-step "用户完成待定项确认"

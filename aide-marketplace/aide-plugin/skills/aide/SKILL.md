@@ -210,12 +210,20 @@ aide flow 会自动校验环节跳转是否合理：
 
 通过 Web 界面处理待定项确认。
 
-### aide decide
+```
+aide decide {submit,result} ...
+
+子命令:
+  submit <json>  提交待定项数据并启动 Web 服务
+  result         获取用户决策结果
+```
+
+### aide decide submit
 
 提交待定项数据并启动 Web 服务。
 
 ```bash
-aide decide '<json数据>'
+aide decide submit '<json数据>'
 ```
 
 **JSON 格式**：
@@ -255,11 +263,21 @@ aide decide '<json数据>'
 }
 ```
 
+**配置项**（在 `.aide/config.toml` 的 `[decide]` 节）：
+
+| 配置项 | 默认值 | 说明 |
+|--------|--------|------|
+| `port` | 3721 | 起始端口 |
+| `bind` | `"127.0.0.1"` | 监听地址，设为 `"0.0.0.0"` 可允许外部访问 |
+| `url` | `""` | 自定义访问地址，为空时自动生成 |
+| `timeout` | 0 | 超时时间（秒），0 表示不超时 |
+
 **输出**：
 ```
 → Web 服务已启动
 → 请访问: http://localhost:3721
 → 等待用户完成决策...
+✓ 决策已完成
 ```
 
 ### aide decide result
@@ -281,6 +299,7 @@ aide decide result
 ```
 
 > 注：`note` 字段仅在用户添加备注时出现
+> 注：如果数据中有 `recommend` 字段，对应选项会默认选中
 
 ---
 
@@ -390,7 +409,7 @@ aide flow next-part verify "实现完成，开始验证"
 
 ```bash
 # 提交待定项（JSON 数据较长时建议保存到文件后通过 cat 传入）
-aide decide '{"task":"...", "items":[...]}'
+aide decide submit '{"task":"...", "items":[...]}'
 
 # 获取结果
 aide decide result

@@ -4,19 +4,27 @@
 
 `aide decide` 提供两个子命令：
 
+```
+aide decide {submit,result} ...
+
+子命令:
+  submit <json>  提交待定项数据并启动 Web 服务
+  result         获取用户决策结果
+```
+
 | 子命令 | 语法（API 约定） | 成功输出 | 主要用途 |
 |--------|------------------|----------|----------|
-| (默认) | `aide decide '<json>'` | 输出访问链接，阻塞等待 | 提交待定项数据并启动 Web 服务 |
+| submit | `aide decide submit '<json>'` | 输出访问链接，阻塞等待 | 提交待定项数据并启动 Web 服务 |
 | result | `aide decide result` | 输出 JSON 结果 | 获取用户决策结果 |
 
 ## 二、命令详细规格
 
-### 2.1 aide decide（提交数据并启动服务）
+### 2.1 aide decide submit（提交数据并启动服务）
 
 **语法**：
 
 ```
-aide decide '<json_data>'
+aide decide submit '<json_data>'
 ```
 
 **参数**：
@@ -24,6 +32,15 @@ aide decide '<json_data>'
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
 | `<json_data>` | string | 是 | 待定项 JSON 数据，需用引号包裹 |
+
+**配置项**（见 [配置格式文档](../../formats/config.md)）：
+
+| 配置项 | 默认值 | 说明 |
+|--------|--------|------|
+| `decide.port` | 3721 | 起始端口 |
+| `decide.bind` | `"127.0.0.1"` | 监听地址，设为 `"0.0.0.0"` 可允许外部访问 |
+| `decide.url` | `""` | 自定义访问地址，为空时自动生成 |
+| `decide.timeout` | 0 | 超时时间（秒），0 表示不超时 |
 
 **输入数据格式**：
 
@@ -143,12 +160,12 @@ aide decide result
 
 ```
 ✗ 未找到待定项数据
-  建议: 请先执行 aide decide '<json>'
+  建议: 请先执行 aide decide submit '<json>'
 ```
 
 ```
 ✗ 决策结果已过期
-  建议: 请重新执行 aide decide '<json>'
+  建议: 请重新执行 aide decide submit '<json>'
 ```
 
 **行为流程**：
@@ -283,7 +300,7 @@ stop
 
 ```bash
 # 1. LLM 提交待定项数据
-$ aide decide '{"task":"实现用户认证","source":"task.md","items":[...]}'
+$ aide decide submit '{"task":"实现用户认证","source":"task.md","items":[...]}'
 → Web 服务已启动
 → 请访问: http://localhost:3721
 → 等待用户完成决策...
@@ -298,7 +315,7 @@ $ aide decide result
 
 ```bash
 # 配置了超时时间的情况
-$ aide decide '{"task":"...","source":"...","items":[...]}'
+$ aide decide submit '{"task":"...","source":"...","items":[...]}'
 → Web 服务已启动
 → 请访问: http://localhost:3721
 → 等待用户完成决策...
@@ -315,7 +332,7 @@ $ aide decide result
 /aide:prep 流程中：
 1. LLM 分析任务，识别待定项
 2. LLM 构造 JSON 数据
-3. LLM 调用 aide decide '<json>'
+3. LLM 调用 aide decide submit '<json>'
 4. LLM 告知用户访问链接
 5. 用户在 Web 界面完成决策
 6. LLM 调用 aide decide result 获取结果

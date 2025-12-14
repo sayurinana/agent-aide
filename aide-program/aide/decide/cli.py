@@ -61,12 +61,12 @@ def cmd_decide_result() -> bool:
         return False
 
     if pending is None:
-        _print_error("未找到待定项数据", "请先执行 aide decide '<json>'")
+        _print_error("未找到待定项数据", "请先执行 aide decide submit '<json>'")
         return False
 
     session_id = pending.meta.session_id if pending.meta else None
     if not session_id:
-        _print_error("决策结果已过期", "pending.json 已被更新，请重新执行 aide decide '<json>'")
+        _print_error("决策结果已过期", "pending.json 已被更新，请重新执行 aide decide submit '<json>'")
         return False
 
     try:
@@ -83,7 +83,7 @@ def cmd_decide_result() -> bool:
             for path in storage.decisions_dir.glob("*.json")
         )
         if has_history:
-            _print_error("决策结果已过期", "pending.json 已被更新，请重新执行 aide decide '<json>'")
+            _print_error("决策结果已过期", "pending.json 已被更新，请重新执行 aide decide submit '<json>'")
         else:
             _print_error("尚无决策结果", "请等待用户在 Web 界面完成操作")
         return False

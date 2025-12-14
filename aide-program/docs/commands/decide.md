@@ -51,13 +51,23 @@
 
 ## 三、接口规格
 
-### 3.1 aide decide（提交数据）
+### 3.1 命令一览
+
+```
+aide decide {submit,result} ...
+
+子命令:
+  submit <json>  提交待定项数据并启动 Web 服务
+  result         获取用户决策结果
+```
+
+### 3.2 aide decide submit（提交数据）
 
 **用途**：提交待定项数据并启动 Web 服务
 
 **语法**：
 ```
-aide decide '<json数据>'
+aide decide submit '<json数据>'
 ```
 
 **输入**：待定项 JSON 数据（见数据格式章节）
@@ -67,9 +77,19 @@ aide decide '<json数据>'
 → Web 服务已启动
 → 请访问: http://localhost:3721
 → 等待用户完成决策...
+✓ 决策已完成
 ```
 
-### 3.2 aide decide result
+**配置项**（见 [配置格式文档](../formats/config.md)）：
+
+| 配置项 | 默认值 | 说明 |
+|--------|--------|------|
+| `decide.port` | 3721 | 起始端口 |
+| `decide.bind` | `"127.0.0.1"` | 监听地址 |
+| `decide.url` | `""` | 自定义访问地址 |
+| `decide.timeout` | 0 | 超时时间（秒） |
+
+### 3.3 aide decide result
 
 **用途**：获取用户决策结果
 
@@ -90,11 +110,13 @@ aide decide result
 
 **错误情况**：
 ```
-✗ 尚无决策结果，请等待用户完成操作
+✗ 尚无决策结果
+  建议: 请等待用户在 Web 界面完成操作
 ```
 
 ```
-✗ 未找到待定项数据，请先执行 aide decide '<json>'
+✗ 未找到待定项数据
+  建议: 请先执行 aide decide submit '<json>'
 ```
 
 ---
@@ -112,7 +134,7 @@ participant "aide decide" as Decide
 participant "Web Server" as Web
 participant User
 
-LLM -> Decide : aide decide '<json>'
+LLM -> Decide : aide decide submit '<json>'
 Decide -> Decide : 解析 JSON
 Decide -> Decide : 保存待定项数据
 Decide -> Web : 启动 HTTP 服务
