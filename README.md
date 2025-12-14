@@ -186,8 +186,8 @@ ccoptimize/
 
 ### 4.1 快速了解 Aide 系统
 
-1. 阅读 `docs/aide-overview.md` - 系统概述和架构
-2. 阅读 `docs/为什么要更换到command+skill+专用处理程序.md` - 设计理念
+1. 阅读 [Aide 系统概述](docs/aide-overview.md) - 系统概述和架构
+2. 阅读 [为什么要更换到command+skill+专用处理程序](docs/为什么要更换到command+skill+专用处理程序.md) - 设计理念
 
 ### 4.2 了解/修改 Commands 或 Skill
 
@@ -202,8 +202,8 @@ ccoptimize/
 
 ### 4.4 了解数据格式
 
-- 配置文件：`aide-program/docs/formats/config.md`
-- 数据格式：`aide-program/docs/formats/data.md`
+- 配置文件：[aide-program/docs/formats/config.md](aide-program/docs/formats/config.md)
+- 数据格式：[aide-program/docs/formats/data.md](aide-program/docs/formats/data.md)
 
 ---
 

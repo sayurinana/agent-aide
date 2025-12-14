@@ -50,7 +50,7 @@ aide-program 是 Aide 工作流体系的命令行工具，为 aide-plugin 提供
 | `aide flow` | [commands/flow.md](commands/flow.md) | ✅ 已实现 | 进度追踪与 git 集成 |
 | `aide decide` | [commands/decide.md](commands/decide.md) | ⏳ 待实现 | 待定项 Web 确认 |
 
-补充：flow 的实现细节与验证清单见 `commands/flow/README.md`。
+补充：flow 的实现细节与验证清单见 [commands/flow/README.md](commands/flow/README.md)。
 
 ### 2.1 环境检测模块
 
