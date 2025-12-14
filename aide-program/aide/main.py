@@ -10,6 +10,7 @@ from typing import Any
 from aide.core import output
 from aide.core.config import ConfigManager
 from aide.env.manager import EnvManager
+from aide.flow.tracker import FlowTracker
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -90,6 +91,43 @@ def build_parser() -> argparse.ArgumentParser:
     set_parser.add_argument("key", help="使用点号分隔的键名，如 task.source")
     set_parser.add_argument("value", help="要写入的值，支持 bool/int/float/字符串")
     set_parser.set_defaults(func=handle_config_set)
+
+    # aide flow
+    flow_parser = subparsers.add_parser("flow", help="进度追踪与 git 集成")
+    flow_sub = flow_parser.add_subparsers(dest="flow_command")
+
+    flow_start = flow_sub.add_parser("start", help="开始新任务")
+    flow_start.add_argument("phase", help="环节名（来自 flow.phases）")
+    flow_start.add_argument("summary", help="本次操作的简要说明")
+    flow_start.set_defaults(func=handle_flow_start)
+
+    flow_next_step = flow_sub.add_parser("next-step", help="记录步骤前进")
+    flow_next_step.add_argument("summary", help="本次操作的简要说明")
+    flow_next_step.set_defaults(func=handle_flow_next_step)
+
+    flow_back_step = flow_sub.add_parser("back-step", help="记录步骤回退")
+    flow_back_step.add_argument("reason", help="回退原因")
+    flow_back_step.set_defaults(func=handle_flow_back_step)
+
+    flow_next_part = flow_sub.add_parser("next-part", help="进入下一环节")
+    flow_next_part.add_argument("phase", help="目标环节名（相邻下一环节）")
+    flow_next_part.add_argument("summary", help="本次操作的简要说明")
+    flow_next_part.set_defaults(func=handle_flow_next_part)
+
+    flow_back_part = flow_sub.add_parser("back-part", help="回退到之前环节")
+    flow_back_part.add_argument("phase", help="目标环节名（任意之前环节）")
+    flow_back_part.add_argument("reason", help="回退原因")
+    flow_back_part.set_defaults(func=handle_flow_back_part)
+
+    flow_issue = flow_sub.add_parser("issue", help="记录一般问题（不阻塞继续）")
+    flow_issue.add_argument("description", help="问题描述")
+    flow_issue.set_defaults(func=handle_flow_issue)
+
+    flow_error = flow_sub.add_parser("error", help="记录严重错误（需要用户关注）")
+    flow_error.add_argument("description", help="错误描述")
+    flow_error.set_defaults(func=handle_flow_error)
+
+    flow_parser.set_defaults(func=handle_flow_help)
 
     parser.add_argument("--version", action="version", version="aide dev")
     return parser
@@ -188,6 +226,60 @@ def handle_config_set(args: argparse.Namespace) -> bool:
     parsed_value = _parse_value(args.value)
     cfg.set_value(args.key, parsed_value)
     return True
+
+
+def handle_flow_help(args: argparse.Namespace) -> bool:
+    output.info("用法: aide flow <start|next-step|back-step|next-part|back-part|issue|error> ...")
+    return True
+
+
+def handle_flow_start(args: argparse.Namespace) -> bool:
+    root = Path.cwd()
+    cfg = ConfigManager(root)
+    tracker = FlowTracker(root, cfg)
+    return tracker.start(args.phase, args.summary)
+
+
+def handle_flow_next_step(args: argparse.Namespace) -> bool:
+    root = Path.cwd()
+    cfg = ConfigManager(root)
+    tracker = FlowTracker(root, cfg)
+    return tracker.next_step(args.summary)
+
+
+def handle_flow_back_step(args: argparse.Namespace) -> bool:
+    root = Path.cwd()
+    cfg = ConfigManager(root)
+    tracker = FlowTracker(root, cfg)
+    return tracker.back_step(args.reason)
+
+
+def handle_flow_next_part(args: argparse.Namespace) -> bool:
+    root = Path.cwd()
+    cfg = ConfigManager(root)
+    tracker = FlowTracker(root, cfg)
+    return tracker.next_part(args.phase, args.summary)
+
+
+def handle_flow_back_part(args: argparse.Namespace) -> bool:
+    root = Path.cwd()
+    cfg = ConfigManager(root)
+    tracker = FlowTracker(root, cfg)
+    return tracker.back_part(args.phase, args.reason)
+
+
+def handle_flow_issue(args: argparse.Namespace) -> bool:
+    root = Path.cwd()
+    cfg = ConfigManager(root)
+    tracker = FlowTracker(root, cfg)
+    return tracker.issue(args.description)
+
+
+def handle_flow_error(args: argparse.Namespace) -> bool:
+    root = Path.cwd()
+    cfg = ConfigManager(root)
+    tracker = FlowTracker(root, cfg)
+    return tracker.error(args.description)
 
 
 def _parse_value(raw: str) -> Any:
