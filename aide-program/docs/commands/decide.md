@@ -1,5 +1,16 @@
 # aide decide 子命令设计文档
 
+## 零、详细设计文档包
+
+本文档为概览设计；更细的实现交接规格见：
+
+- [aide-program/docs/commands/decide/README.md](decide/README.md)
+- [aide-program/docs/commands/decide/cli.md](decide/cli.md)
+- [aide-program/docs/commands/decide/server.md](decide/server.md)
+- [aide-program/docs/commands/decide/web.md](decide/web.md)
+- [aide-program/docs/commands/decide/storage.md](decide/storage.md)
+- [aide-program/docs/commands/decide/verification.md](decide/verification.md)
+
 ## 一、背景
 
 ### 1.1 解决的问题
