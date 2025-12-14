@@ -52,6 +52,11 @@ path = "requirements.txt"
 # flow: 流程配置
 [flow]
 phases = ["task-optimize", "flow-design", "impl", "verify", "docs", "finish"]
+
+# decide: 待定项确认服务配置
+[decide]
+port = 3721
+timeout = 0
 ```
 
 ---
@@ -155,6 +160,17 @@ manager = "pnpm"
 **使用场景**：
 - `aide flow` 校验环节跳转合法性
 - 定义有效的环节名称
+
+### 4.5 [decide] 待定项确认配置
+
+| 字段 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `port` | int | `3721` | Web 服务起始端口，端口被占用时向后探测最多 10 次 |
+| `timeout` | int | `0` | 服务超时时间（秒），0 表示不启用超时 |
+
+**使用场景**：
+- `aide decide '<json>'` 读取 `port` 作为起始端口
+- `aide decide '<json>'` 读取 `timeout` 控制服务最长等待时间
 
 ---
 

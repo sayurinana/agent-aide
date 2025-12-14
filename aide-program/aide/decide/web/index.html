@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aide 待定项确认</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="title">
+                <h1>Aide 待定项确认</h1>
+                <p class="subtitle">请根据任务信息完成待定项选择</p>
+            </div>
+            <div class="task-info">
+                <p><strong>任务:</strong> <span id="task-name"></span></p>
+                <p><strong>来源:</strong> <span id="task-source"></span></p>
+            </div>
+        </header>
+
+        <main class="items-container" id="items-container" aria-label="待定项列表"></main>
+
+        <footer class="footer">
+            <div class="progress">
+                <span id="progress-text">已完成 0/0 项</span>
+            </div>
+            <button class="submit-btn" id="submit-btn" disabled aria-disabled="true" aria-describedby="submit-hint">
+                提交决策
+            </button>
+            <span id="submit-hint" class="sr-only">请先完成所有待定项的选择</span>
+        </footer>
+    </div>
+
+    <div class="success-overlay" id="success-overlay" hidden>
+        <div class="success-message">
+            <h2>决策已提交</h2>
+            <p>您可以关闭此页面</p>
+        </div>
+    </div>
+
+    <div class="error-toast" id="error-toast" hidden role="alert">
+        <span class="error-icon">✗</span>
+        <span class="error-message" id="error-message"></span>
+    </div>
+
+    <script src="/app.js"></script>
+</body>
+</html>

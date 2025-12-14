@@ -9,6 +9,7 @@ from typing import Any
 
 from aide.core import output
 from aide.core.config import ConfigManager
+from aide.decide import cmd_decide
 from aide.env.manager import EnvManager
 from aide.flow.tracker import FlowTracker
 
@@ -128,6 +129,11 @@ def build_parser() -> argparse.ArgumentParser:
     flow_error.set_defaults(func=handle_flow_error)
 
     flow_parser.set_defaults(func=handle_flow_help)
+
+    # aide decide
+    decide_parser = subparsers.add_parser("decide", help="待定项确认与决策记录")
+    decide_parser.add_argument("data", help="待定项 JSON 数据或 result")
+    decide_parser.set_defaults(func=handle_decide)
 
     parser.add_argument("--version", action="version", version="aide dev")
     return parser
@@ -280,6 +286,10 @@ def handle_flow_error(args: argparse.Namespace) -> bool:
     cfg = ConfigManager(root)
     tracker = FlowTracker(root, cfg)
     return tracker.error(args.description)
+
+
+def handle_decide(args: argparse.Namespace) -> bool:
+    return cmd_decide(args)
 
 
 def _parse_value(raw: str) -> Any:

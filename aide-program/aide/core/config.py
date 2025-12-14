@@ -42,6 +42,12 @@ path = "requirements.txt"
 
 [flow]
 phases = ["task-optimize", "flow-design", "impl", "verify", "docs", "finish"]
+
+[decide]
+# HTTP 服务起始端口
+port = 3721
+# 超时时间（秒），0 表示不超时
+timeout = 0
 """
 
 
