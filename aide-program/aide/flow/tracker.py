@@ -144,6 +144,7 @@ class FlowTracker:
         else:
             validator.validate_phase_exists(to_phase)
 
+        config = self.cfg.load_config()
         run_pre_commit_hooks(
             root=self.root,
             git=self.git,
@@ -151,6 +152,7 @@ class FlowTracker:
             from_phase=from_phase,
             to_phase=to_phase,
             action=action,
+            config=config,
         )
 
         message = _build_commit_message(action=action, phase=to_phase, text=text)
