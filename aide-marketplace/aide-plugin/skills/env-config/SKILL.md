@@ -1,11 +1,13 @@
 ---
 name: env-config
-description: 环境配置详细指南。当 aide env ensure 检测失败需要配置环境时使用。提供模块选择、配置设置、多项目场景处理等详细指导。
+description: 环境配置详细指南。当 aide env ensure 检测失败需要配置环境时使用。提供模块选择、配置设置、多项目场景处理等详细指导。由 /aide:setup 命令强制触发。
 ---
 
 # 环境配置指南
 
 当 `aide env ensure` 检测失败（输出 `✗`）时，使用本指南分析项目所需环境并完成配置。
+
+> **触发场景**：本 skill 由 `/aide:setup` 命令强制触发，用于独立的环境配置流程。
 
 ---
 
@@ -254,3 +256,43 @@ aide env set modules <新的模块列表>
 ### 8.3 跳过某个模块
 
 从 modules 列表中移除该模块即可。
+
+---
+
+## 九、与命令体系的关系
+
+### 9.1 触发方式
+
+本 skill 由 `/aide:setup` 命令**强制触发**，用于独立的环境配置流程。
+
+### 9.2 命令体系
+
+| 命令 | 说明 | 是否触发本 skill |
+|------|------|------------------|
+| `/aide:setup` | 环境配置（独立运行） | **是** |
+| `/aide:load` | 项目认知载入 | 否 |
+| `/aide:docs` | 项目文档管理 | 否 |
+| `/aide:run` | 任务执行 | 否（仅触发 aide skill） |
+
+### 9.3 典型使用场景
+
+1. **新项目开始**：执行 `/aide:setup` 进行环境配置
+2. **环境问题排查**：当任务执行中遇到环境错误时，重新执行 `/aide:setup`
+3. **添加新依赖**：项目引入新技术栈后，更新环境模块配置
+
+### 9.4 配置文件位置
+
+所有环境配置存储在 `.aide/config.toml` 的 `[env]` 节：
+
+```toml
+[env]
+modules = ["python", "uv", "venv", "requirements"]
+
+[env.venv]
+path = ".venv"
+
+[env.requirements]
+path = "requirements.txt"
+```
+
+> 注：配置文件已自文档化，包含所有配置项的详细注释说明。
