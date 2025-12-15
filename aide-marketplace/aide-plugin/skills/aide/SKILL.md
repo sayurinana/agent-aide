@@ -443,50 +443,95 @@ aide init
 
 ```
 .aide/
-├── config.toml          # 项目配置
+├── config.toml          # 项目配置（自文档化，含完整注释）
 ├── flow-status.json     # 当前任务进度
 ├── decisions/           # 待定项决策记录
 │   └── {timestamp}.json
-└── logs/                # 操作日志
+├── logs/                # 历史任务归档
+│   └── flow-status.{task_id}.json
+├── diagrams/            # 流程图目录
+│   ├── *.puml           # PlantUML 源文件
+│   └── *.png            # 生成的图片
+└── project-docs/        # 项目文档（面向 LLM）
+    ├── README.md        # 总导览
+    ├── block-plan.md    # 区块计划
+    └── blocks/          # 子区块文档
 ```
 
 ---
 
 ## 常见用法示例
 
-### prep 阶段示例
+### /aide:run 完整流程示例
 
 ```bash
-# 开始任务准备
+# 1. 检查当前 flow 状态
+aide flow status
+
+# 2. 如果无活跃任务，开始新任务
 aide flow start task-optimize "开始任务准备: 实现用户认证模块"
 
-# 记录分析进度
+# 3. 任务分析和优化
 aide flow next-step "任务分析完成"
 aide flow next-step "任务优化完成，生成待定项"
+
+# 4. 处理待定项（如有）
+aide decide submit .aide/pending-items.json
+# 用户完成后
+aide decide result
 aide flow next-step "用户完成待定项确认"
-aide flow next-step "任务准备完成"
-```
 
-### exec 阶段示例
+# 5. 进入流程设计
+aide flow next-part flow-design "进入流程设计环节"
+aide flow next-step "流程图设计完成"
 
-```bash
-# 开始流程设计
-aide flow start flow-design "开始任务: 实现用户认证模块"
-
-# 记录实现进度
+# 6. 进入实现（自动校验并生成 PNG）
+aide flow next-part impl "流程设计完成，进入实现环节"
 aide flow next-step "完成 User 模型定义"
-aide flow next-step "完成密码加密工具"
 aide flow next-step "完成登录接口"
 
-# 进入下一环节
-aide flow next-part verify "实现完成，开始验证"
+# 7. 进入验证
+aide flow next-part verify "实现完成，进入验证环节"
+aide flow next-step "验证完成: 所有测试通过"
+
+# 8. 进入文档更新
+aide flow next-part docs "验证通过，进入文档环节"
+aide flow next-step "文档更新完成"
+
+# 9. 收尾
+aide flow next-part finish "文档更新完成，进入收尾"
+aide flow next-step "任务完成"
+```
+
+### 查看任务状态
+
+```bash
+# 查看当前任务
+aide flow status
+
+# 列出所有任务
+aide flow list
+
+# 查看指定任务详情
+aide flow show 2025-12-15T17-28-53
+```
+
+### 续接未完成的任务
+
+```bash
+# 1. 查看当前进度
+aide flow status
+aide flow show <task_id>
+
+# 2. 从中断处继续
+aide flow next-step "继续实现: 完成密码加密工具"
 ```
 
 ### 处理待定项
 
 ```bash
-# 提交待定项（JSON 数据较长时建议保存到文件后通过 cat 传入）
-aide decide submit '{"task":"...", "items":[...]}'
+# 提交待定项（建议保存到文件）
+aide decide submit .aide/pending-items.json
 
 # 获取结果
 aide decide result
@@ -498,3 +543,26 @@ aide decide result
 aide flow issue "部分边界情况未覆盖测试"
 aide flow error "CI 构建失败"
 ```
+
+### 回退操作
+
+```bash
+# 小步骤回退
+aide flow back-step "发现字段命名不符合规范"
+
+# 大环节回退
+aide flow back-part flow-design "实现中发现设计遗漏"
+```
+
+---
+
+## 新命令体系
+
+| 命令 | 说明 | 独立运行 |
+|------|------|----------|
+| `/aide:setup` | 环境配置（分析、检测、修复） | 是 |
+| `/aide:load` | 项目认知载入 | 否（由 run 调用） |
+| `/aide:docs` | 项目文档创建和维护 | 是 |
+| `/aide:run` | 任务执行（核心命令） | 否 |
+
+> 注：原 `/aide:init`、`/aide:prep`、`/aide:exec` 已合并重组为上述命令
