@@ -1,54 +1,272 @@
 {
-  "task": "测试任务",
-  "source": "test.md",
+  "task": "Aide 工作流体系重构",
+  "source": "statements/1.md",
   "items": [
     {
       "id": 1,
-      "title": "认证方式选择",
+      "title": "新 Commands 命名方案",
       "options": [
         {
-          "value": "jwt",
-          "label": "JWT Token",
-          "score": 85.0,
+          "value": "env_ctx_docs",
+          "label": "/aide:env + /aide:ctx + /aide:docs",
+          "score": 90.0,
           "pros": [
-            "无状态"
+            "语义清晰明确",
+            "与功能高度匹配",
+            "简洁易记"
           ],
           "cons": [
-            "无法主动失效"
+            "ctx 可能不够直观"
           ]
         },
         {
-          "value": "session",
-          "label": "Session",
-          "score": 70.0,
+          "value": "setup_load_docs",
+          "label": "/aide:setup + /aide:load + /aide:docs",
+          "score": 75.0,
           "pros": [
-            "简单"
+            "动词形式更直观",
+            "setup 表达初始化含义"
           ],
           "cons": [
-            "需要存储"
+            "setup 与 env ensure 功能重叠",
+            "load 语义较模糊"
+          ]
+        },
+        {
+          "value": "env_init_docs",
+          "label": "/aide:env + /aide:init + /aide:docs",
+          "score": 80.0,
+          "pros": [
+            "保留 init 命名习惯",
+            "env 明确表达环境功能"
+          ],
+          "cons": [
+            "init 原本包含更多功能，可能造成混淆"
           ]
         }
       ],
-      "context": "选择合适的认证方式",
-      "recommend": "jwt"
+      "location": {
+        "file": "statements/1.md",
+        "start": 9,
+        "end": 25
+      },
+      "context": "原 init 命令需要拆分为环境管理（cmd-1）和项目认知（cmd-2）两部分，同时新增文档管理命令（cmd-3）。需要确定这三个命令的正式名称。",
+      "recommend": "env_ctx_docs"
     },
     {
       "id": 2,
-      "title": "数据库选择",
+      "title": "流程图强制要求的例外情况",
       "options": [
         {
-          "value": "mysql",
-          "label": "MySQL"
+          "value": "always_required",
+          "label": "所有任务必须有流程图",
+          "score": 70.0,
+          "pros": [
+            "规则简单统一",
+            "强制规范化思考",
+            "用户审阅体验一致"
+          ],
+          "cons": [
+            "简单任务效率降低",
+            "可能流于形式"
+          ]
         },
         {
-          "value": "postgres",
-          "label": "PostgreSQL"
+          "value": "allow_exceptions",
+          "label": "允许简单任务跳过",
+          "score": 85.0,
+          "pros": [
+            "平衡效率和质量",
+            "避免形式主义"
+          ],
+          "cons": [
+            "需要定义\"简单任务\"标准",
+            "判断标准可能不一致"
+          ]
+        },
+        {
+          "value": "llm_judgment",
+          "label": "由 LLM 根据复杂度判断",
+          "score": 80.0,
+          "pros": [
+            "灵活适应不同场景",
+            "利用 LLM 判断能力"
+          ],
+          "cons": [
+            "判断标准不够稳定",
+            "可能被滥用跳过"
+          ]
         }
-      ]
+      ],
+      "location": {
+        "file": "statements/1.md",
+        "start": 58,
+        "end": 66
+      },
+      "context": "任务描述要求\"不论是什么任务，只要有任务就必须有流程图\"。但对于简单任务（如修改文档、单文件小改动），强制流程图可能降低效率。需要确定是否允许例外。",
+      "recommend": "allow_exceptions"
+    },
+    {
+      "id": 3,
+      "title": "PlantUML 依赖处理方式",
+      "options": [
+        {
+          "value": "local_java",
+          "label": "添加 java + plantuml 环境检测模块",
+          "score": 85.0,
+          "pros": [
+            "离线可用",
+            "完全本地化",
+            "渲染速度快"
+          ],
+          "cons": [
+            "增加环境依赖",
+            "Java 环境配置可能复杂"
+          ]
+        },
+        {
+          "value": "online_server",
+          "label": "使用在线 PlantUML Server 渲染",
+          "score": 75.0,
+          "pros": [
+            "无需本地环境",
+            "配置简单"
+          ],
+          "cons": [
+            "依赖网络",
+            "隐私考虑",
+            "可能有延迟"
+          ]
+        },
+        {
+          "value": "syntax_only",
+          "label": "仅校验语法，不强制本地渲染",
+          "score": 70.0,
+          "pros": [
+            "最小依赖",
+            "快速验证"
+          ],
+          "cons": [
+            "无法生成图片",
+            "用户需自行渲染查看"
+          ]
+        }
+      ],
+      "location": {
+        "file": "statements/1.md",
+        "start": 67,
+        "end": 71
+      },
+      "context": "流程图功能依赖 PlantUML，而 PlantUML 需要 Java 环境。需要决定如何处理这个依赖关系。",
+      "recommend": "local_java"
+    },
+    {
+      "id": 4,
+      "title": "任务复杂度判断标准",
+      "options": [
+        {
+          "value": "module_count",
+          "label": "涉及 3 个以上独立模块",
+          "score": 70.0,
+          "pros": [
+            "标准明确可量化",
+            "易于判断"
+          ],
+          "cons": [
+            "模块定义可能不清晰",
+            "不适用于所有项目类型"
+          ]
+        },
+        {
+          "value": "code_lines",
+          "label": "预估代码变更超过 500 行",
+          "score": 65.0,
+          "pros": [
+            "量化标准",
+            "与工作量直接相关"
+          ],
+          "cons": [
+            "难以准确预估",
+            "代码行数不等于复杂度"
+          ]
+        },
+        {
+          "value": "llm_guidelines",
+          "label": "LLM 综合判断（提供指导原则）",
+          "score": 90.0,
+          "pros": [
+            "灵活适应各种场景",
+            "可结合多维度考量",
+            "避免机械判断"
+          ],
+          "cons": [
+            "判断可能有主观性",
+            "需要明确的指导原则"
+          ]
+        }
+      ],
+      "location": {
+        "file": "statements/1.md",
+        "start": 52,
+        "end": 56
+      },
+      "context": "需要在任务分析阶段判断任务复杂度，对过于复杂的任务进行拆分。需要确定判断标准。",
+      "recommend": "llm_guidelines"
+    },
+    {
+      "id": 5,
+      "title": "prep+exec 合并后的命令命名",
+      "options": [
+        {
+          "value": "aide_task",
+          "label": "/aide:task",
+          "score": 90.0,
+          "pros": [
+            "语义明确",
+            "涵盖准备和执行",
+            "任务导向"
+          ],
+          "cons": [
+            "与 task 工具可能混淆"
+          ]
+        },
+        {
+          "value": "aide_run",
+          "label": "/aide:run",
+          "score": 80.0,
+          "pros": [
+            "简洁有力",
+            "动作导向"
+          ],
+          "cons": [
+            "语义不如 task 完整",
+            "可能暗示只是执行"
+          ]
+        },
+        {
+          "value": "aide_exec",
+          "label": "/aide:exec（保留原名）",
+          "score": 75.0,
+          "pros": [
+            "保持命名连续性",
+            "用户无需重新适应"
+          ],
+          "cons": [
+            "原名仅强调执行，不含准备含义"
+          ]
+        }
+      ],
+      "location": {
+        "file": "statements/1.md",
+        "start": 26,
+        "end": 31
+      },
+      "context": "将 prep（任务准备）和 exec（任务执行）合并为一个命令，需要确定新命令的名称。",
+      "recommend": "aide_task"
     }
   ],
   "_meta": {
-    "created_at": "2025-12-15T02:11:55+08:00",
-    "session_id": "2025-12-15T02-11-55"
+    "created_at": "2025-12-15T17:33:16+08:00",
+    "session_id": "2025-12-15T17-33-16"
   }
 }
