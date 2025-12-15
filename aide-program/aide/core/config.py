@@ -295,12 +295,77 @@ class ConfigManager:
         return self._walk_get(data, key)
 
     def set_value(self, key: str, value: Any) -> None:
-        data = self.ensure_config()
-        self._walk_set(data, key, value)
-        self._write_config(data)
+        self.ensure_config()
+        self._update_config_value(key, value)
         output.ok(f"已更新 {key} = {value!r}")
 
+    def _update_config_value(self, key: str, value: Any) -> None:
+        """保守更新配置值，保留注释和格式。"""
+        import re
+
+        content = self.config_path.read_text(encoding="utf-8")
+        parts = key.split(".")
+
+        # 格式化值为 TOML 格式
+        if isinstance(value, bool):
+            toml_value = "true" if value else "false"
+        elif isinstance(value, str):
+            toml_value = f'"{value}"'
+        elif isinstance(value, (int, float)):
+            toml_value = str(value)
+        elif isinstance(value, list):
+            toml_value = toml_dumps({"_": value}).split("=", 1)[1].strip()
+        else:
+            toml_value = toml_dumps({"_": value}).split("=", 1)[1].strip()
+
+        new_content = None
+        count = 0
+
+        if len(parts) == 1:
+            # 顶层键：key = value
+            pattern = rf'^({re.escape(parts[0])}\s*=\s*)(.*)$'
+            new_content, count = re.subn(pattern, rf'\g<1>{toml_value}', content, count=1, flags=re.MULTILINE)
+        elif len(parts) >= 2:
+            # 两级或三级键：找到对应 section，然后替换其中的 key
+            if len(parts) == 2:
+                section = parts[0]
+                subkey = parts[1]
+            else:
+                section = ".".join(parts[:-1])
+                subkey = parts[-1]
+
+            # 找到 section 的起始位置
+            section_pattern = rf'^\[{re.escape(section)}\]\s*$'
+            section_match = re.search(section_pattern, content, flags=re.MULTILINE)
+
+            if section_match:
+                section_start = section_match.end()
+                # 找到下一个 section 的位置（或文件末尾）
+                next_section = re.search(r'^\[', content[section_start:], flags=re.MULTILINE)
+                if next_section:
+                    section_end = section_start + next_section.start()
+                else:
+                    section_end = len(content)
+
+                # 在 section 范围内查找并替换 key
+                section_content = content[section_start:section_end]
+                key_pattern = rf'^({re.escape(subkey)}\s*=\s*)(.*)$'
+                new_section, count = re.subn(key_pattern, rf'\g<1>{toml_value}', section_content, count=1, flags=re.MULTILINE)
+
+                if count > 0:
+                    new_content = content[:section_start] + new_section + content[section_end:]
+
+        if count == 0 or new_content is None:
+            # 键不存在，需要添加（回退到传统方式，会丢失注释）
+            data = self.load_config()
+            self._walk_set(data, key, value)
+            self._write_config(data)
+            output.warn("配置键不存在，已添加（注释可能丢失）")
+        else:
+            self.config_path.write_text(new_content, encoding="utf-8")
+
     def _write_config(self, data: dict[str, Any]) -> None:
+        """完全重写配置文件（会丢失注释，仅在添加新键时使用）。"""
         self.config_path.write_text(toml_dumps(data), encoding="utf-8")
 
     @staticmethod
