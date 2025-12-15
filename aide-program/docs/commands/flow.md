@@ -153,6 +153,68 @@ aide flow error "<描述>"
 ✗ 错误已记录: <描述>
 ```
 
+### 3.8 aide flow status
+
+**用途**：查看当前任务状态
+
+**语法**：
+```
+aide flow status
+```
+
+**输出**：
+```
+→ 当前任务: <task_id>
+→ 环节: <current_phase>
+→ 步骤: <current_step>
+→ 开始时间: <started_at>
+```
+
+无活跃任务时：
+```
+→ 无活跃任务
+```
+
+### 3.9 aide flow list
+
+**用途**：列出所有任务（当前 + 已归档）
+
+**语法**：
+```
+aide flow list
+```
+
+**输出**：
+```
+→ 当前任务:
+  <task_id> (<current_phase>, step <n>)
+
+→ 已归档任务:
+  <task_id_1> (finish)
+  <task_id_2> (finish)
+```
+
+### 3.10 aide flow show
+
+**用途**：查看指定任务的详细信息
+
+**语法**：
+```
+aide flow show <task_id>
+```
+
+**输出**：
+```
+→ 任务: <task_id>
+→ 环节: <current_phase>
+→ 步骤: <current_step>
+→ 开始时间: <started_at>
+
+→ 历史记录:
+  [1] <timestamp> <action> <phase> step=<n>: <summary>
+  [2] ...
+```
+
 ---
 
 ## 四、业务流程
@@ -377,8 +439,8 @@ class FlowValidator:
 
 | 依赖方 | 说明 |
 |--------|------|
-| /aide:prep | 调用 flow start、next-step |
-| /aide:exec | 调用 flow next-part、next-step、issue、error |
+| /aide:run | 调用 flow start、next-part、next-step、status、issue、error |
+| /aide:load | 调用 flow status 检查任务状态 |
 
 ---
 
@@ -410,6 +472,6 @@ class FlowValidator:
 - [program 导览](../README.md)
 - [flow 详细设计（交接包）](flow/README.md)
 - [数据格式文档](../formats/data.md)
-- [aide skill 设计文档](../../../aide-marketplace/aide-plugin/docs/skill/aide.md)
-- [/aide:prep 命令设计](../../../aide-marketplace/aide-plugin/docs/commands/prep.md)
-- [/aide:exec 命令设计](../../../aide-marketplace/aide-plugin/docs/commands/exec.md)
+- [aide skill 设计文档](../../../aide-marketplace/aide-plugin/docs/skills/aide/SKILL.md)
+- [/aide:run 命令设计](../../../aide-marketplace/aide-plugin/docs/commands/run.md)
+- [/aide:load 命令设计](../../../aide-marketplace/aide-plugin/docs/commands/load.md)

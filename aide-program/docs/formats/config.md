@@ -21,6 +21,11 @@ aide 使用 TOML 格式的配置文件，位于 `.aide/config.toml`。
 
 ```toml
 # Aide 默认配置（由 aide init 生成）
+# 本配置文件采用自文档化设计，所有字段均有注释说明
+
+# general: 通用设置
+[general]
+gitignore_aide = true    # 是否自动将 .aide/ 添加到 .gitignore
 
 # runtime: aide 自身运行要求
 [runtime]
@@ -49,9 +54,18 @@ path = ".venv"
 [env.requirements]
 path = "requirements.txt"
 
+# docs: 项目文档配置
+[docs]
+path = ".aide/project-docs"  # 项目文档存放路径
+
 # flow: 流程配置
 [flow]
 phases = ["task-optimize", "flow-design", "impl", "verify", "docs", "finish"]
+
+# plantuml: PlantUML 配置
+[plantuml]
+jar_path = ""            # plantuml.jar 路径，为空时使用内置 jar
+diagram_path = ".aide/diagrams"  # 流程图存放路径
 
 # decide: 待定项确认服务配置
 [decide]
@@ -63,7 +77,17 @@ timeout = 0
 
 ## 四、字段详解
 
-### 4.1 [runtime] 运行时配置
+### 4.1 [general] 通用设置
+
+| 字段 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `gitignore_aide` | bool | `true` | 是否自动将 .aide/ 添加到 .gitignore |
+
+**使用场景**：
+- `aide init` 时检查此配置，决定是否修改 .gitignore
+- 设为 `false` 可将 .aide/ 纳入版本控制
+
+### 4.2 [runtime] 运行时配置
 
 | 字段 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
@@ -74,7 +98,7 @@ timeout = 0
 - `aide env ensure --runtime` 使用硬编码的 `"3.11"`
 - `aide env ensure` 读取 `python_min` 进行检查
 
-### 4.2 [task] 任务文档配置
+### 4.3 [task] 任务文档配置
 
 | 字段 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
@@ -82,12 +106,12 @@ timeout = 0
 | `spec` | string | `"task-spec.md"` | 任务细则文档默认路径 |
 
 **使用场景**：
-- `/aide:prep` 未传参数时，使用 `source` 作为默认路径
-- `/aide:exec` 未传参数时，使用 `spec` 作为默认路径
+- `/aide:run` 未传参数时，使用 `source` 作为默认路径
+- `/aide:run` 续接任务时，使用 `spec` 读取任务细则
 
-### 4.3 [env] 环境配置
+### 4.4 [env] 环境配置
 
-#### 4.3.1 模块列表
+#### 4.4.1 模块列表
 
 | 字段 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
@@ -109,7 +133,7 @@ timeout = 0
 
 **模块实例化命名**：支持 `模块类型:实例名` 格式，用于同类型多实例场景。
 
-#### 4.3.2 模块配置
+#### 4.4.2 模块配置
 
 **类型A模块（可选配置）**：
 
@@ -151,7 +175,17 @@ manager = "pnpm"
 - `aide env list` 显示所有可用模块及启用状态
 - `aide env ensure --modules X,Y` 检测指定模块
 
-### 4.4 [flow] 流程配置
+### 4.5 [docs] 项目文档配置
+
+| 字段 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `path` | string | `".aide/project-docs"` | 项目文档存放路径 |
+
+**使用场景**：
+- `/aide:docs` 创建和更新项目文档时使用此路径
+- `/aide:load` 载入项目文档时读取此路径
+
+### 4.6 [flow] 流程配置
 
 | 字段 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
@@ -161,7 +195,18 @@ manager = "pnpm"
 - `aide flow` 校验环节跳转合法性
 - 定义有效的环节名称
 
-### 4.5 [decide] 待定项确认配置
+### 4.7 [plantuml] PlantUML 配置
+
+| 字段 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `jar_path` | string | `""` | plantuml.jar 路径，为空时使用内置 jar |
+| `diagram_path` | string | `".aide/diagrams"` | 流程图存放路径 |
+
+**使用场景**：
+- `aide flow next-part` 离开 flow-design 时校验和生成流程图
+- 支持自定义 jar 路径以使用特定版本的 PlantUML
+
+### 4.8 [decide] 待定项确认配置
 
 | 字段 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
@@ -315,4 +360,5 @@ modules = ["python", "uv", "venv", "requirements"]
 - [program 导览](../README.md)
 - [aide init 设计](../commands/init.md)
 - [aide env 设计](../commands/env.md)
-- [aide skill 设计文档](../../../aide-marketplace/aide-plugin/docs/skill/aide.md)
+- [aide flow 设计](../commands/flow.md)
+- [aide skill 设计文档](../../../aide-marketplace/aide-plugin/docs/skills/aide/SKILL.md)

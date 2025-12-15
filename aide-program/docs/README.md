@@ -47,7 +47,12 @@ aide-program 是 Aide 工作流体系的命令行工具，为 aide-plugin 提供
 | `aide env list` | [commands/env.md](commands/env.md) | ✅ 已实现 | 列出可用模块 |
 | `aide env set` | [commands/env.md](commands/env.md) | ✅ 已实现 | 设置环境配置（带验证） |
 | `aide config` | [formats/config.md](formats/config.md) | ✅ 已实现 | 配置读写 |
-| `aide flow` | [commands/flow.md](commands/flow.md) | ✅ 已实现 | 进度追踪与 git 集成 |
+| `aide flow start` | [commands/flow.md](commands/flow.md) | ✅ 已实现 | 开始新任务 |
+| `aide flow next-part` | [commands/flow.md](commands/flow.md) | ✅ 已实现 | 进入下一阶段 |
+| `aide flow next-step` | [commands/flow.md](commands/flow.md) | ✅ 已实现 | 记录步骤完成 |
+| `aide flow status` | [commands/flow.md](commands/flow.md) | ✅ 已实现 | 查看当前任务状态 |
+| `aide flow list` | [commands/flow.md](commands/flow.md) | ✅ 已实现 | 列出所有任务 |
+| `aide flow show` | [commands/flow.md](commands/flow.md) | ✅ 已实现 | 查看指定任务详情 |
 | `aide decide submit` | [commands/decide.md](commands/decide.md) | ✅ 已实现 | 提交待定项并启动 Web 服务 |
 | `aide decide result` | [commands/decide.md](commands/decide.md) | ✅ 已实现 | 获取用户决策结果 |
 
@@ -175,10 +180,20 @@ aide-program/
 
 ```
 .aide/
-├── config.toml          # 项目配置
+├── config.toml          # 项目配置（自文档化）
 ├── flow-status.json     # 当前任务进度状态
+├── archive/             # 已完成任务归档
+│   └── {task_id}.json
 ├── decisions/           # 待定项决策记录
 │   └── {timestamp}.json
+├── diagrams/            # 流程图文件
+│   └── {task_id}/
+│       ├── *.puml       # PlantUML 源文件
+│       └── *.png        # 生成的图片
+├── project-docs/        # 项目文档（由 /aide:docs 生成）
+│   ├── README.md        # 总导览
+│   ├── block-plan.md    # 区块计划
+│   └── blocks/          # 子区块文档
 └── logs/                # 操作日志
 ```
 
@@ -186,6 +201,7 @@ aide-program/
 
 - `aide init` 时自动检查 `.gitignore`
 - 默认添加 `.aide/` 为忽略项
+- 可通过配置 `general.gitignore_aide = false` 禁用此行为
 
 ---
 

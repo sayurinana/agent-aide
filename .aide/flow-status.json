@@ -1,7 +1,7 @@
 {
   "task_id": "2025-12-15T17-28-53",
   "current_phase": "finish",
-  "current_step": 22,
+  "current_step": 23,
   "started_at": "2025-12-15T17:28:53+08:00",
   "history": [
     {
@@ -178,6 +178,14 @@
       "step": 22,
       "summary": "同步更新 aide skill 文档: 新增命令体系、数据存储结构、完整流程示例",
       "git_commit": "cc959ee7cfb3ac4a70cb15b35ffec6574d35c05e"
+    },
+    {
+      "timestamp": "2025-12-15T18:25:17+08:00",
+      "action": "next-step",
+      "phase": "finish",
+      "step": 23,
+      "summary": "同步更新 env-config skill: 添加与新命令体系的关系说明",
+      "git_commit": "67162d23370766258fffd10ec0e476c8bca86924"
     }
   ]
 }
