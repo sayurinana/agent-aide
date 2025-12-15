@@ -1,7 +1,7 @@
 {
   "task_id": "2025-12-15T17-28-53",
   "current_phase": "impl",
-  "current_step": 12,
+  "current_step": 13,
   "started_at": "2025-12-15T17:28:53+08:00",
   "history": [
     {
@@ -98,6 +98,14 @@
       "step": 12,
       "summary": "子计划2: aide flow 状态查看功能完成 - status/list/show 子命令",
       "git_commit": "6a1b230cc98ff5535fd8cbc1d9490293e2ef6845"
+    },
+    {
+      "timestamp": "2025-12-15T18:12:50+08:00",
+      "action": "next-step",
+      "phase": "impl",
+      "step": 13,
+      "summary": "子计划3: aide flow 流程图集成完成 - PlantUML 校验/构建钩子增强",
+      "git_commit": "5f7c91afa1723e327f04f14f245c3e51d3e49fc7"
     }
   ]
 }
