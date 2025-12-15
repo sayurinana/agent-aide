@@ -127,6 +127,19 @@ def build_parser() -> argparse.ArgumentParser:
     flow_error.add_argument("description", help="错误描述")
     flow_error.set_defaults(func=handle_flow_error)
 
+    # aide flow status
+    flow_status = flow_sub.add_parser("status", help="查看当前任务状态")
+    flow_status.set_defaults(func=handle_flow_status)
+
+    # aide flow list
+    flow_list = flow_sub.add_parser("list", help="列出所有任务")
+    flow_list.set_defaults(func=handle_flow_list)
+
+    # aide flow show <task_id>
+    flow_show = flow_sub.add_parser("show", help="查看指定任务的详细状态")
+    flow_show.add_argument("task_id", help="任务 ID（时间戳格式，如 20251215-103000）")
+    flow_show.set_defaults(func=handle_flow_show)
+
     flow_parser.set_defaults(func=handle_flow_help)
 
     # aide decide
@@ -295,6 +308,98 @@ def handle_flow_error(args: argparse.Namespace) -> bool:
     cfg = ConfigManager(root)
     tracker = FlowTracker(root, cfg)
     return tracker.error(args.description)
+
+
+def handle_flow_status(args: argparse.Namespace) -> bool:
+    """aide flow status - 查看当前任务状态。"""
+    from aide.flow.storage import FlowStorage
+
+    root = Path.cwd()
+    storage = FlowStorage(root)
+
+    try:
+        status = storage.load_status()
+    except Exception as exc:
+        output.err(f"读取状态失败: {exc}")
+        return False
+
+    if status is None:
+        output.info("当前无活跃任务")
+        return True
+
+    # 获取最新的历史条目
+    latest = status.history[-1] if status.history else None
+
+    output.info(f"任务 ID: {status.task_id}")
+    output.info(f"环节: {status.current_phase}")
+    output.info(f"步骤: {status.current_step}")
+    output.info(f"开始时间: {status.started_at}")
+    if latest:
+        output.info(f"最新操作: {latest.summary}")
+        output.info(f"操作时间: {latest.timestamp}")
+        if latest.git_commit:
+            output.info(f"Git 提交: {latest.git_commit[:7]}")
+    return True
+
+
+def handle_flow_list(args: argparse.Namespace) -> bool:
+    """aide flow list - 列出所有任务。"""
+    from aide.flow.storage import FlowStorage
+
+    root = Path.cwd()
+    storage = FlowStorage(root)
+
+    try:
+        tasks = storage.list_all_tasks()
+    except Exception as exc:
+        output.err(f"读取任务列表失败: {exc}")
+        return False
+
+    if not tasks:
+        output.info("暂无任务记录")
+        return True
+
+    output.info("任务列表:")
+    for i, task in enumerate(tasks, 1):
+        marker = "*" if task["is_current"] else " "
+        phase = task["phase"]
+        summary = task["summary"][:30] + "..." if len(task["summary"]) > 30 else task["summary"]
+        print(f"  {marker}[{i}] {task['task_id']} ({phase}) {summary}")
+
+    output.info("提示: 使用 aide flow show <task_id> 查看详细状态")
+    return True
+
+
+def handle_flow_show(args: argparse.Namespace) -> bool:
+    """aide flow show <task_id> - 查看指定任务的详细状态。"""
+    from aide.flow.storage import FlowStorage
+
+    root = Path.cwd()
+    storage = FlowStorage(root)
+
+    try:
+        status = storage.load_task_by_id(args.task_id)
+    except Exception as exc:
+        output.err(f"读取任务失败: {exc}")
+        return False
+
+    if status is None:
+        output.err(f"未找到任务: {args.task_id}")
+        return False
+
+    output.info(f"任务 ID: {status.task_id}")
+    output.info(f"当前环节: {status.current_phase}")
+    output.info(f"当前步骤: {status.current_step}")
+    output.info(f"开始时间: {status.started_at}")
+    output.info("")
+    output.info("历史记录:")
+
+    for entry in status.history:
+        commit_str = f" [{entry.git_commit[:7]}]" if entry.git_commit else ""
+        print(f"  [{entry.phase}] {entry.summary}{commit_str}")
+        print(f"         {entry.timestamp} ({entry.action})")
+
+    return True
 
 
 def handle_decide_help(args: argparse.Namespace) -> bool:

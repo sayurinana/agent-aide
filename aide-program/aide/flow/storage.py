@@ -89,3 +89,58 @@ class FlowStorage:
         except Exception as exc:
             raise FlowError(f"归档旧状态失败: {exc}")
 
+    def list_all_tasks(self) -> list[dict]:
+        """列出所有任务（当前 + 归档），返回按时间倒序排列的任务摘要列表。"""
+        tasks = []
+
+        # 当前任务
+        current = self.load_status()
+        if current is not None:
+            tasks.append({
+                "task_id": current.task_id,
+                "phase": current.current_phase,
+                "started_at": current.started_at,
+                "summary": current.history[0].summary if current.history else "",
+                "is_current": True,
+            })
+
+        # 归档任务
+        if self.logs_dir.exists():
+            for f in self.logs_dir.glob("flow-status.*.json"):
+                try:
+                    raw = f.read_text(encoding="utf-8")
+                    data = json.loads(raw)
+                    status = FlowStatus.from_dict(data)
+                    tasks.append({
+                        "task_id": status.task_id,
+                        "phase": status.current_phase,
+                        "started_at": status.started_at,
+                        "summary": status.history[0].summary if status.history else "",
+                        "is_current": False,
+                    })
+                except Exception:
+                    continue
+
+        # 按 task_id 倒序（task_id 是时间戳格式）
+        tasks.sort(key=lambda x: x["task_id"], reverse=True)
+        return tasks
+
+    def load_task_by_id(self, task_id: str) -> FlowStatus | None:
+        """根据 task_id 加载任务状态（当前或归档）。"""
+        # 先检查当前任务
+        current = self.load_status()
+        if current is not None and current.task_id == task_id:
+            return current
+
+        # 检查归档
+        archive_path = self.logs_dir / f"flow-status.{task_id}.json"
+        if archive_path.exists():
+            try:
+                raw = archive_path.read_text(encoding="utf-8")
+                data = json.loads(raw)
+                return FlowStatus.from_dict(data)
+            except Exception as exc:
+                raise FlowError(f"读取归档任务失败: {exc}")
+
+        return None
+
