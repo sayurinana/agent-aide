@@ -1,0 +1,69 @@
+@startuml subplan2-flow-status
+!theme plain
+title 子计划 2: aide flow 状态查看功能
+
+start
+
+partition "1. 设计数据存储格式" {
+    :分析现有 flow-status.json;
+    :设计任务列表索引;
+    note right
+        .aide/flow-index.json
+        记录所有任务的 task_id 和概要
+    end note
+    :设计归档命名规则;
+}
+
+partition "2. 实现 flow status" {
+    :读取 flow-status.json;
+    if (文件存在?) then (是)
+        :解析当前状态;
+        :输出格式化信息;
+        note right
+            环节: impl
+            步骤: 3
+            简述: xxx
+            时间: 2025-12-15 10:30
+            提交: abc1234
+        end note
+    else (否)
+        :输出 "当前无活跃任务";
+    endif
+}
+
+partition "3. 实现 flow list" {
+    :读取 flow-index.json;
+    :读取 logs/ 目录下归档文件;
+    :合并任务列表;
+    :按时间倒序排列;
+    :输出任务列表;
+    note right
+        [1] 20251215-103000 Aide重构 (finish)
+        [2] 20251214-090000 贪吃蛇游戏 (impl)
+    end note
+}
+
+partition "4. 实现 flow show" {
+    :接收 task_id 参数;
+    :查找对应状态文件;
+    if (找到?) then (是)
+        :解析历史记录;
+        :格式化输出;
+        note right
+            输出每个历史条目:
+            环节、简述、时间戳、git提交
+        end note
+    else (否)
+        :输出错误 "任务不存在";
+    endif
+}
+
+partition "5. 更新相关文档" {
+    :更新 aide skill SKILL.md;
+    :更新 flow 设计文档;
+}
+
+:测试新命令;
+
+stop
+@enduml

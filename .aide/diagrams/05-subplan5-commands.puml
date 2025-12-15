@@ -1,0 +1,109 @@
+@startuml subplan5-commands
+!theme plain
+title 子计划 5: Commands 重组
+
+start
+
+partition "1. 创建 /aide:setup" {
+    :创建 commands/setup.md;
+
+    :定义职责;
+    note right
+        独立运行的环境管理命令
+        专注: 分析、配置、检测、修复
+    end note
+
+    :定义流程;
+    note right
+        1. 强制触发 env-config skill
+        2. 运行 aide env ensure --runtime
+        3. 分析项目依赖
+        4. 配置环境模块
+        5. 运行 aide env ensure
+        6. 处理问题（重试或询问）
+    end note
+}
+
+partition "2. 创建 /aide:load" {
+    :创建 commands/load.md;
+
+    :定义职责;
+    note right
+        项目文档按需载入
+        由 /aide:run 调用
+    end note
+
+    :定义流程;
+    note right
+        1. 检查项目文档目录配置
+        2. 读取总导览文档
+        3. 建立项目脉络认知
+        4. 支持后续按需深入
+    end note
+
+    :处理文档不存在;
+    note right
+        提示用户先执行 /aide:docs
+        或按需创建文档
+    end note
+}
+
+partition "3. 重构 /aide:run" {
+    :创建 commands/run.md;
+
+    :强制触发 aide skill;
+
+    :检查 flow 状态;
+    if (flow 为空或已 finish?) then (是)
+        :启动新 flow;
+        note right
+            aide flow start task-optimize "..."
+        end note
+        :执行 task-optimize 阶段;
+        :处理待定项;
+        :生成任务细则;
+    else (否)
+        :分析当前进度;
+        :调用 /aide:load 载入文档;
+        :续接任务;
+    endif
+
+    :执行 flow-design 阶段;
+    note right
+        创建流程图
+    end note
+
+    :执行 impl 阶段;
+    :执行 verify 阶段;
+    :执行 docs 阶段;
+    :执行 finish 阶段;
+}
+
+partition "4. 处理旧命令" {
+    :重命名 init.md → _deprecated_init.md;
+    :重命名 prep.md → _deprecated_prep.md;
+    :重命名 exec.md → _deprecated_exec.md;
+    note right
+        保留旧文件便于参考
+        但不再注册到 plugin
+    end note
+}
+
+partition "5. 更新 plugin.json" {
+    :移除旧命令注册;
+    :添加新命令注册;
+    note right
+        /aide:setup
+        /aide:load
+        /aide:docs
+        /aide:run
+    end note
+}
+
+partition "6. 更新设计文档" {
+    :更新 docs/commands/;
+    :更新 docs/README.md;
+}
+
+stop
+@enduml

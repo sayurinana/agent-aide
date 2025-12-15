@@ -1,0 +1,56 @@
+@startuml overall-flow
+!theme plain
+title Aide 工作流体系重构 - 总体执行流程
+
+start
+
+:读取任务细则;
+note right: .aide/task-spec.md
+
+partition "子计划 1: 配置系统增强" {
+    :修改 config.py;
+    :自文档化配置模板;
+    :复制 plantuml.jar;
+    :更新 aide init 逻辑;
+}
+
+partition "子计划 2: aide flow 状态查看" {
+    :设计 flow 状态数据格式;
+    :实现 flow status;
+    :实现 flow list;
+    :实现 flow show;
+    :更新 skill 文档;
+}
+
+partition "子计划 3: aide flow 流程图集成" {
+    :创建 plantuml 环境模块;
+    :实现校验功能;
+    :实现构建功能;
+    :集成到 flow 逻辑;
+}
+
+partition "子计划 4: 项目文档体系" {
+    :设计文档结构规范;
+    :设计创建/更新流程;
+    :创建 /aide:docs command;
+}
+
+partition "子计划 5: Commands 重组" {
+    :创建 /aide:setup;
+    :创建 /aide:load;
+    :重构 /aide:run;
+    :更新 plugin.json;
+}
+
+partition "子计划 6: 任务分析增强" {
+    :复杂度评估指导原则;
+    :子计划结构设计;
+    :循环执行机制;
+}
+
+:验证所有功能;
+:更新文档;
+:清理收尾;
+
+stop
+@enduml

@@ -1,0 +1,66 @@
+@startuml subplan1-config
+!theme plain
+title 子计划 1: 配置系统增强
+
+start
+
+:读取当前 config.py;
+note right: aide-program/aide/core/config.py
+
+partition "1. 新增配置项支持" {
+    :添加 [general] 节;
+    note right
+        gitignore_aide = true/false
+    end note
+
+    :添加 [docs] 节;
+    note right
+        path = "..."
+        block_plan_path = "..."
+    end note
+
+    :添加 [flow] 节扩展;
+    note right
+        diagram_path = "..."
+    end note
+
+    :添加 [plantuml] 节;
+    note right
+        jar_path = "lib/plantuml.jar"
+    end note
+}
+
+partition "2. 自文档化配置模板" {
+    :编写 DEFAULT_CONFIG;
+    :添加完整 TOML 注释;
+    :所有配置项含说明;
+    :提供示例值;
+}
+
+partition "3. 复制 plantuml.jar" {
+    :创建 lib/ 目录;
+    :复制 jar 文件;
+    note right
+        从: /home/user/env-hub/jar/plantuml.jar
+        到: aide-program/lib/plantuml.jar
+    end note
+}
+
+partition "4. 修改 aide init 逻辑" {
+    :读取 gitignore_aide 配置;
+    if (gitignore_aide == true?) then (是)
+        :添加 .aide/ 到 .gitignore;
+    else (否)
+        :不修改 .gitignore;
+    endif
+}
+
+partition "5. 更新设计文档" {
+    :更新 formats/config.md;
+    :更新 README.md;
+}
+
+:验证配置功能;
+
+stop
+@enduml
