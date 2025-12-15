@@ -1,0 +1,65 @@
+{
+  "input": {
+    "task": "测试任务",
+    "source": "test.md",
+    "items": [
+      {
+        "id": 1,
+        "title": "认证方式选择",
+        "options": [
+          {
+            "value": "jwt",
+            "label": "JWT Token",
+            "score": 85.0,
+            "pros": [
+              "无状态"
+            ],
+            "cons": [
+              "无法主动失效"
+            ]
+          },
+          {
+            "value": "session",
+            "label": "Session",
+            "score": 70.0,
+            "pros": [
+              "简单"
+            ],
+            "cons": [
+              "需要存储"
+            ]
+          }
+        ],
+        "context": "选择合适的认证方式",
+        "recommend": "jwt"
+      },
+      {
+        "id": 2,
+        "title": "数据库选择",
+        "options": [
+          {
+            "value": "mysql",
+            "label": "MySQL"
+          },
+          {
+            "value": "postgres",
+            "label": "PostgreSQL"
+          }
+        ]
+      }
+    ]
+  },
+  "output": {
+    "decisions": [
+      {
+        "id": 1,
+        "chosen": "jwt"
+      },
+      {
+        "id": 2,
+        "chosen": "mysql"
+      }
+    ]
+  },
+  "completed_at": "2025-12-15T02:12:09+08:00"
+}
