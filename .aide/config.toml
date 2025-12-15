@@ -30,3 +30,9 @@ path = "requirements.txt"
 
 [flow]
 phases = ["task-optimize", "flow-design", "impl", "verify", "docs", "finish"]
+
+[decide]
+port = 3721
+bind = "0.0.0.0"
+url = "http://m1.dev.net:3721"
+timeout = 0
