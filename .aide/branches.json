@@ -1,0 +1,15 @@
+{
+  "next_number": 2,
+  "branches": [
+    {
+      "number": 1,
+      "branch_name": "aide/001",
+      "source_branch": "master",
+      "start_commit": "bd723629c5b471637a69c68dd5cdb6e4e4dee238",
+      "task_id": "2025-12-17T04-54-31",
+      "task_summary": "开始任务准备: 创建环境安装 Command",
+      "started_at": "2025-12-17T04:54:31+08:00",
+      "status": "active"
+    }
+  ]
+}

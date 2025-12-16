@@ -6,6 +6,19 @@
 
 ### 新增功能
 
+**环境安装 Commands**
+- 新增 `/aide:install-win` - Windows 环境安装命令
+- 新增 `/aide:install-linux` - Linux 环境安装命令
+- 支持两种安装模式：自动安装（报告→确认→执行）和手动指南（markdown + 脚本）
+- 自动检测并安装 uv、Python（via uv）、Java JRE
+- 包含 aide PATH 配置指导
+
+**离线安装程序**
+- 新增 `aide-program/offline-installer/windows/` - Windows 离线安装程序
+- 新增 `aide-program/offline-installer/linux/` - Linux 离线安装程序
+- 提供资源清单（resources.json）、安装脚本和使用说明
+- 支持在无网络环境下安装 aide 所需的环境依赖
+
 **aide flow 自动 Git 分支管理**
 - 任务开始时自动创建 `aide/NNN` 分支（三位递增编号）
 - 任务结束时自动合并并压缩提交

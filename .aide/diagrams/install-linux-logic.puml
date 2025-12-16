@@ -1,0 +1,166 @@
+@startuml install-linux-logic
+title /aide:install-linux 命令执行逻辑
+
+start
+
+:检测操作系统;
+if (是 Linux?) then (是)
+  :继续执行;
+else (否)
+  :提示用户使用 /aide:install-win;
+  stop
+endif
+
+partition "系统识别" {
+  :检测 Linux 发行版;
+  note right
+    /etc/os-release
+    lsb_release -a
+  end note
+
+  switch (发行版类型)
+  case (Debian/Ubuntu)
+    :包管理器 = apt;
+  case (RHEL/Fedora)
+    :包管理器 = dnf;
+  case (Arch)
+    :包管理器 = pacman;
+  case (其他)
+    :包管理器 = 手动;
+  endswitch
+}
+
+partition "环境检测" {
+  :检测 uv 是否可用;
+  note right: uv --version
+
+  :检测 Python 是否可用;
+  note right: python3 --version 或 uv python list
+
+  :检测 Java 是否可用;
+  note right: java -version
+
+  :汇总检测结果;
+}
+
+if (所有工具都已安装?) then (是)
+  :显示环境状态;
+  :跳转到 aide PATH 配置;
+else (否)
+  :生成缺失工具列表;
+endif
+
+partition "安装模式选择" {
+  :询问用户选择安装模式;
+
+  switch (用户选择)
+  case (模式 A: 自动安装)
+    :进入自动安装流程;
+  case (模式 B: 手动指南)
+    :进入手动指南流程;
+  endswitch
+}
+
+partition "模式 A: 自动安装" {
+  :=== 生成安装报告 ===;
+
+  :列出将要执行的操作;
+  :说明安装位置;
+  :说明可能的副作用;
+  :说明潜在风险;
+
+  :请求用户确认;
+
+  if (用户确认?) then (是)
+    :=== 执行安装 ===;
+
+    if (需要安装 uv?) then (是)
+      :执行 uv 安装;
+      note right
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+      end note
+      :重新加载 shell 环境;
+      :验证 uv 安装;
+    endif
+
+    if (需要安装 Python?) then (是)
+      :通过 uv 安装 Python;
+      note right: uv python install 3.11
+      :验证 Python 安装;
+    endif
+
+    if (需要安装 Java?) then (是)
+      switch (包管理器)
+      case (apt)
+        :sudo apt install openjdk-17-jre;
+      case (dnf)
+        :sudo dnf install java-17-openjdk-headless;
+      case (pacman)
+        :sudo pacman -S jre17-openjdk-headless;
+      case (手动)
+        :提供 Adoptium 下载链接;
+        :指导手动安装;
+      endswitch
+      :验证 Java 安装;
+    endif
+
+    :汇报安装结果;
+  else (否)
+    :取消安装;
+    stop
+  endif
+}
+
+partition "模式 B: 手动指南" {
+  :=== 生成操作指南 ===;
+
+  :生成 Markdown 文档;
+  note right
+    包含:
+    - 各发行版的安装命令
+    - 官方下载链接
+    - PATH 配置方法
+    - 常见问题解答
+  end note
+
+  :生成 Shell 脚本;
+  note right
+    aide-install.sh
+    包含完整注释
+    自动检测发行版
+  end note
+
+  :保存到当前工作目录;
+  :告知用户文件位置;
+}
+
+partition "aide PATH 配置" {
+  :检测 aide-program 位置;
+
+  if (aide 已在 PATH?) then (是)
+    :显示当前配置;
+  else (否)
+    :检测 shell 类型;
+    note right: bash, zsh, fish
+
+    :生成 PATH 配置命令;
+    note right
+      添加到 ~/.bashrc 或 ~/.zshrc
+      export PATH="$PATH:/path/to/aide-program/bin"
+    end note
+    :指导用户执行配置;
+  endif
+}
+
+:=== 最终验证 ===;
+:运行 aide env ensure --runtime;
+
+if (验证通过?) then (是)
+  :显示成功信息;
+else (否)
+  :显示问题诊断;
+  :提供解决建议;
+endif
+
+stop
+@enduml
