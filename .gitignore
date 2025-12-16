@@ -2,4 +2,3 @@ anthropic-agent-skills/
 __pycache__/
 .venv/
 test-cache/
-

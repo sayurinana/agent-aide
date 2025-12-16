@@ -92,8 +92,17 @@ class BranchManager:
         self.aide_dir = root / ".aide"
         self.branches_json = self.aide_dir / "branches.json"
         self.branches_md = self.aide_dir / "branches.md"
+        self.lock_path = self.aide_dir / "flow-status.lock"
         self._data: BranchesData | None = None
         self._current_branch_info: BranchInfo | None = None
+
+    def _cleanup_lock_file(self) -> None:
+        """清理 lock 文件，避免分支切换时的冲突"""
+        try:
+            if self.lock_path.exists():
+                self.lock_path.unlink()
+        except OSError:
+            pass
 
     def load_branches(self) -> BranchesData:
         """加载分支概况"""
@@ -314,6 +323,9 @@ class BranchManager:
         source_branch = branch_info.source_branch
         start_commit = branch_info.start_commit
 
+        # 切换分支前清理 lock 文件，避免冲突
+        self._cleanup_lock_file()
+
         # 切回源分支
         self.git.checkout(source_branch)
 
@@ -342,6 +354,9 @@ class BranchManager:
         start_commit = branch_info.start_commit
         task_branch = branch_info.branch_name
         temp_branch = f"{task_branch}-merge"
+
+        # 切换分支前清理 lock 文件，避免冲突
+        self._cleanup_lock_file()
 
         # 从起始提交检出临时分支
         self.git.checkout_new_branch(temp_branch, start_commit)
