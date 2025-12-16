@@ -4,6 +4,14 @@
 
 ## 2025-12-17
 
+### 修复
+
+**aide flow 分支切换问题修复**
+- 修复 finish 阶段分支切换时 lock 文件冲突的问题
+- 修复 finish 阶段状态文件未提交导致切换失败的问题
+- 在 `BranchManager` 添加 `_cleanup_lock_file` 方法
+- 调整 `FlowTracker` 中分支合并的执行顺序（先提交再合并）
+
 ### 新增功能
 
 **环境安装 Commands**

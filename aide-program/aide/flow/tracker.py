@@ -108,14 +108,6 @@ class FlowTracker:
                 if action == "next-part":
                     assert to_phase is not None
                     validator.validate_next_part(current_phase, to_phase)
-
-                    # 如果进入 finish 环节，执行分支合并
-                    if to_phase == "finish":
-                        success, merge_msg = self.branch_mgr.finish_branch_merge(
-                            task_summary=normalized_text,
-                        )
-                        if not success:
-                            output.warn(merge_msg)
                 elif action == "back-part":
                     assert to_phase is not None
                     validator.validate_back_part(current_phase, to_phase)
@@ -134,6 +126,18 @@ class FlowTracker:
                 self.storage.save_status(updated)
                 final_status = self._do_git_commit(updated, commit_msg)
                 self.storage.save_status(final_status)
+
+                # 如果进入 finish 环节，执行分支合并（必须在提交后执行）
+                if action == "next-part" and to_phase == "finish":
+                    # 再次提交状态文件（因为 save_status 更新了 git_commit hash）
+                    self.git.add_all()
+                    self.git.commit("[aide] finish: 更新状态文件")
+
+                    success, merge_msg = self.branch_mgr.finish_branch_merge(
+                        task_summary=normalized_text,
+                    )
+                    if not success:
+                        output.warn(merge_msg)
 
                 if action == "next-part":
                     output.ok(f"进入环节: {to_phase}")
