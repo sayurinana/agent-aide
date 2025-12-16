@@ -11,6 +11,7 @@
 - 修复 finish 阶段状态文件未提交导致切换失败的问题
 - 在 `BranchManager` 添加 `_cleanup_lock_file` 方法
 - 调整 `FlowTracker` 中分支合并的执行顺序（先提交再合并）
+- **修复 `_merge_normal` 方法使用错误的 reset_soft 逻辑，改用 merge_squash**
 
 ### 新增功能
 
