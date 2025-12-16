@@ -319,9 +319,9 @@ class BranchManager:
         branch_info: BranchInfo,
         task_summary: str,
     ) -> tuple[bool, str]:
-        """正常合并流程：软重置 + 压缩提交"""
+        """正常合并流程：squash 合并任务分支到源分支"""
         source_branch = branch_info.source_branch
-        start_commit = branch_info.start_commit
+        task_branch = branch_info.branch_name
 
         # 切换分支前清理 lock 文件，避免冲突
         self._cleanup_lock_file()
@@ -329,8 +329,8 @@ class BranchManager:
         # 切回源分支
         self.git.checkout(source_branch)
 
-        # 软重置到起始提交
-        self.git.reset_soft(start_commit)
+        # squash 合并任务分支
+        self.git.merge_squash(task_branch)
 
         # 创建压缩提交
         self.git.add_all()
