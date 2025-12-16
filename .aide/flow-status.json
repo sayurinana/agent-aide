@@ -1,7 +1,7 @@
 {
   "task_id": "2025-12-17T02-28-46",
   "current_phase": "task-optimize",
-  "current_step": 3,
+  "current_step": 4,
   "started_at": "2025-12-17T02:28:46+08:00",
   "history": [
     {
@@ -25,7 +25,15 @@
       "action": "next-step",
       "phase": "task-optimize",
       "step": 3,
-      "summary": "完成 docs.md 修改：增加完整覆盖规则和验证步骤"
+      "summary": "完成 docs.md 修改：增加完整覆盖规则和验证步骤",
+      "git_commit": "3c8f06bbb0efce35f7533ede8dc5080aec03f57d"
+    },
+    {
+      "timestamp": "2025-12-17T02:33:50+08:00",
+      "action": "next-step",
+      "phase": "task-optimize",
+      "step": 4,
+      "summary": "完成相关文档更新：aide-plugin-commands.md 和 CHANGELOG.md"
     }
   ]
 }
