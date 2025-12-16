@@ -105,7 +105,8 @@
       "action": "next-step",
       "phase": "finish",
       "step": 13,
-      "summary": "任务完成"
+      "summary": "任务完成",
+      "git_commit": "854791e25ce42cbfdb7226a8afb69b0c2ea3b718"
     }
   ]
 }
