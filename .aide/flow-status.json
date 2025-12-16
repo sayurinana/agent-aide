@@ -1,7 +1,7 @@
 {
   "task_id": "2025-12-16T20-22-50",
   "current_phase": "finish",
-  "current_step": 16,
+  "current_step": 17,
   "started_at": "2025-12-16T20:22:50+08:00",
   "history": [
     {
@@ -129,7 +129,15 @@
       "action": "next-step",
       "phase": "finish",
       "step": 16,
-      "summary": "任务完成"
+      "summary": "任务完成",
+      "git_commit": "7cb28fa3e69f3157434ed26c6222c7c6f1100d13"
+    },
+    {
+      "timestamp": "2025-12-17T00:45:02+08:00",
+      "action": "next-step",
+      "phase": "finish",
+      "step": 17,
+      "summary": "测试下一步"
     }
   ]
 }
