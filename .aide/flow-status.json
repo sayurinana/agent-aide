@@ -1,7 +1,7 @@
 {
   "task_id": "2025-12-17T01-45-46",
   "current_phase": "flow-design",
-  "current_step": 5,
+  "current_step": 6,
   "started_at": "2025-12-17T01:45:46+08:00",
   "history": [
     {
@@ -41,7 +41,15 @@
       "action": "next-part",
       "phase": "flow-design",
       "step": 5,
-      "summary": "进入流程设计环节"
+      "summary": "进入流程设计环节",
+      "git_commit": "9ecc7baa8b83e04431f9ff8eb60c69d91c0f916d"
+    },
+    {
+      "timestamp": "2025-12-17T01:49:30+08:00",
+      "action": "next-step",
+      "phase": "flow-design",
+      "step": 6,
+      "summary": "流程图设计完成"
     }
   ]
 }
