@@ -1,7 +1,7 @@
 {
   "task_id": "2025-12-16T20-22-50",
   "current_phase": "finish",
-  "current_step": 15,
+  "current_step": 16,
   "started_at": "2025-12-16T20:22:50+08:00",
   "history": [
     {
@@ -121,7 +121,15 @@
       "action": "next-part",
       "phase": "finish",
       "step": 15,
-      "summary": "文档更新完成，进入收尾"
+      "summary": "文档更新完成，进入收尾",
+      "git_commit": "22ab8458d741085d756590b84a231d38429cef76"
+    },
+    {
+      "timestamp": "2025-12-16T20:39:43+08:00",
+      "action": "next-step",
+      "phase": "finish",
+      "step": 16,
+      "summary": "任务完成"
     }
   ]
 }
