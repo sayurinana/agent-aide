@@ -324,6 +324,9 @@ FlowStatus:
     current_step: int         # 当前步骤序号
     started_at: str           # 开始时间（ISO格式）
     history: list[HistoryEntry]  # 历史记录
+    source_branch: str | None # 源分支名（分支管理）
+    start_commit: str | None  # 起始提交（分支管理）
+    task_branch: str | None   # 任务分支名（分支管理）
 
 HistoryEntry:
     timestamp: str            # 时间戳
@@ -334,7 +337,30 @@ HistoryEntry:
     git_commit: str | None    # git commit hash（无变更可提交/未启用 git 时为空）
 ```
 
-### 5.2 方法签名原型
+### 5.2 分支概况文件格式
+
+位置：`.aide/branches.json` 和 `.aide/branches.md`
+
+```
+BranchesData:
+    next_number: int          # 下一个分支编号
+    branches: list[BranchInfo]  # 分支记录列表
+
+BranchInfo:
+    number: int               # 分支编号
+    branch_name: str          # 分支名（aide/NNN）
+    source_branch: str        # 源分支名
+    start_commit: str         # 起始提交
+    end_commit: str | None    # 结束提交
+    task_id: str              # 任务 ID
+    task_summary: str         # 任务摘要
+    started_at: str           # 开始时间
+    finished_at: str | None   # 结束时间
+    status: str               # 状态（active/finished/merged-to-temp）
+    temp_branch: str | None   # 临时分支名（仅安全合并时）
+```
+
+### 5.3 方法签名原型
 
 ```
 class FlowTracker:
