@@ -210,7 +210,7 @@ bind = "0.0.0.0"
 # 为空时自动生成为 http://{bind}:{port}
 # 适用于反向代理或自定义域名场景
 # 示例：url = "https://decide.example.com"
-url = "http://m1.dev.net:3721"
+url = "http://vm1.dev.net:3721"
 
 # 超时时间（秒）
 # - 0（默认）：不超时，等待用户完成

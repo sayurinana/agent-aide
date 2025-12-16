@@ -1,0 +1,325 @@
+{
+  "input": {
+    "task": "Aide 工具 Git 分支管理和任务细则强制确认功能",
+    "source": "task-now.md",
+    "items": [
+      {
+        "id": 1,
+        "title": "分支命名规则",
+        "options": [
+          {
+            "value": "aide_taskid",
+            "label": "aide/<task_id>",
+            "score": 90.0,
+            "pros": [
+              "与 task_id 直接关联，易于追溯",
+              "格式规范，避免冲突",
+              "示例：aide/2025-12-17T10-30-00"
+            ],
+            "cons": [
+              "分支名较长"
+            ]
+          },
+          {
+            "value": "task_taskid",
+            "label": "task/<task_id>",
+            "score": 75.0,
+            "pros": [
+              "简洁明了",
+              "与任务概念直接对应"
+            ],
+            "cons": [
+              "可能与其他工具的分支命名冲突"
+            ]
+          },
+          {
+            "value": "custom_prefix",
+            "label": "可配置前缀",
+            "score": 70.0,
+            "pros": [
+              "灵活性高，用户可自定义"
+            ],
+            "cons": [
+              "增加配置复杂度"
+            ]
+          }
+        ],
+        "location": {
+          "file": "task-now.md",
+          "start": 15,
+          "end": 16
+        },
+        "context": "用户希望在任务开始时创建新分支，需要确定分支命名规则。分支名将用于区分不同任务的工作内容。",
+        "recommend": "aide_taskid"
+      },
+      {
+        "id": 2,
+        "title": "分支概况文档格式",
+        "options": [
+          {
+            "value": "json",
+            "label": "JSON 格式 (.aide/branches.json)",
+            "score": 85.0,
+            "pros": [
+              "结构化数据，易于程序处理",
+              "可精确存储多条记录",
+              "与现有 flow-status.json 风格一致"
+            ],
+            "cons": [
+              "人工阅读不够直观"
+            ]
+          },
+          {
+            "value": "markdown",
+            "label": "Markdown 格式 (.aide/branches.md)",
+            "score": 70.0,
+            "pros": [
+              "人工阅读友好",
+              "可直接在编辑器中查看"
+            ],
+            "cons": [
+              "解析复杂，数据提取不便"
+            ]
+          }
+        ],
+        "location": {
+          "file": "task-now.md",
+          "start": 11,
+          "end": 12
+        },
+        "context": "需要维护一份记录 git 分支概况的文档，存储分支名、起始提交、源分支、结束提交等信息。需确定文档格式。",
+        "recommend": "json"
+      },
+      {
+        "id": 3,
+        "title": "合并冲突处理策略",
+        "options": [
+          {
+            "value": "abort_warning",
+            "label": "检测冲突时中止并警告",
+            "score": 85.0,
+            "pros": [
+              "安全，不会意外覆盖代码",
+              "用户有完全控制权"
+            ],
+            "cons": [
+              "需要用户手动解决"
+            ]
+          },
+          {
+            "value": "squash_merge",
+            "label": "使用 squash 合并（避免大部分冲突）",
+            "score": 75.0,
+            "pros": [
+              "减少冲突可能性",
+              "生成单一提交"
+            ],
+            "cons": [
+              "某些场景仍可能冲突"
+            ]
+          },
+          {
+            "value": "force_override",
+            "label": "强制覆盖（任务分支优先）",
+            "score": 40.0,
+            "pros": [
+              "总能完成合并"
+            ],
+            "cons": [
+              "可能丢失原分支的其他更改",
+              "风险较高"
+            ]
+          }
+        ],
+        "location": {
+          "file": "task-now.md",
+          "start": 18,
+          "end": 21
+        },
+        "context": "任务结束时需要将任务分支合并回原分支。如果原分支在任务期间有其他提交，可能产生合并冲突。需确定处理策略。",
+        "recommend": "abort_warning"
+      },
+      {
+        "id": 4,
+        "title": "任务中断恢复策略",
+        "options": [
+          {
+            "value": "manual_cleanup",
+            "label": "保留分支，用户手动处理",
+            "score": 80.0,
+            "pros": [
+              "保留所有工作成果",
+              "用户完全控制"
+            ],
+            "cons": [
+              "可能积累废弃分支"
+            ]
+          },
+          {
+            "value": "abort_command",
+            "label": "提供 aide flow abort 命令",
+            "score": 90.0,
+            "pros": [
+              "提供标准化的清理方式",
+              "可选择保留或删除分支"
+            ],
+            "cons": [
+              "需要额外开发"
+            ]
+          },
+          {
+            "value": "auto_cleanup",
+            "label": "下次 start 时自动清理",
+            "score": 60.0,
+            "pros": [
+              "无需用户干预"
+            ],
+            "cons": [
+              "可能意外删除有价值的工作"
+            ]
+          }
+        ],
+        "location": {
+          "file": "task-now.md",
+          "start": 21,
+          "end": 21
+        },
+        "context": "如果任务在执行过程中被中断（非正常 finish），需要确定如何处理遗留的任务分支和状态。",
+        "recommend": "abort_command"
+      },
+      {
+        "id": 5,
+        "title": "任务细则确认机制",
+        "options": [
+          {
+            "value": "ask_user_question",
+            "label": "使用 AskUserQuestion 工具",
+            "score": 85.0,
+            "pros": [
+              "利用现有工具，无需改 aide 代码",
+              "交互式确认，体验好"
+            ],
+            "cons": [
+              "依赖 LLM 遵守流程"
+            ]
+          },
+          {
+            "value": "aide_decide",
+            "label": "使用 aide decide 提交确认",
+            "score": 75.0,
+            "pros": [
+              "复用现有工具",
+              "有 Web 界面"
+            ],
+            "cons": [
+              "流程较重，适合复杂决策"
+            ]
+          },
+          {
+            "value": "aide_confirm",
+            "label": "新增 aide confirm 命令",
+            "score": 70.0,
+            "pros": [
+              "专用命令，语义清晰",
+              "可程序化强制"
+            ],
+            "cons": [
+              "需要额外开发 aide 代码"
+            ]
+          }
+        ],
+        "location": {
+          "file": "task-now.md",
+          "start": 30,
+          "end": 34
+        },
+        "context": "用户要求待定项处理和细则文档保存都必须经用户确认才能继续。需确定确认机制的实现方式。",
+        "recommend": "ask_user_question"
+      },
+      {
+        "id": 6,
+        "title": "任务细则文档存储位置",
+        "options": [
+          {
+            "value": "aide_task_spec",
+            "label": ".aide/task-spec.md",
+            "score": 85.0,
+            "pros": [
+              "与 .aide 目录结构一致",
+              "每次任务覆盖，保持简洁"
+            ],
+            "cons": [
+              "历史细则不保留"
+            ]
+          },
+          {
+            "value": "aide_specs_dir",
+            "label": ".aide/specs/<task_id>.md",
+            "score": 80.0,
+            "pros": [
+              "保留历史细则",
+              "可追溯"
+            ],
+            "cons": [
+              "可能积累大量文件"
+            ]
+          },
+          {
+            "value": "configurable",
+            "label": "可配置路径（默认 task.spec）",
+            "score": 90.0,
+            "pros": [
+              "灵活性高",
+              "用户可自定义"
+            ],
+            "cons": [
+              "增加配置项"
+            ]
+          }
+        ],
+        "location": {
+          "file": "task-now.md",
+          "start": 32,
+          "end": 32
+        },
+        "context": "任务分析优化后需要生成并保存任务细则文档。需确定文档存储位置。",
+        "recommend": "configurable"
+      }
+    ]
+  },
+  "output": {
+    "decisions": [
+      {
+        "id": 1,
+        "chosen": "aide_taskid",
+        "note": "用aide/为固定前缀，但后面具体的不要用taskid，改为自然数递增的编号，三位数左填充0的编号，例如aide/001，具体编号对应的分支的详情记录到分支概况文档中，（也就是说在不加入分支的情况下想知道目标编号分支的工作内容就必去分支概况文档里看，但这是可以接受的，没关系）"
+      },
+      {
+        "id": 2,
+        "chosen": "markdown",
+        "note": "封装为程序化过程应该可以实现同时使用，读取和解析时仅用json，但输出和保存时同时输出json和转换为md文档，"
+      },
+      {
+        "id": 3,
+        "chosen": "abort_warning",
+        "note": "能不能仅合并到目标对应分支的原起始提交处，不关注原分支后续可能存在的变更，若原分支自起始提交后（创建起始提交时已确保git工作目录干净了的）还有变更，则从原分支的起始提交处迁出一个临时分支然后在这个临时分支处完成合并操作，同时中止并警告用户相关情况，用户任有完全控制权且数据安全"
+      },
+      {
+        "id": 4,
+        "chosen": "auto_cleanup",
+        "note": "如果run切入时的状态就不是finish，应该由LLM判断当前任务细则文档是否存在，如果细则文档存在就判断上次未finish的任务的任务名和步骤流程是否符合细则文档的含义，\n若不符合或者细则文档不存在就说明旧状态已经无用了，需要start一个新任务，\n如果符合则说明应该接续之前的状态继续（前面这些内容如果原本的command/run没有提及的话，还应该更新run命令内容，这些都是预期的行为），\n判断为应该继续任务，但是git仓库状态不干净，则git add .（由aide flow集成自动完成）暂存所有变更然后创建一个清理提交记录，来保存所有改动且使工作目录状态变干净"
+      },
+      {
+        "id": 5,
+        "chosen": "aide_decide",
+        "note": "仅待定项要求用aide decide，而细则文档保存后不需要decide，直接使用AskUserQuestion或简单报告用户然后停下等待用户答复即可"
+      },
+      {
+        "id": 6,
+        "chosen": "configurable",
+        "note": "遵循aide环境配置数据规范，config.toml中原本就有的：\n# 任务细则文档路径（aide 生成的可执行任务细则）\n# /aide:exec 命令在未指定参数时读取此文件\nspec = \"task-spec.md\""
+      }
+    ]
+  },
+  "completed_at": "2025-12-17T03:36:02+08:00"
+}
