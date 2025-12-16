@@ -1,4 +1,4 @@
-"""FlowTracker：编排一次 flow 动作（校验 → hooks → git → 落盘 → 输出）。"""
+"""FlowTracker：编排一次 flow 动作（校验 → hooks → 落盘 → git → 输出）。"""
 
 from __future__ import annotations
 
@@ -68,7 +68,7 @@ class FlowTracker:
                         started_at=now_iso(),
                         history=[],
                     )
-                    updated = self._apply_action(
+                    updated, commit_msg = self._apply_action(
                         status=status,
                         action=action,
                         from_phase=None,
@@ -76,7 +76,10 @@ class FlowTracker:
                         text=normalized_text,
                         validator=validator,
                     )
+                    # 先保存状态，再执行 git 操作
                     self.storage.save_status(updated)
+                    final_status = self._do_git_commit(updated, commit_msg)
+                    self.storage.save_status(final_status)
                     output.ok(f"任务开始: {to_phase}")
                     run_post_commit_hooks(to_phase=to_phase, action=action)
                     return True
@@ -97,7 +100,7 @@ class FlowTracker:
                 else:
                     to_phase = current_phase
 
-                updated = self._apply_action(
+                updated, commit_msg = self._apply_action(
                     status=status,
                     action=action,
                     from_phase=current_phase,
@@ -105,7 +108,10 @@ class FlowTracker:
                     text=normalized_text,
                     validator=validator,
                 )
+                # 先保存状态，再执行 git 操作
                 self.storage.save_status(updated)
+                final_status = self._do_git_commit(updated, commit_msg)
+                self.storage.save_status(final_status)
 
                 if action == "next-part":
                     output.ok(f"进入环节: {to_phase}")
@@ -129,7 +135,8 @@ class FlowTracker:
         to_phase: str,
         text: str,
         validator: FlowValidator,
-    ) -> FlowStatus:
+    ) -> tuple[FlowStatus, str]:
+        """应用动作，返回 (更新后的状态, commit消息)。不执行 git 操作。"""
         if action in {"next-part", "back-part"} and from_phase is None:
             raise FlowError("内部错误：缺少 from_phase")
 
@@ -156,8 +163,6 @@ class FlowTracker:
         )
 
         message = _build_commit_message(action=action, phase=to_phase, text=text)
-        self.git.add_all()
-        commit_hash = self.git.commit(message)
 
         next_step = status.current_step + 1
         entry = HistoryEntry(
@@ -166,17 +171,44 @@ class FlowTracker:
             phase=to_phase,
             step=next_step,
             summary=text,
-            git_commit=commit_hash,
+            git_commit=None,  # 暂时为 None，后续在 git 提交后更新
         )
 
         history = [*status.history, entry]
-        return FlowStatus(
+        updated_status = FlowStatus(
             task_id=status.task_id,
             current_phase=to_phase,
             current_step=next_step,
             started_at=status.started_at,
             history=history,
         )
+        return updated_status, message
+
+    def _do_git_commit(self, status: FlowStatus, message: str) -> FlowStatus:
+        """执行 git add + commit，并更新状态中的 commit hash。"""
+        self.git.add_all()
+        commit_hash = self.git.commit(message)
+
+        # 更新最后一条历史记录的 git_commit
+        if status.history:
+            last_entry = status.history[-1]
+            updated_entry = HistoryEntry(
+                timestamp=last_entry.timestamp,
+                action=last_entry.action,
+                phase=last_entry.phase,
+                step=last_entry.step,
+                summary=last_entry.summary,
+                git_commit=commit_hash,
+            )
+            updated_history = [*status.history[:-1], updated_entry]
+            return FlowStatus(
+                task_id=status.task_id,
+                current_phase=status.current_phase,
+                current_step=status.current_step,
+                started_at=status.started_at,
+                history=updated_history,
+            )
+        return status
 
 
 def _get_phases(config: dict) -> list[str]:

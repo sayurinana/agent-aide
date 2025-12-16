@@ -1,7 +1,7 @@
 {
   "task_id": "2025-12-16T20-22-50",
   "current_phase": "impl",
-  "current_step": 7,
+  "current_step": 9,
   "started_at": "2025-12-16T20:22:50+08:00",
   "history": [
     {
@@ -59,6 +59,21 @@
       "step": 7,
       "summary": "子计划2&3完成：修改 run 命令集成 skill 触发和强化流程图规范",
       "git_commit": "bb6cf1e178cd8c6e335113a356d678b55f3e7268"
+    },
+    {
+      "timestamp": "2025-12-16T20:32:26+08:00",
+      "action": "next-step",
+      "phase": "impl",
+      "step": 8,
+      "summary": "子计划4完成：创建 Python 示例程序并绘制程序逻辑流图",
+      "git_commit": "53e4fa9d1d909da69b3dea303adb644b7245254a"
+    },
+    {
+      "timestamp": "2025-12-16T20:34:04+08:00",
+      "action": "next-step",
+      "phase": "impl",
+      "step": 9,
+      "summary": "子计划5完成：调整 aide flow 的 git 提交顺序"
     }
   ]
 }
