@@ -77,7 +77,9 @@
       "task_id": "2025-12-17T06-07-01",
       "task_summary": "测试",
       "started_at": "2025-12-17T06:07:01+08:00",
-      "status": "active"
+      "status": "finished",
+      "end_commit": "346ec90386190363cb71651e6bff3c64bb6b86f9",
+      "finished_at": "2025-12-17T06:07:50+08:00"
     }
   ]
 }

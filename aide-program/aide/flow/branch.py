@@ -332,16 +332,20 @@ class BranchManager:
         # squash 合并任务分支
         self.git.merge_squash(task_branch)
 
-        # 创建压缩提交
+        # 创建压缩提交（结束提交）
         self.git.add_all()
         commit_msg = f"[aide] 任务: {task_summary}"
         end_commit = self.git.commit(commit_msg)
 
-        # 记录完成
+        # 记录完成（更新 branches.json/md）
         self.record_branch_finish(
             status="finished",
             end_commit=end_commit,
         )
+
+        # 收尾提交：清理工作区（包含 branches.json/md 的更新）
+        self.git.add_all()
+        self.git.commit("[aide] 收尾: 更新分支记录")
 
         return True, f"任务分支已合并到 {source_branch}"
 
