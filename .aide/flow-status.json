@@ -137,7 +137,8 @@
       "action": "next-step",
       "phase": "finish",
       "step": 17,
-      "summary": "测试下一步"
+      "summary": "测试下一步",
+      "git_commit": "973e60ec1d97c98116663b3203cd522c058ef877"
     }
   ]
 }
