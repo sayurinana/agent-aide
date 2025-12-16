@@ -24,11 +24,11 @@
 - 新增文件类型列和统计信息
 - 移除"单个区块不超过 5000 行代码"的限制
 
-### 文档
+### 文档更新 (docs 阶段)
 
-- 更新 docs.md 命令执行文件
+- 更新 commands/docs.md 命令定义
 - 更新 aide-plugin-commands.md 区块文档
-- 更新 CHANGELOG.md 记录所有变更
+- 更新 CHANGELOG.md 记录变更详情
 
 ---
 
