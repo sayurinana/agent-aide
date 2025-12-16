@@ -1,5 +1,5 @@
 {
-  "next_number": 3,
+  "next_number": 4,
   "branches": [
     {
       "number": 1,
@@ -20,6 +20,18 @@
       "task_summary": "测试任务：写一个 hello 程序",
       "started_at": "2025-12-17T05:33:04+08:00",
       "status": "active"
+    },
+    {
+      "number": 3,
+      "branch_name": "aide/003",
+      "source_branch": "master",
+      "start_commit": "aa067fc460ef3ec9d00cd7a08b99459e7d80b4b1",
+      "task_id": "2025-12-17T05-42-38",
+      "task_summary": "测试修复：hello2 程序",
+      "started_at": "2025-12-17T05:42:38+08:00",
+      "status": "finished",
+      "end_commit": "aa067fc460ef3ec9d00cd7a08b99459e7d80b4b1",
+      "finished_at": "2025-12-17T05:48:59+08:00"
     }
   ]
 }
