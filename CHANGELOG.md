@@ -21,6 +21,7 @@
 - 更新 docs.md 命令执行文件
 - 更新 docs/commands/docs.md 设计文档
 - 更新 project-docs 区块文档
+- 更新 CHANGELOG.md 记录所有变更
 
 ---
 
