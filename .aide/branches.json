@@ -65,7 +65,9 @@
       "task_id": "2025-12-17T06-03-45",
       "task_summary": "最终测试：验证合并功能",
       "started_at": "2025-12-17T06:03:45+08:00",
-      "status": "active"
+      "status": "finished",
+      "end_commit": "d60f0bae2d783625d628aabf91fa74f631053a7c",
+      "finished_at": "2025-12-17T06:05:19+08:00"
     }
   ]
 }
