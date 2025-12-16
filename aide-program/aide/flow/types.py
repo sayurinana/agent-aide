@@ -54,15 +54,26 @@ class FlowStatus:
     current_step: int
     started_at: str
     history: list[HistoryEntry]
+    # 分支管理相关字段
+    source_branch: str | None = None
+    start_commit: str | None = None
+    task_branch: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        data: dict[str, Any] = {
             "task_id": self.task_id,
             "current_phase": self.current_phase,
             "current_step": self.current_step,
             "started_at": self.started_at,
             "history": [h.to_dict() for h in self.history],
         }
+        if self.source_branch is not None:
+            data["source_branch"] = self.source_branch
+        if self.start_commit is not None:
+            data["start_commit"] = self.start_commit
+        if self.task_branch is not None:
+            data["task_branch"] = self.task_branch
+        return data
 
     @staticmethod
     def from_dict(data: dict[str, Any]) -> "FlowStatus":
@@ -84,6 +95,9 @@ class FlowStatus:
             current_step=current_step,
             started_at=started_at,
             history=history,
+            source_branch=data.get("source_branch"),
+            start_commit=data.get("start_commit"),
+            task_branch=data.get("task_branch"),
         )
 
 

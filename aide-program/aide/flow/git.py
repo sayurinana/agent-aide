@@ -61,6 +61,71 @@ class GitIntegration:
         files = [line.strip() for line in (result.stdout or "").splitlines() if line.strip()]
         return path in files
 
+    # === 分支管理新增方法 ===
+
+    def get_current_branch(self) -> str:
+        """获取当前分支名"""
+        result = self._run(["rev-parse", "--abbrev-ref", "HEAD"], check=False)
+        if result.returncode != 0:
+            raise FlowError(_format_git_error("获取当前分支失败", result))
+        return (result.stdout or "").strip()
+
+    def is_clean(self) -> bool:
+        """检查工作目录是否干净（无未提交的变更）"""
+        result = self._run(["status", "--porcelain"], check=False)
+        if result.returncode != 0:
+            raise FlowError(_format_git_error("检查 git 状态失败", result))
+        return not (result.stdout or "").strip()
+
+    def has_commits(self) -> bool:
+        """检查是否有提交历史"""
+        result = self._run(["rev-parse", "HEAD"], check=False)
+        return result.returncode == 0
+
+    def create_branch(self, name: str, start_point: str | None = None) -> None:
+        """创建新分支"""
+        args = ["branch", name]
+        if start_point:
+            args.append(start_point)
+        result = self._run(args, check=False)
+        if result.returncode != 0:
+            raise FlowError(_format_git_error(f"创建分支 {name} 失败", result))
+
+    def checkout(self, branch: str) -> None:
+        """切换到指定分支"""
+        result = self._run(["checkout", branch], check=False)
+        if result.returncode != 0:
+            raise FlowError(_format_git_error(f"切换到分支 {branch} 失败", result))
+
+    def checkout_new_branch(self, name: str, start_point: str | None = None) -> None:
+        """创建并切换到新分支"""
+        args = ["checkout", "-b", name]
+        if start_point:
+            args.append(start_point)
+        result = self._run(args, check=False)
+        if result.returncode != 0:
+            raise FlowError(_format_git_error(f"创建并切换到分支 {name} 失败", result))
+
+    def has_commits_since(self, commit: str, branch: str) -> bool:
+        """检查指定分支自某提交后是否有新提交"""
+        result = self._run(["rev-list", f"{commit}..{branch}", "--count"], check=False)
+        if result.returncode != 0:
+            raise FlowError(_format_git_error(f"检查分支 {branch} 新提交失败", result))
+        count = int((result.stdout or "0").strip())
+        return count > 0
+
+    def reset_soft(self, commit: str) -> None:
+        """软重置到指定提交"""
+        result = self._run(["reset", "--soft", commit], check=False)
+        if result.returncode != 0:
+            raise FlowError(_format_git_error(f"软重置到 {commit} 失败", result))
+
+    def merge_squash(self, branch: str) -> None:
+        """squash 合并指定分支"""
+        result = self._run(["merge", "--squash", branch], check=False)
+        if result.returncode != 0:
+            raise FlowError(_format_git_error(f"squash 合并分支 {branch} 失败", result))
+
     def _run(self, args: list[str], check: bool) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
             ["git", *args],

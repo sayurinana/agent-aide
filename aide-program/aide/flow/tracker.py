@@ -6,6 +6,7 @@ from pathlib import Path
 
 from aide.core import output
 from aide.core.config import ConfigManager
+from aide.flow.branch import BranchManager
 from aide.flow.errors import FlowError
 from aide.flow.git import GitIntegration
 from aide.flow.hooks import run_post_commit_hooks, run_pre_commit_hooks
@@ -23,6 +24,7 @@ class FlowTracker:
         self.cfg = cfg
         self.storage = FlowStorage(root)
         self.git = GitIntegration(root)
+        self.branch_mgr = BranchManager(root, self.git)
 
     def start(self, phase: str, summary: str) -> bool:
         return self._run(action="start", to_phase=phase, text=summary)
@@ -61,12 +63,24 @@ class FlowTracker:
                     assert to_phase is not None
                     validator.validate_start(to_phase)
                     self.storage.archive_existing_status()
+
+                    # 创建任务分支
+                    task_id = now_task_id()
+                    task_branch = self.branch_mgr.create_task_branch(
+                        task_id=task_id,
+                        task_summary=normalized_text,
+                    )
+                    branch_info = self.branch_mgr.get_active_branch_info()
+
                     status = FlowStatus(
-                        task_id=now_task_id(),
+                        task_id=task_id,
                         current_phase=to_phase,
                         current_step=0,
                         started_at=now_iso(),
                         history=[],
+                        source_branch=branch_info.source_branch if branch_info else None,
+                        start_commit=branch_info.start_commit if branch_info else None,
+                        task_branch=task_branch,
                     )
                     updated, commit_msg = self._apply_action(
                         status=status,
@@ -80,7 +94,7 @@ class FlowTracker:
                     self.storage.save_status(updated)
                     final_status = self._do_git_commit(updated, commit_msg)
                     self.storage.save_status(final_status)
-                    output.ok(f"任务开始: {to_phase}")
+                    output.ok(f"任务开始: {to_phase} (分支: {task_branch})")
                     run_post_commit_hooks(to_phase=to_phase, action=action)
                     return True
 
@@ -94,6 +108,14 @@ class FlowTracker:
                 if action == "next-part":
                     assert to_phase is not None
                     validator.validate_next_part(current_phase, to_phase)
+
+                    # 如果进入 finish 环节，执行分支合并
+                    if to_phase == "finish":
+                        success, merge_msg = self.branch_mgr.finish_branch_merge(
+                            task_summary=normalized_text,
+                        )
+                        if not success:
+                            output.warn(merge_msg)
                 elif action == "back-part":
                     assert to_phase is not None
                     validator.validate_back_part(current_phase, to_phase)
@@ -181,6 +203,9 @@ class FlowTracker:
             current_step=next_step,
             started_at=status.started_at,
             history=history,
+            source_branch=status.source_branch,
+            start_commit=status.start_commit,
+            task_branch=status.task_branch,
         )
         return updated_status, message
 
@@ -207,6 +232,9 @@ class FlowTracker:
                 current_step=status.current_step,
                 started_at=status.started_at,
                 history=updated_history,
+                source_branch=status.source_branch,
+                start_commit=status.start_commit,
+                task_branch=status.task_branch,
             )
         return status
 
