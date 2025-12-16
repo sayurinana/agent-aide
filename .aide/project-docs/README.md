@@ -1,7 +1,7 @@
 # Aide 项目导览
 
 > 本文档面向 LLM，用于快速了解项目结构和脉络。
-> 最后更新：2025-12-15
+> 最后更新：2025-12-16
 
 ## 项目简介
 
@@ -23,7 +23,7 @@ Aide 是一套面向 Claude Code 的工作流辅助体系，旨在解决 AI 辅�
   ▼
 aide-plugin (Claude Code 插件)
   ├── Commands: /aide:setup, /aide:load, /aide:docs, /aide:run
-  └── Skills: aide, env-config
+  └── Skills: aide, env-config, task-parser
   │
   ▼ 调用
 aide-program (命令行工具)
@@ -66,12 +66,18 @@ aide-program (命令行工具)
 
 ## 标准工作流程
 
-1. **task-optimize** - 任务优化：分析任务、识别待定项
-2. **flow-design** - 流程设计：创建 PlantUML 流程图
+1. **task-optimize** - 任务优化：分析任务、识别待定项、口语化内容解析
+2. **flow-design** - 流程设计：创建 PlantUML 流程图（任务流程图 + 程序逻辑流图）
 3. **impl** - 迭代实现：按计划执行
 4. **verify** - 验证交付：对照任务细则验证
 5. **docs** - 文档更新：更新相关文档
 6. **finish** - 收尾：清理临时文件、汇报完成
+
+## 最近更新（2025-12-16）
+
+- 新增 `task-parser` skill：口语化任务内容解析
+- 强化流程图规范：区分任务执行流程图和程序逻辑流图
+- 优化 `aide flow` git 提交顺序：状态先保存再提交
 
 ## 输出格式约定
 

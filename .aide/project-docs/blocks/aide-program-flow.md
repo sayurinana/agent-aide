@@ -1,7 +1,7 @@
 # aide-program-flow
 
 > 路径：aide-program/aide/flow/
-> 最后更新：2025-12-15
+> 最后更新：2025-12-16
 
 ## 概述
 
@@ -12,7 +12,7 @@
 | 文件 | 说明 |
 |------|------|
 | `__init__.py` | 模块初始化 |
-| `tracker.py` | FlowTracker 主逻辑（~200 行） |
+| `tracker.py` | FlowTracker 主逻辑（~220 行） |
 | `storage.py` | 状态文件读写（~147 行） |
 | `types.py` | 数据结构定义（~103 行） |
 | `validator.py` | 环节校验器（~50 行） |
@@ -25,7 +25,7 @@
 
 ### FlowTracker
 
-- **职责**：编排一次 flow 动作（校验 → hooks → git → 落盘 → 输出）
+- **职责**：编排一次 flow 动作（校验 → hooks → 落盘 → git → 输出）
 - **位置**：`tracker.py:20`
 - **关键方法**：
   - `start(phase, summary)` - 开始新任务
@@ -35,6 +35,8 @@
   - `back_part(phase, reason)` - 回退到之前环节
   - `issue(description)` - 记录一般问题
   - `error(description)` - 记录严重错误
+  - `_apply_action()` - 应用动作，生成新状态和 commit 消息
+  - `_do_git_commit()` - 执行 git 操作并更新 commit hash
 
 ### FlowStorage
 
@@ -80,9 +82,15 @@ aide flow show <task_id>                # 查看任务详情
 
 ## Git 集成
 
-每次 flow 操作自动执行：
-1. `git add .`
-2. `git commit -m "[aide] <phase>: <summary>"`
+**执行顺序**（已优化）：
+1. 运行 pre_commit_hooks
+2. 更新 FlowStatus（内存）
+3. 保存状态到磁盘（flow-status.json）
+4. `git add .`
+5. `git commit -m "[aide] <phase>: <summary>"`
+6. 更新 commit hash 到状态文件
+
+> **关键改进**：状态文件先保存再执行 git 操作，确保 flow-status.json 的更新包含在 commit 中
 
 提交信息格式：
 - 正常操作：`[aide] impl: 完成数据库模型设计`
@@ -99,3 +107,4 @@ aide flow show <task_id>                # 查看任务详情
 - 状态文件使用文件锁防止并发写入
 - 归档文件保存在 `.aide/logs/` 目录
 - Hooks 支持 PlantUML 自动校验和构建
+- Git 提交在状态保存之后执行，确保 .aide 目录变更被包含

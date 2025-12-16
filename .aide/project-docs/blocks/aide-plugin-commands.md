@@ -1,7 +1,7 @@
 # aide-plugin-commands
 
 > 路径：aide-marketplace/aide-plugin/commands/
-> 最后更新：2025-12-15
+> 最后更新：2025-12-16
 
 ## 概述
 
@@ -50,14 +50,30 @@ Aide 插件的斜杠命令定义，是面向 LLM 的执行指令文件。
 ### /aide:run
 
 - **用途**：任务执行（核心命令）
-- **触发 skill**：aide
+- **触发 skill**：aide, task-parser（按需）
+- **新增功能**：
+  - 口语化内容检测：在任务分析前检测内容特征
+  - 自动触发 task-parser skill 解析口语化内容
+  - 流程图规范：区分任务执行流程图和程序逻辑流图
 - **标准流程**：
-  1. task-optimize - 任务准备
-  2. flow-design - 流程设计
+  1. task-optimize - 任务准备（含口语化检测）
+  2. flow-design - 流程设计（含流程图规范）
   3. impl - 迭代实现
   4. verify - 验证交付
   5. docs - 文档更新
   6. finish - 收尾
+
+## 流程图要求
+
+### 任务执行流程图（所有任务必需）
+- 展示任务执行的步骤顺序
+- 体现决策点和依赖关系
+
+### 程序逻辑流图（程序类任务必需）
+- 从入口函数开始
+- 体现顺序/分支/循环结构
+- 语义化抽象，模块化表示
+- 支持层次化组织
 
 ## 设计原则
 
@@ -67,7 +83,7 @@ Aide 插件的斜杠命令定义，是面向 LLM 的执行指令文件。
 
 ## 依赖关系
 
-- 依赖：aide skill, env-config skill
+- 依赖：aide skill, env-config skill, task-parser skill
 - 调用：aide 命令行工具
 
 ## 注意事项
