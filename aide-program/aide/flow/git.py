@@ -25,7 +25,8 @@ class GitIntegration:
 
     def add_all(self) -> None:
         self.ensure_repo()
-        result = self._run(["add", "."], check=False)
+        # 使用 -A 确保删除的文件也被暂存
+        result = self._run(["add", "-A"], check=False)
         if result.returncode != 0:
             raise FlowError(_format_git_error("git add 失败", result))
 
