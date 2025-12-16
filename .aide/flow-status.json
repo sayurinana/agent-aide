@@ -1,7 +1,7 @@
 {
   "task_id": "2025-12-17T01-45-46",
   "current_phase": "impl",
-  "current_step": 10,
+  "current_step": 11,
   "started_at": "2025-12-17T01:45:46+08:00",
   "history": [
     {
@@ -81,7 +81,15 @@
       "action": "next-step",
       "phase": "impl",
       "step": 10,
-      "summary": "完成 project-docs 区块文档更新"
+      "summary": "完成 project-docs 区块文档更新",
+      "git_commit": "20f2fe21c0ee80b25adb1d755ff33e490db32c30"
+    },
+    {
+      "timestamp": "2025-12-17T01:54:49+08:00",
+      "action": "next-step",
+      "phase": "impl",
+      "step": 11,
+      "summary": "完成 CHANGELOG.md 更新"
     }
   ]
 }
