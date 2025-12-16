@@ -14,6 +14,7 @@
 - 调整 `FlowTracker` 中分支合并的执行顺序（先提交再合并）
 - **修复 `_merge_normal` 方法使用错误的 reset_soft 逻辑，改用 merge_squash**
 - 在分支合并前额外提交状态文件（解决 git_commit hash 更新后未提交的问题）
+- **修复 finish 后工作目录不干净的问题：在 `record_branch_finish` 后添加收尾提交**
 
 ### 新增功能
 

@@ -1,5 +1,5 @@
 {
-  "next_number": 8,
+  "next_number": 9,
   "branches": [
     {
       "number": 1,
@@ -80,6 +80,16 @@
       "status": "finished",
       "end_commit": "346ec90386190363cb71651e6bff3c64bb6b86f9",
       "finished_at": "2025-12-17T06:07:50+08:00"
+    },
+    {
+      "number": 8,
+      "branch_name": "aide/008",
+      "source_branch": "master",
+      "start_commit": "c685c31d409c5c2d729f11c7266ef6ddca7e0c23",
+      "task_id": "2025-12-17T06-27-02",
+      "task_summary": "测试修复：验证finish后工作区干净",
+      "started_at": "2025-12-17T06:27:02+08:00",
+      "status": "active"
     }
   ]
 }
