@@ -323,11 +323,11 @@ class BranchManager:
         source_branch = branch_info.source_branch
         task_branch = branch_info.branch_name
 
-        # 切换分支前清理 lock 文件，避免冲突
-        self._cleanup_lock_file()
-
         # 切回源分支
         self.git.checkout(source_branch)
+
+        # 切换分支后清理 lock 文件（确保 master 上的 lock 文件也被删除）
+        self._cleanup_lock_file()
 
         # squash 合并任务分支
         self.git.merge_squash(task_branch)
@@ -359,11 +359,11 @@ class BranchManager:
         task_branch = branch_info.branch_name
         temp_branch = f"{task_branch}-merge"
 
-        # 切换分支前清理 lock 文件，避免冲突
-        self._cleanup_lock_file()
-
         # 从起始提交检出临时分支
         self.git.checkout_new_branch(temp_branch, start_commit)
+
+        # 切换分支后清理 lock 文件
+        self._cleanup_lock_file()
 
         # 在临时分支执行 squash 合并
         self.git.merge_squash(task_branch)
