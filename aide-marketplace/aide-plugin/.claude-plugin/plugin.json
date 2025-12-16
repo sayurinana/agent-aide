@@ -1,7 +1,7 @@
 {
   "name": "aide-plugin",
   "description": "Aide 工作流体系插件，提供环境配置、项目认知、文档管理和任务执行的标准化流程",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "author": {
     "name": "Aide Team"
   },

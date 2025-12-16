@@ -19,7 +19,7 @@
 
 你可以检查一下当前项目的aide-plugin中已实现的docs.md，再对比一下.aide/project-docs中的由LLM根据docs.md的要求执行产出的项目文档，
 
-为什么这个项目文档中没有看到aide-marketplace、docs这些目录的导览信息，更别说discuss、reply这些仅有文件夹本身的空目录，整个project-docs读完都对它们完全没有感知，而且也没有体现出目录/文件结构(类似tree命令输出那样)
+为什么这个项目文档中没有看到docs这个目录的导览信息，整个project-docs读完都对它们完全没有感知，
 
 原因是什么，单纯是docs.md没有按预期行为准确的给出提示词？还是我之前的想法没有描述到位？还是什么其他原因？
 
