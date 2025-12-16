@@ -1,0 +1,64 @@
+@startuml git-branch-management-task
+!theme plain
+title 任务执行流程图：Git 分支管理功能实现
+
+start
+
+partition "子计划 1: Git 分支管理核心功能" {
+  :扩展 GitIntegration 类;
+  note right
+    新增方法:
+    - get_current_branch()
+    - is_clean()
+    - has_commits()
+    - create_branch()
+    - checkout()
+    - has_commits_since()
+    - reset_soft()
+  end note
+
+  :创建 BranchManager 类;
+  note right
+    branch.py 新文件
+    管理分支编号和概况文档
+  end note
+
+  :修改 FlowTracker.start();
+  note right
+    集成分支创建逻辑
+  end note
+
+  :修改 FlowTracker (finish 逻辑);
+  note right
+    集成安全合并策略
+  end note
+
+  :测试验证子计划 1;
+}
+
+partition "子计划 2: 流程更新" {
+  :更新 command/run.md 续接逻辑;
+  note right
+    智能判断细则符合度
+  end note
+
+  :更新确认机制;
+  note right
+    待定项: aide decide
+    细则: AskUserQuestion
+  end note
+
+  :测试验证子计划 2;
+}
+
+partition "子计划 3: 文档更新" {
+  :更新 aide skill;
+  :更新 flow 命令文档;
+  :更新 CHANGELOG;
+  :测试验证子计划 3;
+}
+
+:完成验证;
+stop
+
+@enduml
