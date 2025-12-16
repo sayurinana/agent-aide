@@ -1,5 +1,5 @@
 {
-  "next_number": 10,
+  "next_number": 11,
   "branches": [
     {
       "number": 1,
@@ -104,6 +104,16 @@
       "status": "finished",
       "end_commit": "d705a733ee3a2ad7981f9256eda4873ed7fb3996",
       "finished_at": "2025-12-17T06:32:22+08:00"
+    },
+    {
+      "number": 10,
+      "branch_name": "aide/010",
+      "source_branch": "master",
+      "start_commit": "c8d20db07da57dbbfdbbe33f3d29c58c85372c76",
+      "task_id": "2025-12-17T06-34-31",
+      "task_summary": "测试",
+      "started_at": "2025-12-17T06:34:31+08:00",
+      "status": "active"
     }
   ]
 }
