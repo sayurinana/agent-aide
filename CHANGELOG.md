@@ -12,6 +12,7 @@
 - 在 `BranchManager` 添加 `_cleanup_lock_file` 方法
 - 调整 `FlowTracker` 中分支合并的执行顺序（先提交再合并）
 - **修复 `_merge_normal` 方法使用错误的 reset_soft 逻辑，改用 merge_squash**
+- 在分支合并前额外提交状态文件（解决 git_commit hash 更新后未提交的问题）
 
 ### 新增功能
 

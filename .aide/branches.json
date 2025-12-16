@@ -1,5 +1,5 @@
 {
-  "next_number": 6,
+  "next_number": 7,
   "branches": [
     {
       "number": 1,
@@ -56,6 +56,16 @@
       "status": "finished",
       "end_commit": "b2f922bf9d43632c832c3d7c6a2ebc9545b921c5",
       "finished_at": "2025-12-17T06:02:12+08:00"
+    },
+    {
+      "number": 6,
+      "branch_name": "aide/006",
+      "source_branch": "master",
+      "start_commit": "2b0c00790994570c719b04bd2877e5a9f8f412f3",
+      "task_id": "2025-12-17T06-03-45",
+      "task_summary": "最终测试：验证合并功能",
+      "started_at": "2025-12-17T06:03:45+08:00",
+      "status": "active"
     }
   ]
 }
