@@ -68,12 +68,11 @@ ccoptimize/
 │   │   └── decide/                  待定项确认
 │   ├── bin/                         可执行脚本
 │   ├── docs/                        程序文档
-│   ├── lib/                         依赖库
-│   └── offline-installer/           离线安装器
+│   └── lib/                         依赖库
 ├── aide-marketplace/                插件市场（~21 文件）
 │   ├── .claude-plugin/              市场配置
 │   └── aide-plugin/                 Aide 插件（版本 2.1.0）
-│       ├── commands/                斜杠命令（含 auto-run/install-linux/win）
+│       ├── commands/                斜杠命令
 │       ├── skills/                  技能定义
 │       └── docs/                    插件文档
 ├── docs/                            项目文档
