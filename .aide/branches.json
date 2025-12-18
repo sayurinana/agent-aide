@@ -1,5 +1,5 @@
 {
-  "next_number": 20,
+  "next_number": 21,
   "branches": [
     {
       "number": 1,
@@ -222,6 +222,16 @@
       "status": "finished",
       "end_commit": "de4a3a63975faf59c89a28c2e29c1ac58a48789b",
       "finished_at": "2025-12-19T02:30:45+08:00"
+    },
+    {
+      "number": 20,
+      "branch_name": "aide/020",
+      "source_branch": "master",
+      "start_commit": "3de91017057046f93c9d2a52300a83314e1f7e58",
+      "task_id": "2025-12-19T03-01-27",
+      "task_summary": "开始任务准备: 调整 commands/skills/aide-program 体系",
+      "started_at": "2025-12-19T03:01:27+08:00",
+      "status": "active"
     }
   ]
 }
