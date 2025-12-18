@@ -1,5 +1,5 @@
 {
-  "next_number": 21,
+  "next_number": 22,
   "branches": [
     {
       "number": 1,
@@ -234,6 +234,16 @@
       "status": "finished",
       "end_commit": "3ed7848bd721f2c7f5fb7b247259c5c3a201ded6",
       "finished_at": "2025-12-19T03:58:34+08:00"
+    },
+    {
+      "number": 21,
+      "branch_name": "aide/021",
+      "source_branch": "master",
+      "start_commit": "af6605e5b98073727129e613cc5d37e27dc300f8",
+      "task_id": "2025-12-19T04-09-25",
+      "task_summary": "开始任务准备: 将任务计划文件清理功能从 command/run 迁移到 aide",
+      "started_at": "2025-12-19T04:09:25+08:00",
+      "status": "active"
     }
   ]
 }
