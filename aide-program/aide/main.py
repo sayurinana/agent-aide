@@ -119,6 +119,10 @@ def build_parser() -> argparse.ArgumentParser:
     flow_back_part.add_argument("reason", help="回退原因")
     flow_back_part.set_defaults(func=handle_flow_back_part)
 
+    flow_back_confirm = flow_sub.add_parser("back-confirm", help="确认返工请求")
+    flow_back_confirm.add_argument("--key", required=True, help="确认 key")
+    flow_back_confirm.set_defaults(func=handle_flow_back_confirm)
+
     flow_issue = flow_sub.add_parser("issue", help="记录一般问题（不阻塞继续）")
     flow_issue.add_argument("description", help="问题描述")
     flow_issue.set_defaults(func=handle_flow_issue)
@@ -299,6 +303,13 @@ def handle_flow_back_part(args: argparse.Namespace) -> bool:
     cfg = ConfigManager(root)
     tracker = FlowTracker(root, cfg)
     return tracker.back_part(args.phase, args.reason)
+
+
+def handle_flow_back_confirm(args: argparse.Namespace) -> bool:
+    root = find_project_root()
+    cfg = ConfigManager(root)
+    tracker = FlowTracker(root, cfg)
+    return tracker.back_confirm(args.key)
 
 
 def handle_flow_issue(args: argparse.Namespace) -> bool:

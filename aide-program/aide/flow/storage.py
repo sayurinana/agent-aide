@@ -4,13 +4,14 @@ from __future__ import annotations
 
 import json
 import os
+import secrets
 import time
 from contextlib import contextmanager
 from pathlib import Path
 
 from aide.flow.errors import FlowError
 from aide.flow.types import FlowStatus
-from aide.flow.utils import now_task_id
+from aide.flow.utils import now_iso, now_task_id
 
 
 class FlowStorage:
@@ -21,6 +22,7 @@ class FlowStorage:
         self.lock_path = self.aide_dir / "flow-status.lock"
         self.tmp_path = self.aide_dir / "flow-status.json.tmp"
         self.logs_dir = self.aide_dir / "logs"
+        self.back_confirm_path = self.aide_dir / "back-confirm-state.json"
 
     def ensure_ready(self) -> None:
         if not self.aide_dir.exists():
@@ -143,4 +145,46 @@ class FlowStorage:
                 raise FlowError(f"读取归档任务失败: {exc}")
 
         return None
+
+    # === Back-confirm 状态管理 ===
+
+    def has_pending_back_confirm(self) -> bool:
+        """检查是否存在待确认的 back 请求。"""
+        return self.back_confirm_path.exists()
+
+    def load_back_confirm_state(self) -> dict | None:
+        """加载 back-confirm 状态。"""
+        if not self.back_confirm_path.exists():
+            return None
+        try:
+            raw = self.back_confirm_path.read_text(encoding="utf-8")
+            data = json.loads(raw)
+            if not isinstance(data, dict):
+                raise ValueError("back-confirm 状态文件格式错误")
+            return data
+        except Exception as exc:
+            raise FlowError(f"读取 back-confirm 状态失败: {exc}")
+
+    def save_back_confirm_state(self, target_part: str, reason: str) -> str:
+        """保存 back-confirm 状态，返回生成的 key。"""
+        key = secrets.token_hex(6)  # 12 字符的随机 key
+        data = {
+            "pending_key": key,
+            "target_part": target_part,
+            "reason": reason,
+            "created_at": now_iso(),
+        }
+        try:
+            payload = json.dumps(data, ensure_ascii=False, indent=2) + "\n"
+            self.back_confirm_path.write_text(payload, encoding="utf-8")
+        except Exception as exc:
+            raise FlowError(f"保存 back-confirm 状态失败: {exc}")
+        return key
+
+    def clear_back_confirm_state(self) -> None:
+        """清除 back-confirm 状态文件。"""
+        try:
+            self.back_confirm_path.unlink(missing_ok=True)
+        except Exception as exc:
+            raise FlowError(f"清除 back-confirm 状态失败: {exc}")
 

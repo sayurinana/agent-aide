@@ -1,7 +1,7 @@
 {
   "task_id": "2025-12-19T00-40-02",
   "current_phase": "impl",
-  "current_step": 18,
+  "current_step": 19,
   "started_at": "2025-12-19T00:40:02+08:00",
   "history": [
     {
@@ -145,7 +145,15 @@
       "action": "next-step",
       "phase": "impl",
       "step": 18,
-      "summary": "完成子计划5: /aide:user-graph 命令实现 (配置项 + 命令文件)"
+      "summary": "完成子计划5: /aide:user-graph 命令实现 (配置项 + 命令文件)",
+      "git_commit": "eebfd18562f237cbece37f2d4ce69d3eb4151490"
+    },
+    {
+      "timestamp": "2025-12-19T02:15:49+08:00",
+      "action": "next-step",
+      "phase": "impl",
+      "step": 19,
+      "summary": "完成子计划6: 返工流程优化 (rework skill + back-confirm 机制)"
     }
   ],
   "source_branch": "master",

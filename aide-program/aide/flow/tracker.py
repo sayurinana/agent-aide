@@ -39,7 +39,64 @@ class FlowTracker:
         return self._run(action="next-part", to_phase=phase, text=summary)
 
     def back_part(self, phase: str, reason: str) -> bool:
-        return self._run(action="back-part", to_phase=phase, text=reason)
+        """返工请求：检测是否已确认，未确认则生成 key。"""
+        try:
+            self.storage.ensure_ready()
+
+            # 检查是否存在待确认的 back 请求
+            if self.storage.has_pending_back_confirm():
+                state = self.storage.load_back_confirm_state()
+                if state:
+                    output.warn("已存在待确认的返工请求")
+                    output.info(f"目标环节: {state['target_part']}")
+                    output.info(f"原因: {state['reason']}")
+                    output.info(f"请执行: aide flow back-confirm --key {state['pending_key']}")
+                    return False
+
+            # 生成新的确认 key
+            key = self.storage.save_back_confirm_state(phase, reason)
+            output.warn("返工需要确认。请先完成准备工作，然后执行:")
+            output.info(f"aide flow back-confirm --key {key}")
+            return True
+
+        except FlowError as exc:
+            output.err(str(exc))
+            return False
+
+    def back_confirm(self, key: str) -> bool:
+        """确认返工请求并执行。"""
+        try:
+            self.storage.ensure_ready()
+
+            # 检查是否存在待确认的请求
+            state = self.storage.load_back_confirm_state()
+            if state is None:
+                output.err("无待确认的返工请求")
+                return False
+
+            # 验证 key
+            if state.get("pending_key") != key:
+                output.err("确认 key 不匹配")
+                return False
+
+            # 获取目标阶段和原因
+            target_part = state["target_part"]
+            reason = state["reason"]
+
+            # 清除确认状态文件
+            self.storage.clear_back_confirm_state()
+
+            # 执行实际的 back-part 操作
+            result = self._run(action="back-part", to_phase=target_part, text=reason)
+
+            if result:
+                output.warn("建议执行 /exit 重新开始对话")
+
+            return result
+
+        except FlowError as exc:
+            output.err(str(exc))
+            return False
 
     def issue(self, description: str) -> bool:
         return self._run(action="issue", to_phase=None, text=description)

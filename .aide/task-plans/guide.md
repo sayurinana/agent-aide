@@ -21,8 +21,8 @@
 | 2 | README skill 模板集 | **completed** | spec-02.md | 创建 readme-templates skill |
 | 3 | README 命令实现 | **completed** | spec-03.md | /aide:readme 命令 |
 | 4 | 用户文档命令实现 | **completed** | spec-04.md | /aide:user-docs 命令 |
-| 5 | 用户流程图命令实现 | pending | spec-05.md | /aide:user-graph 命令 |
-| 6 | 返工流程优化 | pending | spec-06.md | rework skill + 程序修改 |
+| 5 | 用户流程图命令实现 | **completed** | spec-05.md | /aide:user-graph 命令 |
+| 6 | 返工流程优化 | **completed** | spec-06.md | rework skill + 程序修改 |
 
 ## 执行顺序
 
