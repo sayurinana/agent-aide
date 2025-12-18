@@ -19,7 +19,7 @@
 |---|------|------|----------|------|
 | 1 | 基础配置修改 | **completed** | spec-01.md | gitignore_aide 默认值、aide init 任意目录 |
 | 2 | README skill 模板集 | **completed** | spec-02.md | 创建 readme-templates skill |
-| 3 | README 命令实现 | pending | spec-03.md | /aide:readme 命令 |
+| 3 | README 命令实现 | **completed** | spec-03.md | /aide:readme 命令 |
 | 4 | 用户文档命令实现 | pending | spec-04.md | /aide:user-docs 命令 |
 | 5 | 用户流程图命令实现 | pending | spec-05.md | /aide:user-graph 命令 |
 | 6 | 返工流程优化 | pending | spec-06.md | rework skill + 程序修改 |
