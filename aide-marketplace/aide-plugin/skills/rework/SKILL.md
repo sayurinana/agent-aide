@@ -30,16 +30,16 @@
 
 3. 向用户发出提醒（见下方模板）
 
-4. 执行确认命令：
+4. 执行返工命令：
+   ```bash
+   aide flow back-part task-optimize "[原因]"
+   ```
+
+5. 执行确认命令：
    ```bash
    aide flow back-confirm --key [key]
    ```
    > 注：key 由 `aide flow back-part` 生成
-
-5. 执行返工命令：
-   ```bash
-   aide flow back-part task-optimize "[原因]"
-   ```
 
 ### task.source 更新格式
 
@@ -84,14 +84,14 @@
 
 4. 向用户发出提醒（见下方模板）
 
-5. 执行确认命令：
-   ```bash
-   aide flow back-confirm --key [key]
-   ```
-
-6. 执行返工命令：
+5. 执行返工命令：
    ```bash
    aide flow back-part [阶段] "[原因]"
+   ```
+
+6. 执行确认命令：
+   ```bash
+   aide flow back-confirm --key [key]
    ```
 
 ### new-requirements.md 格式
