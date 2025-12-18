@@ -6,6 +6,33 @@
 
 ### 新增功能
 
+**PlantUML 渲染配置**
+
+- 新增 `plantuml.font_name` 配置项：默认字体 "Arial"
+- 新增 `plantuml.dpi` 配置项：默认 DPI 300
+- 新增 `plantuml.scale` 配置项：默认缩放 0.5
+- run.md 流程图示例更新：添加配置获取说明和 skinparam/scale 示例
+
+**finish 环节清理任务计划文件**
+
+- run.md finish 环节新增清理任务计划文件（`.aide/task-plans/`）的指导
+
+**返工流程警告增强**
+
+- `aide flow back-part` 输出确认 key 前，新增 rework skill 学习提示
+- 明确要求完成准备工作后才能确认返工
+
+### 移除
+
+**移除安装命令和离线安装程序**
+
+- 删除 `/aide:install-linux` 命令（`aide-marketplace/aide-plugin/commands/install-linux.md`）
+- 删除 `/aide:install-win` 命令（`aide-marketplace/aide-plugin/commands/install-win.md`）
+- 删除 `aide-program/offline-installer/` 目录及其全部内容
+- 清理项目文档中的相关引用
+
+### 新增功能
+
 **返工流程优化**
 
 - 新增 `rework` skill：提供返工流程指南，包含返工类型判断、文档更新格式、用户提醒模板

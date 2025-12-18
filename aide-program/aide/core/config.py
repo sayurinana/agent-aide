@@ -302,6 +302,21 @@ jar_path = "lib/plantuml.jar"
 # 默认使用系统 PATH 中的 java
 # java_path = "/usr/bin/java"
 
+# 流程图渲染配置
+# LLM 编写 PlantUML 时应在文件头部添加这些配置：
+#   skinparam defaultFontName "<font_name>"
+#   skinparam dpi <dpi>
+#   scale <scale>
+
+# 默认字体名称
+font_name = "Arial"
+
+# DPI 值（影响图片清晰度）
+dpi = 300
+
+# 缩放系数（0.5 表示缩小到 50%）
+scale = 0.5
+
 ################################################################################
 # [decide] - 待定项确认配置
 ################################################################################

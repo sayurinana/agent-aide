@@ -55,8 +55,11 @@ class FlowTracker:
 
             # 生成新的确认 key
             key = self.storage.save_back_confirm_state(phase, reason)
-            output.warn("返工需要确认。请先完成准备工作，然后执行:")
-            output.info(f"aide flow back-confirm --key {key}")
+            output.warn("返工需要确认。请先完成以下准备工作:")
+            output.info("1. 触发 rework skill 学习返工流程指南")
+            output.info("2. 按照指南更新任务文档（记录返工原因和新需求）")
+            output.info("3. 完成准备工作后执行:")
+            output.info(f"   aide flow back-confirm --key {key}")
             return True
 
         except FlowError as exc:

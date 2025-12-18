@@ -31,7 +31,6 @@ ccoptimize/
 │   ├── bin/                     可执行脚本
 │   ├── docs/                    程序文档
 │   ├── lib/                     依赖库（plantuml.jar）
-│   ├── offline-installer/       离线安装器
 │   ├── .venv/                   [ignored] 虚拟环境
 │   ├── requirements.txt         依赖清单
 │   └── .gitignore               忽略规则
@@ -76,7 +75,6 @@ ccoptimize/
   - `aide/decide/` - 待定项确认模块
   - `bin/` - 可执行脚本
   - `docs/` - 程序文档
-  - `offline-installer/` - 离线安装器（Linux/Windows）
 
 ### 区块 2：aide-marketplace（插件市场）
 
@@ -86,7 +84,7 @@ ccoptimize/
 - **状态**：已完成
 - **说明**：Aide 插件市场和 aide-plugin 源码（版本 2.1.0），包括：
   - `.claude-plugin/` - 市场配置
-  - `aide-plugin/commands/` - 斜杠命令定义（含 auto-run、install-linux、install-win）
+  - `aide-plugin/commands/` - 斜杠命令定义
   - `aide-plugin/skills/` - 技能定义
   - `aide-plugin/docs/` - 插件文档
 

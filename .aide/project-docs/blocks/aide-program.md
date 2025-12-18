@@ -91,15 +91,6 @@ aide-program/
 │       └── data.md                  数据格式
 ├── lib/                             依赖库
 │   └── plantuml.jar                 PlantUML（二进制）
-├── offline-installer/               离线安装器目录
-│   ├── linux/                       Linux 安装
-│   │   ├── install.sh               安装脚本（470 行）
-│   │   ├── README.md                安装说明
-│   │   └── resources.json           资源配置
-│   └── windows/                     Windows 安装
-│       ├── install.ps1              PowerShell 安装脚本（405 行）
-│       ├── README.md                安装说明
-│       └── resources.json           资源配置
 ├── .venv/                           [ignored] 虚拟环境
 ├── requirements.txt                 Python 依赖
 └── .gitignore                       忽略规则
