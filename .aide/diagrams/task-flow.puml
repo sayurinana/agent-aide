@@ -1,0 +1,39 @@
+@startuml task-flow
+skinparam defaultFontName "Arial"
+skinparam dpi 300
+scale 0.5
+
+title 任务执行流程图
+
+start
+
+partition "任务 2：流程图配置优化" {
+    :修改 config.py;
+    note right
+        在 DEFAULT_CONFIG 的 [plantuml] 节
+        添加 font_name、dpi、scale 配置项
+    end note
+}
+
+partition "任务 1 + 任务 2：run.md 修改" {
+    :修改 run.md 的 finish 环节;
+    note right
+        添加清理任务计划文件的指导
+        包含获取 task.plans_path 配置
+    end note
+
+    :修改 run.md 的流程图部分;
+    note right
+        更新流程图示例结构
+        添加配置获取和使用说明
+    end note
+}
+
+partition "验证" {
+    :验证 config.py 修改;
+    :验证 run.md 修改;
+}
+
+stop
+
+@enduml
