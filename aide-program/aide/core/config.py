@@ -101,10 +101,10 @@ DEFAULT_CONFIG = """############################################################
 
 [general]
 # 是否在 .gitignore 中忽略 .aide 目录
-# - true（默认）：自动添加 .aide/ 到 .gitignore，不跟踪 aide 状态
-# - false：不修改 .gitignore，允许 git 跟踪 .aide 目录
-#   适用于需要在多设备同步 aide 状态的场景
-gitignore_aide = true
+# - true：自动添加 .aide/ 到 .gitignore，不跟踪 aide 状态
+# - false（默认）：不修改 .gitignore，允许 git 跟踪 .aide 目录
+#   推荐使用此设置，便于多设备同步 aide 状态和任务历史
+gitignore_aide = false
 
 ################################################################################
 # [runtime] - Aide 运行时要求
@@ -241,6 +241,30 @@ path = ".aide/project-docs"
 block_plan_path = ".aide/project-docs/block-plan.md"
 
 ################################################################################
+# [user_docs] - 面向用户的文档配置
+################################################################################
+# 配置面向用户的文档系统。
+# 包括 README、用户文档和流程图等。
+
+[user_docs]
+# README 文件路径（相对于项目根目录）
+readme_path = "README.md"
+
+# README 编写规范文件路径
+# 存放项目的 README 编写规范和模板选择
+rules_path = "make-readme-rules.md"
+
+# 用户文档目录路径
+docs_path = "docs"
+
+# 用户流程图目录路径
+graph_path = "docs/graph-guide"
+
+# 流程图计划文件路径
+# 存放流程图编写计划和进度，用于分步执行和接续执行
+graph_plan_path = "docs/graph-guide/plan.md"
+
+################################################################################
 # [flow] - 流程追踪配置
 ################################################################################
 # 配置任务执行流程的追踪和校验。
@@ -327,11 +351,11 @@ class ConfigManager:
 
     def ensure_gitignore(self) -> None:
         """根据配置决定是否在 .gitignore 中添加 .aide/ 忽略项。"""
-        # 读取配置，默认为 True（忽略 .aide 目录）
+        # 读取配置，默认为 False（不忽略 .aide 目录）
         config = self.load_config()
         gitignore_aide = self._walk_get(config, "general.gitignore_aide")
         if gitignore_aide is None:
-            gitignore_aide = True  # 默认值
+            gitignore_aide = False  # 默认值
 
         if not gitignore_aide:
             # 配置为 False，不添加忽略项

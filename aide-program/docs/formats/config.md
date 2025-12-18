@@ -25,7 +25,7 @@ aide 使用 TOML 格式的配置文件，位于 `.aide/config.toml`。
 
 # general: 通用设置
 [general]
-gitignore_aide = true    # 是否自动将 .aide/ 添加到 .gitignore
+gitignore_aide = false   # 是否自动将 .aide/ 添加到 .gitignore
 
 # runtime: aide 自身运行要求
 [runtime]
@@ -81,11 +81,12 @@ timeout = 0
 
 | 字段 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
-| `gitignore_aide` | bool | `true` | 是否自动将 .aide/ 添加到 .gitignore |
+| `gitignore_aide` | bool | `false` | 是否自动将 .aide/ 添加到 .gitignore |
 
 **使用场景**：
 - `aide init` 时检查此配置，决定是否修改 .gitignore
-- 设为 `false` 可将 .aide/ 纳入版本控制
+- 默认 `false`，推荐将 .aide/ 纳入版本控制，便于多设备同步
+- 设为 `true` 可自动将 .aide/ 添加到 .gitignore
 
 ### 4.2 [runtime] 运行时配置
 

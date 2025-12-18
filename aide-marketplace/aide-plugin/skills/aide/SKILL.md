@@ -146,9 +146,34 @@ aide flow next-part impl "流程设计完成，开始实现"
 aide flow back-part <环节名> "<原因>"
 ```
 
+**注意**：执行 back-part 时会生成一个确认 key，需要先完成准备工作后执行 back-confirm 确认。
+
 **示例**：
 ```bash
 aide flow back-part flow-design "实现中发现设计遗漏，需要补充"
+# 输出: ⚠ 返工需要确认。请先完成准备工作，然后执行:
+#       aide flow back-confirm --key abc123
+```
+
+### aide flow back-confirm
+
+确认返工请求并执行。
+
+```bash
+aide flow back-confirm --key <key>
+```
+
+**参数**：
+
+| 参数 | 说明 |
+|------|------|
+| `--key` | back-part 生成的确认 key |
+
+**示例**：
+```bash
+aide flow back-confirm --key abc123
+# 输出: ⚠ 回退到环节: flow-design
+#       ⚠ 建议执行 /exit 重新开始对话
 ```
 
 ### aide flow issue
