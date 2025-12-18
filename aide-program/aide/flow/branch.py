@@ -620,11 +620,10 @@ class BranchManager:
 
         # 8. 创建收尾提交
         self.git.add_all()
-        short_hash = start_commit[:7] if start_commit else "unknown"
         if is_force_clean:
-            commit_msg = f"{short_hash}的强制清理"
+            commit_msg = f"任务中断，清理：{task_branch} - {branch_info.task_summary}"
         else:
-            commit_msg = f"{short_hash}的任务收尾"
+            commit_msg = f"完成：{task_branch} - {branch_info.task_summary}"
         self.git.commit(commit_msg)
 
         return True, f"任务分支已合并到 {source_branch}"

@@ -1,7 +1,7 @@
 {
   "task_id": "2025-12-19T04-37-00",
   "current_phase": "impl",
-  "current_step": 7,
+  "current_step": 8,
   "started_at": "2025-12-19T04:37:00+08:00",
   "history": [
     {
@@ -57,7 +57,15 @@
       "action": "next-step",
       "phase": "impl",
       "step": 7,
-      "summary": "子任务 1 完成：移除 run.md 和 auto-run.md 中的清理代码"
+      "summary": "子任务 1 完成：移除 run.md 和 auto-run.md 中的清理代码",
+      "git_commit": "2b2c130f9594d0443dcb06ef6490e34e6930cbb5"
+    },
+    {
+      "timestamp": "2025-12-19T04:45:41+08:00",
+      "action": "next-step",
+      "phase": "impl",
+      "step": 8,
+      "summary": "子任务 2 完成：修改 branch.py 中的提交信息格式"
     }
   ],
   "source_branch": "master",
