@@ -65,9 +65,38 @@ class DecideHandlers:
         if pending is None:
             return self._server_error("无法读取待定项数据", "文件不存在或格式错误")
 
-        body = json.dumps(pending.to_dict(include_meta=False), ensure_ascii=False).encode("utf-8")
+        # 转换为字典并为每个 item 添加 source_content
+        data = pending.to_dict(include_meta=False)
+        for item in data.get("items", []):
+            location = item.get("location")
+            if location and location.get("file"):
+                source_content = self._read_source_lines(
+                    location["file"],
+                    location.get("start", 1),
+                    location.get("end", 1)
+                )
+                if source_content:
+                    item["source_content"] = source_content
+
+        body = json.dumps(data, ensure_ascii=False).encode("utf-8")
         headers = self._cors_headers({"Content-Type": "application/json; charset=utf-8"})
         return 200, headers, body
+
+    def _read_source_lines(self, file_path: str, start: int, end: int) -> str | None:
+        """读取源文件指定行范围的内容"""
+        try:
+            # 相对路径基于项目根目录
+            full_path = Path(self.storage.root) / file_path
+            if not full_path.exists():
+                return None
+            lines = full_path.read_text(encoding="utf-8").splitlines()
+            # 转换为 0-indexed
+            start_idx = max(0, start - 1)
+            end_idx = min(len(lines), end)
+            selected = lines[start_idx:end_idx]
+            return "\n".join(selected)
+        except Exception:
+            return None
 
     def handle_submit(self, body: bytes) -> Response:
         try:

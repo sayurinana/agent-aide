@@ -1,7 +1,7 @@
 {
   "task_id": "2025-12-19T04-37-00",
   "current_phase": "impl",
-  "current_step": 8,
+  "current_step": 9,
   "started_at": "2025-12-19T04:37:00+08:00",
   "history": [
     {
@@ -65,7 +65,15 @@
       "action": "next-step",
       "phase": "impl",
       "step": 8,
-      "summary": "子任务 2 完成：修改 branch.py 中的提交信息格式"
+      "summary": "子任务 2 完成：修改 branch.py 中的提交信息格式",
+      "git_commit": "804fdc62012c70e9802fe8dfdab52d362a711329"
+    },
+    {
+      "timestamp": "2025-12-19T04:47:07+08:00",
+      "action": "next-step",
+      "phase": "impl",
+      "step": 9,
+      "summary": "子任务 3 完成：调整 decide 界面显示源文件内容"
     }
   ],
   "source_branch": "master",
