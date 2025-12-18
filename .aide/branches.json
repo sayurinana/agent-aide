@@ -1,5 +1,5 @@
 {
-  "next_number": 12,
+  "next_number": 13,
   "branches": [
     {
       "number": 1,
@@ -128,6 +128,16 @@
       "status": "finished",
       "end_commit": "8ea9ce72954b3c2ed7417679996852cf0dfb18cb",
       "finished_at": "2025-12-18T10:03:52+08:00"
+    },
+    {
+      "number": 12,
+      "branch_name": "aide/012",
+      "source_branch": "master",
+      "start_commit": "c6f45f9e36ad877b413c12c67a463d8b0c862dbc",
+      "task_id": "2025-12-18T10-09-00",
+      "task_summary": "开始任务准备: 修复 aide finish 后 .lock 文件残留问题",
+      "started_at": "2025-12-18T10:09:00+08:00",
+      "status": "active"
     }
   ]
 }

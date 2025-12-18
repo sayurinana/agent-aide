@@ -1,0 +1,18 @@
+{
+  "task_id": "2025-12-18T10-09-00",
+  "current_phase": "task-optimize",
+  "current_step": 1,
+  "started_at": "2025-12-18T10:09:00+08:00",
+  "history": [
+    {
+      "timestamp": "2025-12-18T10:09:00+08:00",
+      "action": "start",
+      "phase": "task-optimize",
+      "step": 1,
+      "summary": "开始任务准备: 修复 aide finish 后 .lock 文件残留问题"
+    }
+  ],
+  "source_branch": "master",
+  "start_commit": "c6f45f9e36ad877b413c12c67a463d8b0c862dbc",
+  "task_branch": "aide/012"
+}
