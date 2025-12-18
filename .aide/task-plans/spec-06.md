@@ -142,43 +142,35 @@
 1. **back-part 命令修改**：
    - 执行前检查是否有待确认的 back 请求
    - 如无确认，输出提示并生成随机 key
-   - 要求 LLM 确认已完成准备工作
-   - 等待 back-confirm 命令
+   - 记录目标阶段和原因到状态文件
+   - 要求 LLM 确认已完成准备工作后执行 back-confirm
 
 2. **back-confirm 命令实现**：
    - 验证 key 是否匹配
-   - 匹配则标记为已确认
-   - 返回确认成功信息
-
-3. **back-part 命令继续执行**：
-   - 检测到确认后执行实际的 back-part 操作
-   - 执行成功后：
+   - 匹配成功后：
+     - 读取状态文件中的目标阶段和原因
+     - 直接执行 back-part 操作
      - 暂存所有更改：`git add .`
      - 创建清洁提交：`git commit -m "[aide] 返工前清洁提交"`
      - 输出警告：建议用户 `/exit` 重新对话
+     - 清理状态文件
 
 **数据流**：
 
 ```
-LLM 请求 back-part
+LLM 请求 back-part flow-design "设计遗漏"
        │
        ↓
-aide 检测未确认，输出提示，生成 key "abc123"
+aide 检测未确认，记录目标和原因，生成 key "abc123"，输出提示
        │
        ↓
-LLM 确认已完成准备，执行 back-confirm --key abc123
+LLM 完成准备工作后，执行 back-confirm --key abc123
        │
        ↓
-aide 验证 key，标记已确认
+aide 验证 key 成功 → 执行 back-part → 创建清洁提交 → 输出警告
        │
        ↓
-LLM 再次请求 back-part
-       │
-       ↓
-aide 检测已确认，执行 back-part
-       │
-       ↓
-aide 创建清洁提交，输出警告
+结束（LLM 无需第三次请求）
 ```
 
 ### 6.4 状态存储
@@ -192,20 +184,21 @@ aide 创建清洁提交，输出警告
   "pending_key": "abc123",
   "target_part": "flow-design",
   "reason": "设计遗漏，需要补充",
-  "created_at": "2025-12-19T10:00:00+08:00",
-  "confirmed": false
+  "created_at": "2025-12-19T10:00:00+08:00"
 }
 ```
+
+> 注：验证成功后直接执行并清理状态文件，无需 confirmed 字段
 
 ## 验证标准
 
 - [ ] rework skill 内容完整，指导清晰
 - [ ] /aide:run 正确引用 rework skill
-- [ ] `aide flow back-part` 在未确认时拒绝执行
-- [ ] `aide flow back-confirm --key` 正确验证 key
-- [ ] 确认后 back-part 正常执行
+- [ ] `aide flow back-part` 在未确认时生成 key 并记录状态
+- [ ] `aide flow back-confirm --key` 正确验证 key 并直接执行 back-part
 - [ ] 执行后创建清洁提交
 - [ ] 输出正确的警告信息
+- [ ] 状态文件在完成后被清理
 
 ## 依赖
 
