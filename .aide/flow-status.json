@@ -1,7 +1,7 @@
 {
   "task_id": "2025-12-19T05-31-03",
   "current_phase": "impl",
-  "current_step": 6,
+  "current_step": 7,
   "started_at": "2025-12-19T05:31:03+08:00",
   "history": [
     {
@@ -49,7 +49,15 @@
       "action": "next-part",
       "phase": "impl",
       "step": 6,
-      "summary": "流程设计完成，进入实现环节"
+      "summary": "流程设计完成，进入实现环节",
+      "git_commit": "837fcbef5cc629e34e5f8ab6cd41659c8a013014"
+    },
+    {
+      "timestamp": "2025-12-19T05:36:43+08:00",
+      "action": "next-step",
+      "phase": "impl",
+      "step": 7,
+      "summary": "代码实现完成：添加 _clean_task_summary 函数并修改提交信息生成逻辑"
     }
   ],
   "source_branch": "master",
