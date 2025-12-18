@@ -1,7 +1,7 @@
 {
   "task_id": "2025-12-19T00-40-02",
   "current_phase": "task-optimize",
-  "current_step": 5,
+  "current_step": 6,
   "started_at": "2025-12-19T00:40:02+08:00",
   "history": [
     {
@@ -41,7 +41,15 @@
       "action": "next-step",
       "phase": "task-optimize",
       "step": 5,
-      "summary": "根据用户反馈修正 spec-06 数据流设计"
+      "summary": "根据用户反馈修正 spec-06 数据流设计",
+      "git_commit": "b2ef44157bc3b8034601a62eef0a60174c4a70f0"
+    },
+    {
+      "timestamp": "2025-12-19T01:08:18+08:00",
+      "action": "next-step",
+      "phase": "task-optimize",
+      "step": 6,
+      "summary": "任务细则已确认"
     }
   ],
   "source_branch": "master",

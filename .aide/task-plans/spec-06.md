@@ -149,11 +149,11 @@
    - 验证 key 是否匹配
    - 匹配成功后：
      - 读取状态文件中的目标阶段和原因
-     - 直接执行 back-part 操作
+     - 清理状态文件（删除 `.aide/back-confirm-state.json`）
+     - 执行 back-part 操作
      - 暂存所有更改：`git add .`
      - 创建清洁提交：`git commit -m "[aide] 返工前清洁提交"`
      - 输出警告：建议用户 `/exit` 重新对话
-     - 清理状态文件
 
 **数据流**：
 
@@ -167,7 +167,7 @@ aide 检测未确认，记录目标和原因，生成 key "abc123"，输出提�
 LLM 完成准备工作后，执行 back-confirm --key abc123
        │
        ↓
-aide 验证 key 成功 → 执行 back-part → 创建清洁提交 → 输出警告
+aide 验证 key 成功 → 清理状态文件 → 执行 back-part → 创建清洁提交 → 输出警告
        │
        ↓
 结束（LLM 无需第三次请求）
