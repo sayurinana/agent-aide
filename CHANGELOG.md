@@ -13,9 +13,11 @@
 - 新增 `plantuml.scale` 配置项：默认缩放 0.5
 - run.md 流程图示例更新：添加配置获取说明和 skinparam/scale 示例
 
-**finish 环节清理任务计划文件**
+**finish 环节自动清理任务计划文件**
 
-- run.md finish 环节新增清理任务计划文件（`.aide/task-plans/`）的指导
+- `aide flow next-part finish` 时自动清理 `.aide/task-plans/` 目录下的所有文件
+- 功能由 `hooks.py` 中的 `_hook_clean_task_plans` 实现
+- 从 run.md 中删除了手动清理指令
 
 **返工流程警告增强**
 

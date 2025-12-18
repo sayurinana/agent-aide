@@ -27,6 +27,8 @@ def run_pre_commit_hooks(
         _hook_plantuml(root=root, config=config)
     if from_phase == "docs" and action in {"next-part", "back-part"}:
         _hook_changelog_on_leave_docs(root=root, git=git, status=status)
+    if to_phase == "finish" and action == "next-part":
+        _hook_clean_task_plans(root=root, config=config)
 
 
 def run_post_commit_hooks(*, to_phase: str, action: str) -> None:
@@ -144,4 +146,30 @@ def _hook_changelog_on_leave_docs(*, root: Path, git: GitIntegration, status: Fl
             return
 
     raise FlowError("离开 docs 前需要更新 CHANGELOG.md（未检测到 docs 阶段的更新记录）")
+
+
+def _hook_clean_task_plans(*, root: Path, config: dict[str, Any] | None) -> None:
+    """进入 finish 时清理任务计划文件。"""
+    # 获取任务计划目录配置
+    plans_path = ".aide/task-plans"
+    if config:
+        plans_path = config.get("task", {}).get("plans_path", plans_path)
+
+    # 移除末尾斜杠（如有）
+    plans_path = plans_path.rstrip("/")
+
+    plans_dir = root / plans_path
+    if not plans_dir.exists():
+        return
+
+    # 收集所有文件
+    files = [f for f in plans_dir.iterdir() if f.is_file()]
+    if not files:
+        return
+
+    # 删除文件
+    for f in files:
+        f.unlink()
+
+    output.ok(f"已清理任务计划文件: {len(files)} 个")
 

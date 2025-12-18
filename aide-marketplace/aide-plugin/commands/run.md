@@ -410,12 +410,6 @@ aide flow next-part finish "用户确认通过，进入收尾"
 ```
 
 - 清理临时文件
-- 清理任务计划文件（如有）：
-  ```bash
-  # 获取任务计划目录
-  aide config get task.plans_path
-  # 删除目录下的所有文件（guide.md, spec-*.md 等）
-  ```
 - 检查遗漏的 TODO
 - 向用户汇报完成情况
 
