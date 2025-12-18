@@ -1,5 +1,5 @@
 {
-  "next_number": 23,
+  "next_number": 24,
   "branches": [
     {
       "number": 1,
@@ -258,6 +258,18 @@
       "status": "finished",
       "end_commit": "76026e4b62996b667b2f788a2cf6e34cc79cebfb",
       "finished_at": "2025-12-19T04:50:04+08:00"
+    },
+    {
+      "number": 23,
+      "branch_name": "aide/023",
+      "source_branch": "master",
+      "start_commit": "d2842d46dbef9b7fe9f85749a9d2c8feae4ee528",
+      "task_id": "2025-12-19T05-00-29",
+      "task_summary": "开始任务准备: 为 user-docs 添加分步执行和接续执行能力",
+      "started_at": "2025-12-19T05:00:29+08:00",
+      "status": "finished",
+      "end_commit": "91c9bca5d5356e7c06d018fab0138152ab96c56a",
+      "finished_at": "2025-12-19T05:17:07+08:00"
     }
   ]
 }
