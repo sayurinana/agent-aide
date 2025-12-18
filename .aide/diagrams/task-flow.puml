@@ -1,0 +1,49 @@
+@startuml
+skinparam defaultFontName "Arial"
+skinparam dpi 300
+scale 0.5
+
+title 任务执行流程图：调整 aide 体系
+
+start
+
+partition "子任务 1：移除 commands 清理代码" {
+  :读取 run.md;
+  :移除"清理临时文件"行;
+  :移除 next-step 代码块;
+  :保存 run.md;
+
+  :读取 auto-run.md;
+  :移除"清理临时文件"行;
+  :移除 next-step 代码块;
+  :保存 auto-run.md;
+}
+
+partition "子任务 2：修改 finish 提交信息" {
+  :读取 branch.py;
+  :定位 _merge_normal 方法;
+  :修改 finish 提交信息格式
+  完成：<分支名> - <任务名>;
+  :修改 clean 提交信息格式
+  任务中断，清理：<分支名> - <任务名>;
+  :保存 branch.py;
+}
+
+partition "子任务 3：调整 decide 界面" {
+  :修改 handlers.py;
+  :添加 _read_source_lines 方法;
+  :修改 handle_get_items
+  添加 source_content 字段;
+
+  :修改 app.js;
+  :更新 renderItemCard
+  显示源文件内容;
+}
+
+partition "验证" {
+  :检查文件修改正确;
+  :验证代码无语法错误;
+}
+
+stop
+@enduml
