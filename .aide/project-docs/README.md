@@ -1,18 +1,18 @@
-# ccoptimize 项目文档
+# agent-aide 项目文档
 
-> 最后更新：2025-12-18
+> 最后更新：2025-12-19
 
 ## 项目概述
 
-**ccoptimize** 是 Aide 工作流工具优化项目，包含 Aide 命令行工具的核心实现和 Claude Code 插件。
+**agent-aide** 是 Aide 工作流工具项目，包含 Aide 命令行工具的核心实现和 Claude Code 插件。
 
 ### 项目统计
 
 | 指标 | 数值 |
 |------|------|
-| 总文件数 | 139（排除忽略项） |
-| 总目录数 | 47（含 5 个空目录） |
-| 代码行数 | 约 21000 行 |
+| 总文件数 | 161（排除忽略项） |
+| 总目录数 | 54（含 3 个空目录） |
+| 代码行数 | 约 5350 行（Python） |
 | 主要语言 | Python |
 | 被忽略项 | 7 个目录 |
 
@@ -23,7 +23,7 @@
 | 区块 | 路径 | 文档 | 说明 |
 |------|------|------|------|
 | aide-program | `aide-program/` | [查看](blocks/aide-program.md) | 核心命令行工具实现 |
-| aide-marketplace | `aide-marketplace/` | [查看](blocks/aide-marketplace.md) | 插件市场和 aide-plugin |
+| aide-marketplace | `aide-marketplace/` | [查看](blocks/aide-marketplace.md) | 插件市场和 aide-plugin（版本 2.1.3） |
 | 项目配置与文档 | `.aide/`, `docs/` 等 | [查看](blocks/project-config-docs.md) | 配置文件和项目文档 |
 
 ## 快速导航
@@ -35,29 +35,30 @@
 | 环境检测 | `aide-program/aide/env/` | 检测 Python/Node/Rust 等环境 |
 | 流程追踪 | `aide-program/aide/flow/` | 任务状态管理和 Git 集成 |
 | 待定项确认 | `aide-program/aide/decide/` | Web 界面交互式决策 |
-| 斜杠命令 | `aide-marketplace/aide-plugin/commands/` | `/aide:run` 等命令定义 |
-| 技能定义 | `aide-marketplace/aide-plugin/skills/` | aide、env-config、task-parser |
+| 斜杠命令 | `aide-marketplace/aide-plugin/commands/` | 8 个命令定义 |
+| 技能定义 | `aide-marketplace/aide-plugin/skills/` | 5 个技能定义 |
 
 ### 按文件类型
 
 | 类型 | 数量 | 位置 |
 |------|------|------|
 | Python 源码 | ~35 | `aide-program/aide/` |
-| Markdown 命令 | 4 | `aide-marketplace/aide-plugin/commands/` |
-| Markdown 技能 | 3 | `aide-marketplace/aide-plugin/skills/` |
+| Markdown 命令 | 8 | `aide-marketplace/aide-plugin/commands/` |
+| Markdown 技能 | 5 | `aide-marketplace/aide-plugin/skills/` |
 | 配置文件 | ~5 | `.aide/`, 根目录 |
-| 文档 | ~15 | `docs/`, `aide-program/docs/` |
+| 文档 | ~15 | `docs/reference/`, `aide-program/docs/` |
 
 ## 目录结构
 
 ```
-ccoptimize/
+agent-aide/
 ├── .aide/                           项目级 Aide 配置
 │   ├── config.toml                  配置文件
 │   ├── branches.json                分支概况数据
 │   ├── branches.md                  分支概况文档
-│   ├── pending-items.json           待定项数据
-│   ├── diagrams/                    PlantUML 流程图
+│   ├── decisions/                   [空目录] 决策记录
+│   ├── diagrams/                    [空目录] PlantUML 流程图
+│   ├── task-plans/                  [空目录] 复杂任务计划
 │   ├── logs/                        历史任务归档
 │   └── project-docs/                本文档目录
 ├── aide-program/                    核心程序（~72 文件）
@@ -69,19 +70,14 @@ ccoptimize/
 │   ├── bin/                         可执行脚本
 │   ├── docs/                        程序文档
 │   └── lib/                         依赖库
-├── aide-marketplace/                插件市场（~21 文件）
+├── aide-marketplace/                插件市场（~39 文件）
 │   ├── .claude-plugin/              市场配置
-│   └── aide-plugin/                 Aide 插件（版本 2.1.0）
-│       ├── commands/                斜杠命令
-│       ├── skills/                  技能定义
+│   └── aide-plugin/                 Aide 插件（版本 2.1.3）
+│       ├── commands/                斜杠命令（8 个）
+│       ├── skills/                  技能定义（5 个）
 │       └── docs/                    插件文档
 ├── docs/                            项目文档
-│   ├── aide-overview.md             系统概述
-│   ├── project-details.md           详细说明
-│   └── 01-04 指南系列               Claude Code 指南
-├── statements/                      [空目录] 声明文档
-├── discuss/                         [空目录] 讨论记录
-├── reply/                           [空目录] 回复记录
+│   └── reference/                   参考文档（7 个）
 ├── CLAUDE.md                        Claude 配置指令
 ├── CHANGELOG.md                     变更日志
 ├── README.md                        项目说明
@@ -105,6 +101,19 @@ Aide 是一套面向 LLM 驱动开发的工作流工具，核心设计原则：
 | Commands | 定义流程和步骤 | `/aide:run` 定义任务执行流程 |
 | Skills | 提供工具使用指南 | `aide` skill 提供 CLI 命令用法 |
 
+### 命令清单
+
+| 命令 | 说明 |
+|------|------|
+| `/aide:setup` | 环境配置（分析、检测、修复） |
+| `/aide:load` | 项目认知载入 |
+| `/aide:docs` | 项目文档创建和维护 |
+| `/aide:run` | 任务执行（核心命令） |
+| `/aide:auto-run` | 全自动任务执行 |
+| `/aide:readme` | README 生成 |
+| `/aide:user-docs` | 用户文档生成 |
+| `/aide:user-graph` | 用户流程图生成 |
+
 ### 环境检测模块
 
 | 类型 | 模块 | 说明 |
@@ -118,9 +127,7 @@ Aide 是一套面向 LLM 驱动开发的工作流工具，核心设计原则：
 |------|------|
 | `.aide/decisions/` | 待定项决策记录 |
 | `.aide/diagrams/` | PlantUML 流程图 |
-| `discuss/` | 项目讨论记录 |
-| `reply/` | 项目回复记录 |
-| `statements/` | 声明文档 |
+| `.aide/task-plans/` | 复杂任务计划文档 |
 
 ## 被忽略项
 
