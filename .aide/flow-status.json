@@ -1,7 +1,7 @@
 {
   "task_id": "2025-12-19T04-09-25",
-  "current_phase": "confirm",
-  "current_step": 15,
+  "current_phase": "finish",
+  "current_step": 16,
   "started_at": "2025-12-19T04:09:25+08:00",
   "history": [
     {
@@ -121,7 +121,15 @@
       "action": "next-step",
       "phase": "confirm",
       "step": 15,
-      "summary": "用户确认通过"
+      "summary": "用户确认通过",
+      "git_commit": "c8b90cbf95c916b75b2337fb4591763f69833dc4"
+    },
+    {
+      "timestamp": "2025-12-19T04:25:16+08:00",
+      "action": "next-part",
+      "phase": "finish",
+      "step": 16,
+      "summary": "用户确认通过，进入收尾"
     }
   ],
   "source_branch": "master",
