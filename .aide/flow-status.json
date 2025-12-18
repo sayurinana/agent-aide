@@ -1,7 +1,7 @@
 {
   "task_id": "2025-12-18T10-09-00",
   "current_phase": "task-optimize",
-  "current_step": 2,
+  "current_step": 3,
   "started_at": "2025-12-18T10:09:00+08:00",
   "history": [
     {
@@ -17,7 +17,15 @@
       "action": "next-step",
       "phase": "task-optimize",
       "step": 2,
-      "summary": "问题定位完成：finish 环节在锁内执行 git add，导致 .lock 文件被提交"
+      "summary": "问题定位完成：finish 环节在锁内执行 git add，导致 .lock 文件被提交",
+      "git_commit": "9d4f6b8a2234376ce5498fc0a0c4f3d06e2f4550"
+    },
+    {
+      "timestamp": "2025-12-18T10:11:18+08:00",
+      "action": "next-step",
+      "phase": "task-optimize",
+      "step": 3,
+      "summary": "修复已实现：git add_all 方法排除 .lock 文件"
     }
   ],
   "source_branch": "master",
