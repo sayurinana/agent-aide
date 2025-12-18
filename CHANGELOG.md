@@ -2,6 +2,30 @@
 
 本文件记录 Aide 项目对使用者可见的重要变更。
 
+## 2025-12-19
+
+### 新增功能
+
+**返工流程优化**
+
+- 新增 `rework` skill：提供返工流程指南，包含返工类型判断、文档更新格式、用户提醒模板
+- 新增 `aide flow back-confirm --key <key>` 命令：确认返工请求并执行
+- 修改 `aide flow back-part`：执行时生成确认 key，需先完成准备工作后执行 back-confirm 确认
+- 返工确认机制防止误操作，确保返工前完成文档更新
+- 状态文件 `.aide/back-confirm-state.json` 用于存储待确认的返工请求
+
+**面向用户的文档系统**
+
+- 新增 `/aide:readme` 命令：生成面向用户的 README.md
+- 新增 `/aide:user-docs` 命令：生成面向用户的文档
+- 新增 `/aide:user-graph` 命令：生成面向用户的流程图
+- 新增 `readme-templates` skill：提供 README 编写模板和模块
+
+**基础配置修改**
+
+- `gitignore_aide` 配置项默认值改为 `false`
+- `aide init` 支持在任意目录执行初始化
+
 ## 2025-12-18
 
 ### 修复
