@@ -6,60 +6,57 @@ scale 0.5
 title 程序逻辑流图：任务计划文件清理钩子
 
 start
-:run_pre_commit_hooks 被调用;
-note right
-  参数: root, git, status,
-  from_phase, to_phase, action, config
-end note
 
-if (to_phase == "finish" \n&& action == "next-part"?) then (是)
-  :调用 _hook_clean_task_plans;
-else (否)
-  :跳过清理;
-endif
+partition "run_pre_commit_hooks" {
+  :接收参数;
+  note right
+    root, git, status,
+    from_phase, to_phase,
+    action, config
+  end note
 
-' 其他已有钩子逻辑
-if (from_phase == "flow-design" \n&& action in ["next-part", "back-part"]?) then (是)
-  :调用 _hook_plantuml;
-endif
+  if (to_phase == finish\n且 action == next-part?) then (是)
+    :调用清理钩子;
+  else (否)
+  endif
 
-if (from_phase == "docs" \n&& action in ["next-part", "back-part"]?) then (是)
-  :调用 _hook_changelog_on_leave_docs;
-endif
+  if (from_phase == flow-design?) then (是)
+    :调用 PlantUML 钩子;
+  else (否)
+  endif
 
-stop
+  if (from_phase == docs?) then (是)
+    :调用 CHANGELOG 钩子;
+  else (否)
+  endif
+}
 
-== _hook_clean_task_plans 函数详情 ==
+partition "_hook_clean_task_plans" {
+  :获取 plans_path 配置;
+  note right: 默认 .aide/task-plans
 
-start
-:获取 task.plans_path 配置;
-note right: 默认值 ".aide/task-plans"
+  :构建目录路径;
 
-:构建目录路径;
-:plans_dir = root / plans_path;
+  if (目录存在?) then (否)
+    :返回;
+    detach
+  else (是)
+  endif
 
-if (plans_dir 存在?) then (否)
-  :直接返回;
-  stop
-else (是)
-endif
+  :列出所有文件;
 
-:列出目录下所有文件;
-:files = plans_dir.glob("*");
+  if (有文件?) then (否)
+    :返回;
+    detach
+  else (是)
+  endif
 
-if (files 为空?) then (是)
-  :直接返回;
-  stop
-else (否)
-endif
+  while (遍历文件) is (有)
+    :删除文件;
+  endwhile (无)
 
-:遍历删除文件;
-while (还有文件?) is (是)
-  :file.unlink();
-endwhile (否)
-
-:输出清理结果;
-note right: "已清理任务计划文件: N 个"
+  :输出清理结果;
+}
 
 stop
 @enduml
