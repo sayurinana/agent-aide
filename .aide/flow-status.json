@@ -1,7 +1,7 @@
 {
   "task_id": "2025-12-19T04-09-25",
   "current_phase": "impl",
-  "current_step": 7,
+  "current_step": 8,
   "started_at": "2025-12-19T04:09:25+08:00",
   "history": [
     {
@@ -57,7 +57,15 @@
       "action": "next-step",
       "phase": "impl",
       "step": 7,
-      "summary": "完成 run.md 修改：删除手动清理指令"
+      "summary": "完成 run.md 修改：删除手动清理指令",
+      "git_commit": "1fc90a92a44e62a85e230f4441914c1ec9640041"
+    },
+    {
+      "timestamp": "2025-12-19T04:20:35+08:00",
+      "action": "next-step",
+      "phase": "impl",
+      "step": 8,
+      "summary": "auto-run.md 无需修改（已确认无手动清理指令）"
     }
   ],
   "source_branch": "master",
