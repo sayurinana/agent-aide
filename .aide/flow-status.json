@@ -1,7 +1,7 @@
 {
   "task_id": "2025-12-19T00-40-02",
-  "current_phase": "impl",
-  "current_step": 11,
+  "current_phase": "flow-design",
+  "current_step": 12,
   "started_at": "2025-12-19T00:40:02+08:00",
   "history": [
     {
@@ -89,7 +89,15 @@
       "action": "next-step",
       "phase": "impl",
       "step": 11,
-      "summary": "补充完成6个子计划的任务执行流程图"
+      "summary": "补充完成6个子计划的任务执行流程图",
+      "git_commit": "5ea3241564bb976cdb6add82b842758ffee781d2"
+    },
+    {
+      "timestamp": "2025-12-19T01:38:37+08:00",
+      "action": "back-part",
+      "phase": "flow-design",
+      "step": 12,
+      "summary": "返回流程图生成"
     }
   ],
   "source_branch": "master",
