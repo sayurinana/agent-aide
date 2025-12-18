@@ -87,6 +87,26 @@ class BranchesData:
         return BranchesData(next_number=next_number, branches=branches)
 
 
+# 需要从 task_summary 中移除的前缀列表（finish 提交信息使用）
+_TASK_SUMMARY_PREFIXES = [
+    "开始任务准备: ",
+    "开始任务准备:",
+    "开始任务准备： ",
+    "开始任务准备：",
+]
+
+
+def _clean_task_summary(task_summary: str) -> str:
+    """清理 task_summary 中的前缀。
+
+    用于生成 finish 提交信息时，移除 "开始任务准备:" 等前缀。
+    """
+    for prefix in _TASK_SUMMARY_PREFIXES:
+        if task_summary.startswith(prefix):
+            return task_summary[len(prefix):]
+    return task_summary
+
+
 class BranchManager:
     """管理 aide flow 任务分支"""
 
@@ -620,10 +640,11 @@ class BranchManager:
 
         # 8. 创建收尾提交
         self.git.add_all()
+        clean_summary = _clean_task_summary(branch_info.task_summary)
         if is_force_clean:
-            commit_msg = f"任务中断，清理：{task_branch} - {branch_info.task_summary}"
+            commit_msg = f"任务中断，清理：{task_branch} - {clean_summary}"
         else:
-            commit_msg = f"完成：{task_branch} - {branch_info.task_summary}"
+            commit_msg = f"完成：{task_branch} - {clean_summary}"
         self.git.commit(commit_msg)
 
         return True, f"任务分支已合并到 {source_branch}"
@@ -720,10 +741,11 @@ class BranchManager:
 
         # 8. 创建压缩提交
         self.git.add_all()
+        clean_summary = _clean_task_summary(task_summary)
         if is_force_clean:
-            commit_msg = f"[aide] 强制清理压缩提交: {task_summary}"
+            commit_msg = f"[aide] 强制清理压缩提交: {clean_summary}"
         else:
-            commit_msg = f"[aide] 任务压缩提交: {task_summary}"
+            commit_msg = f"[aide] 任务压缩提交: {clean_summary}"
         self.git.commit(commit_msg)
 
         action_name = "强制清理" if is_force_clean else "任务完成"
