@@ -1,7 +1,7 @@
 {
   "task_id": "2025-12-19T00-40-02",
   "current_phase": "impl",
-  "current_step": 14,
+  "current_step": 15,
   "started_at": "2025-12-19T00:40:02+08:00",
   "history": [
     {
@@ -113,7 +113,15 @@
       "action": "next-step",
       "phase": "impl",
       "step": 14,
-      "summary": "完成子计划1: gitignore_aide默认值改为false, aide init支持任意目录"
+      "summary": "完成子计划1: gitignore_aide默认值改为false, aide init支持任意目录",
+      "git_commit": "2ca64a7f984c65fa6ff63abe215ad19695d65da7"
+    },
+    {
+      "timestamp": "2025-12-19T01:47:50+08:00",
+      "action": "next-step",
+      "phase": "impl",
+      "step": 15,
+      "summary": "完成子计划2: readme-templates skill创建完成 (1 SKILL.md + 5模板 + 10模块)"
     }
   ],
   "source_branch": "master",

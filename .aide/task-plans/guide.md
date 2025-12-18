@@ -17,7 +17,7 @@
 
 | # | 名称 | 状态 | 细则文档 | 说明 |
 |---|------|------|----------|------|
-| 1 | 基础配置修改 | pending | spec-01.md | gitignore_aide 默认值、aide init 任意目录 |
+| 1 | 基础配置修改 | **completed** | spec-01.md | gitignore_aide 默认值、aide init 任意目录 |
 | 2 | README skill 模板集 | pending | spec-02.md | 创建 readme-templates skill |
 | 3 | README 命令实现 | pending | spec-03.md | /aide:readme 命令 |
 | 4 | 用户文档命令实现 | pending | spec-04.md | /aide:user-docs 命令 |
