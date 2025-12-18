@@ -409,13 +409,8 @@ aide flow next-part confirm "文档更新完成，进入用户确认环节"
 aide flow next-part finish "用户确认通过，进入收尾"
 ```
 
-- 清理临时文件
 - 检查遗漏的 TODO
 - 向用户汇报完成情况
-
-```bash
-aide flow next-step "任务完成"
-```
 
 ---
 

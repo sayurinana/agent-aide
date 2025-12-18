@@ -88,10 +88,22 @@ function renderItemCard(item) {
     }
 
     if (item.location && item.location.file) {
-        const location = document.createElement("div");
-        location.className = "item-location";
-        location.textContent = `位置: ${item.location.file}:${item.location.start}-${item.location.end}`;
-        card.appendChild(location);
+        const locationWrap = document.createElement("div");
+        locationWrap.className = "item-location";
+
+        const locationLabel = document.createElement("div");
+        locationLabel.className = "location-label";
+        locationLabel.textContent = `来源: ${item.location.file} (行 ${item.location.start}-${item.location.end})`;
+        locationWrap.appendChild(locationLabel);
+
+        if (item.source_content) {
+            const sourceContent = document.createElement("pre");
+            sourceContent.className = "source-content";
+            sourceContent.textContent = item.source_content;
+            locationWrap.appendChild(sourceContent);
+        }
+
+        card.appendChild(locationWrap);
     }
 
     const options = renderOptions(item);

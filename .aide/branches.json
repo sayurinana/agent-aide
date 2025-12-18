@@ -1,5 +1,5 @@
 {
-  "next_number": 22,
+  "next_number": 23,
   "branches": [
     {
       "number": 1,
@@ -246,6 +246,18 @@
       "status": "finished",
       "end_commit": "d93eecca44169cf88d0d1397dcf80e507487d1c0",
       "finished_at": "2025-12-19T04:25:16+08:00"
+    },
+    {
+      "number": 22,
+      "branch_name": "aide/022",
+      "source_branch": "master",
+      "start_commit": "af40327146d6be0781bb8f9ccdcaf8b2ce216455",
+      "task_id": "2025-12-19T04-37-00",
+      "task_summary": "开始任务准备: 调整 aide 体系的 finish 清理、提交信息和 decide 界面",
+      "started_at": "2025-12-19T04:37:00+08:00",
+      "status": "finished",
+      "end_commit": "76026e4b62996b667b2f788a2cf6e34cc79cebfb",
+      "finished_at": "2025-12-19T04:50:04+08:00"
     }
   ]
 }

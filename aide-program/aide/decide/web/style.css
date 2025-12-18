@@ -130,6 +130,26 @@ body {
     line-height: 1.6;
 }
 
+.location-label {
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--spacing-xs);
+}
+
+.source-content {
+    background: var(--color-background);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-sm);
+    margin: var(--spacing-xs) 0 0 0;
+    font-family: "SF Mono", Monaco, Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    color: var(--color-text);
+}
+
 .options-list {
     margin-top: var(--spacing-md);
     display: grid;
