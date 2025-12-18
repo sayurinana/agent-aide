@@ -1,0 +1,44 @@
+@startuml auto-run-task-flow
+title auto-run 任务执行流程图
+
+start
+
+:复制 run.md 为 auto-run.md;
+
+:修改命令标题和描述;
+
+:改造待定项处理逻辑;
+note right
+  - 移除用户 Web 决策
+  - 改为自动选择最优解
+  - 记录决策理由
+end note
+
+:删除任务细则确认;
+note right
+  移除 AskUserQuestion 调用
+end note
+
+:删除 confirm 阶段;
+note right
+  - 移除阶段 6 定义
+  - 调整流程跳转
+  - 移除返工流程
+end note
+
+:新增错误自动处理机制;
+note right
+  优先委托子代理
+  否则自行解决
+end note
+
+:新增计划外情况处理机制;
+note right
+  先记录 → 更新计划 → 再处理
+end note
+
+:验证命令文件;
+
+stop
+
+@enduml

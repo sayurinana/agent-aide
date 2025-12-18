@@ -1,0 +1,73 @@
+@startuml auto-run-logic-flow
+title auto-run 命令逻辑流图
+
+|#LightBlue| 入口 |
+start
+:加载 aide skill;
+:检查 flow 状态;
+
+if (有活跃任务?) then (是)
+  :进入续接流程;
+else (否)
+  :进入新任务流程;
+endif
+
+|#LightGreen| 新任务流程 |
+
+:启动流程追踪;
+:aide flow start task-optimize;
+
+:读取任务文档;
+:任务分析与优化;
+
+if (有待定项?) then (是)
+  :分析各选项;
+  :自动选择 recommend 选项;
+  :记录决策理由;
+else (否)
+  :继续;
+endif
+
+:生成任务细则;
+note right: 无用户确认，直接继续
+
+:aide flow next-part flow-design;
+:创建流程图;
+
+:aide flow next-part impl;
+:迭代实现;
+
+|#LightYellow| 错误处理 |
+
+if (遇到错误?) then (是)
+  if (存在 general-purpose 子代理?) then (是)
+    :委托子代理解决;
+  else (否)
+    :记录遇到的情况;
+    :更新任务计划文档;
+    :自行解决问题;
+  endif
+else (否)
+  :继续执行;
+endif
+
+|#LightGreen| 继续流程 |
+
+:aide flow next-part verify;
+:验证交付;
+
+:aide flow next-part docs;
+:文档更新;
+
+note right
+  跳过 confirm 阶段
+  直接进入 finish
+end note
+
+:aide flow next-part finish;
+:清理临时文件;
+:汇报完成情况;
+
+stop
+
+@enduml
