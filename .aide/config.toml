@@ -193,6 +193,9 @@ diagram_path = ".aide/diagrams"
 # 支持绝对路径或相对于 aide-program 目录的相对路径
 # 默认使用 aide-program/lib/plantuml.jar
 jar_path = "lib/plantuml.jar"
+font_name = "PingFang SC"
+dpi = 300
+scale = 0.5
 
 # Java 命令路径（可选）
 # 默认使用系统 PATH 中的 java
