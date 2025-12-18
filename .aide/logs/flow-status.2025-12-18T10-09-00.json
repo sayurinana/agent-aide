@@ -33,7 +33,8 @@
       "action": "next-step",
       "phase": "task-optimize",
       "step": 4,
-      "summary": "从 git 历史中移除 .lock 文件跟踪"
+      "summary": "从 git 历史中移除 .lock 文件跟踪",
+      "git_commit": "3f2bff5ac0aa663f6eb9df2b5a6f43a45f272a68"
     }
   ],
   "source_branch": "master",
