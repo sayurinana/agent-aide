@@ -1,0 +1,49 @@
+@startuml program-logic
+title 程序逻辑流图：finish_branch_merge 重构
+
+start
+:进入 finish_branch_merge();
+note right: branch.py
+
+:获取分支信息\nbranch_info = get_active_branch_info();
+
+if (源分支有新提交?) then (是)
+  :创建临时分支合并\n(保持现有逻辑);
+  :返回提示信息;
+  stop
+else (否)
+  :进入 _merge_normal();
+endif
+
+partition "清理操作" {
+  :删除 .aide/*.lock;
+  :删除 task-spec.md;
+  :清空 task-now.md\n(保留文件);
+  :备份并删除\nflow-status.json;
+  :备份并删除\ndecisions/*.json;
+}
+
+partition "创建临时提交" {
+  :git add -A;
+  :git commit\n"清理任务临时文件";
+}
+
+partition "切换并合并" {
+  :git checkout\n源分支;
+  :清理 .lock 文件;
+  :git merge --squash\n任务分支;
+  :构建提交信息\n格式: {hash}的任务收尾;
+  :git add -A;
+  :git commit\n收尾提交;
+}
+
+partition "更新记录" {
+  :更新分支记录\nstatus = finished;
+  :git add -A;
+  :git commit\n更新分支记录;
+}
+
+:返回成功;
+stop
+
+@enduml

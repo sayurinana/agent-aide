@@ -1,48 +1,45 @@
 @startuml task-flow
-!theme plain
-skinparam backgroundColor #FFFFFF
-skinparam activityBackgroundColor #F5F5F5
-skinparam activityBorderColor #333333
+title 任务执行流程图：改进 aide flow 的 git 工作流
 
-title 任务执行流程图 - 多模块调整
-
-|#LightBlue|子计划1: 创建 skill|
 start
-:读取 statements/optimize.md;
-:分析并扩展内容;
-:创建 task-parser.md;
-:验证 skill 结构完整性;
+:阅读任务细则;
+note right: task-spec.md
 
-|#LightGreen|子计划2: 修改 run 命令|
-:阅读现有 run.md;
-:设计口语化检测逻辑;
-:添加 skill 触发规则;
-:更新命令文档;
+partition "代码修改" {
+  :修改 branch.py;
+  note right
+    - 重构 _merge_normal()
+    - 添加清理函数
+    - 修改提交信息格式
+  end note
 
-|#LightYellow|子计划3: 强化流程图规范|
-:定义两种流程图类型;
-:编写任务执行流程图规范;
-:编写程序逻辑流图规范;
-:更新 run.md 流程设计部分;
+  :修改 tracker.py;
+  note right
+    调整 finish 触发逻辑
+    （如需要）
+  end note
+}
 
-|#LightCoral|子计划4: 创建示例程序|
-:设计 Python 程序结构;
-:创建 test-cache/demo-program/;
-:实现模块化程序;
-:绘制程序逻辑流图;
-:验证流程图规范有效性;
+partition "测试验证" {
+  :创建测试任务;
+  :执行完整 flow 流程;
+  :检查最终 git 历史;
 
-|#LightCyan|子计划5: 调整 git 提交顺序|
-:分析 tracker.py 当前逻辑;
-:重构 _apply_action 方法;
-:确保状态先保存再提交;
-:测试验证;
+  if (只有 2 个提交?) then (是)
+    :检查文件清理结果;
+    if (清理正确?) then (是)
+      :验证通过;
+    else (否)
+      :修复清理逻辑;
+      -> 执行完整 flow 流程;
+    endif
+  else (否)
+    :修复合并逻辑;
+    -> 执行完整 flow 流程;
+  endif
+}
 
-|#Lavender|子计划6: 更新文档|
-:更新 aide-plugin-skills.md;
-:更新 aide-plugin-commands.md;
-:更新 aide-program-flow.md;
-:检查其他相关文档;
-
+:更新文档;
 stop
+
 @enduml

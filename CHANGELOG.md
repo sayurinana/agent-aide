@@ -2,6 +2,26 @@
 
 本文件记录 Aide 项目对使用者可见的重要变更。
 
+## 2025-12-18
+
+### 变更
+
+**aide flow finish 流程重构**
+- 简化 git 历史：finish 后原分支只保留 2 个提交（起始 + 收尾）
+- 收尾提交信息格式改为：`{起始哈希}的任务收尾`
+- 分支记录不再保存 `end_commit`（简化数据结构）
+
+**finish 时自动清理任务文件**
+- 删除 `.aide/*.lock` 文件
+- 删除任务细则文件（`task.spec` 配置路径）
+- 清空任务原文件（`task.source` 配置路径，保留文件本身）
+- 备份并删除 `flow-status.json` 到 `.aide/logs/{task_id}-status.json`
+- 备份并删除 `decisions/*.json` 到 `.aide/logs/{task_id}-decisions/`
+
+### 修改的文件
+- `aide-program/aide/flow/branch.py` - 重构 `_merge_normal()` 方法，新增 `_cleanup_task_files()` 清理函数
+- `aide-program/aide/flow/tracker.py` - 传递 `ConfigManager` 给 `BranchManager`
+
 ## 2025-12-17
 
 ### 修复

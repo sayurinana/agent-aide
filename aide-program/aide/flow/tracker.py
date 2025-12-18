@@ -24,7 +24,7 @@ class FlowTracker:
         self.cfg = cfg
         self.storage = FlowStorage(root)
         self.git = GitIntegration(root)
-        self.branch_mgr = BranchManager(root, self.git)
+        self.branch_mgr = BranchManager(root, self.git, cfg)
 
     def start(self, phase: str, summary: str) -> bool:
         return self._run(action="start", to_phase=phase, text=summary)

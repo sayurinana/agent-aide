@@ -3,13 +3,17 @@
 from __future__ import annotations
 
 import json
+import shutil
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
 from aide.flow.errors import FlowError
 from aide.flow.git import GitIntegration
 from aide.flow.utils import now_iso
+
+if TYPE_CHECKING:
+    from aide.core.config import ConfigManager
 
 
 @dataclass
@@ -86,13 +90,15 @@ class BranchesData:
 class BranchManager:
     """管理 aide flow 任务分支"""
 
-    def __init__(self, root: Path, git: GitIntegration):
+    def __init__(self, root: Path, git: GitIntegration, cfg: "ConfigManager"):
         self.root = root
         self.git = git
+        self.cfg = cfg
         self.aide_dir = root / ".aide"
         self.branches_json = self.aide_dir / "branches.json"
         self.branches_md = self.aide_dir / "branches.md"
         self.lock_path = self.aide_dir / "flow-status.lock"
+        self.logs_dir = self.aide_dir / "logs"
         self._data: BranchesData | None = None
         self._current_branch_info: BranchInfo | None = None
 
@@ -103,6 +109,71 @@ class BranchManager:
                 self.lock_path.unlink()
         except OSError:
             pass
+
+    def _cleanup_task_files(self, task_id: str) -> None:
+        """清理任务相关文件
+
+        - 删除 .aide/*.lock
+        - 删除任务细则文件 (task.spec)
+        - 清空任务原文件 (task.source)，保留文件本身
+        - 备份并删除 flow-status.json
+        - 备份并删除 decisions/*.json
+        """
+        # 确保 logs 目录存在
+        self.logs_dir.mkdir(parents=True, exist_ok=True)
+
+        # 1. 删除所有 .lock 文件
+        for lock_file in self.aide_dir.glob("*.lock"):
+            try:
+                lock_file.unlink()
+            except OSError:
+                pass
+
+        # 2. 删除任务细则文件
+        task_spec = self.cfg.get_value("task.spec")
+        if task_spec:
+            spec_path = self.root / task_spec
+            if spec_path.exists():
+                try:
+                    spec_path.unlink()
+                except OSError:
+                    pass
+
+        # 3. 清空任务原文件（保留文件本身）
+        task_source = self.cfg.get_value("task.source")
+        if task_source:
+            source_path = self.root / task_source
+            if source_path.exists():
+                try:
+                    source_path.write_text("", encoding="utf-8")
+                except OSError:
+                    pass
+
+        # 4. 备份并删除 flow-status.json
+        status_path = self.aide_dir / "flow-status.json"
+        if status_path.exists():
+            backup_name = f"{task_id}-status.json"
+            backup_path = self.logs_dir / backup_name
+            try:
+                shutil.copy2(status_path, backup_path)
+                status_path.unlink()
+            except OSError:
+                pass
+
+        # 5. 备份并删除 decisions/*.json
+        decisions_dir = self.aide_dir / "decisions"
+        if decisions_dir.exists():
+            decision_files = list(decisions_dir.glob("*.json"))
+            if decision_files:
+                # 创建备份目录
+                backup_decisions_dir = self.logs_dir / f"{task_id}-decisions"
+                backup_decisions_dir.mkdir(parents=True, exist_ok=True)
+                for decision_file in decision_files:
+                    try:
+                        shutil.copy2(decision_file, backup_decisions_dir / decision_file.name)
+                        decision_file.unlink()
+                    except OSError:
+                        pass
 
     def load_branches(self) -> BranchesData:
         """加载分支概况"""
@@ -319,33 +390,37 @@ class BranchManager:
         branch_info: BranchInfo,
         task_summary: str,
     ) -> tuple[bool, str]:
-        """正常合并流程：squash 合并任务分支到源分支"""
+        """正常合并流程：清理 → 临时提交 → squash 合并 → 收尾提交"""
         source_branch = branch_info.source_branch
         task_branch = branch_info.branch_name
+        task_id = branch_info.task_id
+        start_commit = branch_info.start_commit
 
-        # 切回源分支
+        # 1. 执行任务文件清理（在工作分支上）
+        self._cleanup_task_files(task_id)
+
+        # 2. 创建临时提交保存清理后的变更
+        self.git.add_all()
+        self.git.commit("[aide] 清理任务临时文件")
+
+        # 3. 切回源分支
         self.git.checkout(source_branch)
 
-        # 切换分支后清理 lock 文件（确保 master 上的 lock 文件也被删除）
+        # 切换分支后清理 lock 文件
         self._cleanup_lock_file()
 
-        # squash 合并任务分支
+        # 4. squash 合并任务分支
         self.git.merge_squash(task_branch)
 
-        # 创建压缩提交（结束提交）
-        self.git.add_all()
-        commit_msg = f"[aide] 任务: {task_summary}"
-        end_commit = self.git.commit(commit_msg)
+        # 5. 先更新分支记录（不再记录 end_commit）
+        self.record_branch_finish(status="finished")
 
-        # 记录完成（更新 branches.json/md）
-        self.record_branch_finish(
-            status="finished",
-            end_commit=end_commit,
-        )
-
-        # 收尾提交：清理工作区（包含 branches.json/md 的更新）
+        # 6. 创建收尾提交（包含 squash 内容和分支记录更新）
+        # 格式：{起始哈希}的任务收尾
         self.git.add_all()
-        self.git.commit("[aide] 收尾: 更新分支记录")
+        short_hash = start_commit[:7] if start_commit else "unknown"
+        commit_msg = f"{short_hash}的任务收尾"
+        self.git.commit(commit_msg)
 
         return True, f"任务分支已合并到 {source_branch}"
 

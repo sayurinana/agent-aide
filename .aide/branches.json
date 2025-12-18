@@ -1,5 +1,5 @@
 {
-  "next_number": 13,
+  "next_number": 14,
   "branches": [
     {
       "number": 1,
@@ -138,6 +138,18 @@
       "task_summary": "开始任务准备: 修复 aide finish 后 .lock 文件残留问题",
       "started_at": "2025-12-18T10:09:00+08:00",
       "status": "active"
+    },
+    {
+      "number": 13,
+      "branch_name": "aide/013",
+      "source_branch": "aide/012",
+      "start_commit": "f4b96202d0d4407407e9291f74dd74af3b1067a9",
+      "task_id": "2025-12-18T10-41-43",
+      "task_summary": "开始任务准备: 改进 aide flow 的 git 工作流",
+      "started_at": "2025-12-18T10:41:43+08:00",
+      "status": "finished",
+      "end_commit": "f4b96202d0d4407407e9291f74dd74af3b1067a9",
+      "finished_at": "2025-12-18T11:22:54+08:00"
     }
   ]
 }
