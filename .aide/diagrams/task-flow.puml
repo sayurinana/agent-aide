@@ -1,0 +1,45 @@
+@startuml
+skinparam defaultFontName "PingFang SC"
+skinparam dpi 300
+scale 0.5
+
+title 任务执行流程：优化 finish 提交信息格式
+
+start
+
+:分析问题;
+note right
+  finish 提交信息包含
+  "开始任务准备:" 前缀
+end note
+
+:定位代码位置;
+note right
+  branch.py 中的
+  _merge_normal() 和
+  _merge_with_temp_branch()
+end note
+
+:实现清理函数;
+note right
+  添加 _clean_task_summary()
+  移除指定前缀
+end note
+
+:修改提交信息生成逻辑;
+
+:语法检查;
+
+if (语法正确?) then (是)
+  :验证效果;
+else (否)
+  :修复错误;
+  stop
+endif
+
+:更新文档;
+
+:完成;
+
+stop
+@enduml
