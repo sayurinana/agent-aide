@@ -1,5 +1,5 @@
 {
-  "next_number": 24,
+  "next_number": 25,
   "branches": [
     {
       "number": 1,
@@ -270,6 +270,18 @@
       "status": "finished",
       "end_commit": "91c9bca5d5356e7c06d018fab0138152ab96c56a",
       "finished_at": "2025-12-19T05:17:07+08:00"
+    },
+    {
+      "number": 24,
+      "branch_name": "aide/024",
+      "source_branch": "master",
+      "start_commit": "5942bd2d6c906d57574aba6a4bff52f6ae649604",
+      "task_id": "2025-12-19T05-31-03",
+      "task_summary": "开始任务准备: 优化 finish 后提交信息中的任务名格式",
+      "started_at": "2025-12-19T05:31:03+08:00",
+      "status": "finished",
+      "end_commit": "4fdf7664c19b276336970421e1788a27c19815d7",
+      "finished_at": "2025-12-19T05:39:19+08:00"
     }
   ]
 }
