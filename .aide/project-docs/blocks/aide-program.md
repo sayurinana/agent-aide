@@ -11,9 +11,6 @@ Aide 命令行工具的核心实现，提供环境检测、流程追踪、待定
 
 ```
 aide-program/
-├── .aide/                           程序级 Aide 配置
-│   ├── config.toml                  配置文件
-│   └── decisions/                   [空目录] 决策记录
 ├── aide/                            Python 源码包
 │   ├── __init__.py                  包入口（docstring）
 │   ├── __main__.py                  模块入口

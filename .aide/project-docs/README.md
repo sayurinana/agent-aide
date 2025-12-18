@@ -10,9 +10,9 @@
 
 | 指标 | 数值 |
 |------|------|
-| 总文件数 | 132（排除忽略项） |
-| 总目录数 | 53（含 5 个空目录） |
-| 代码行数 | 约 20082 行 |
+| 总文件数 | 139（排除忽略项） |
+| 总目录数 | 47（含 5 个空目录） |
+| 代码行数 | 约 21000 行 |
 | 主要语言 | Python |
 | 被忽略项 | 7 个目录 |
 
@@ -60,7 +60,7 @@ ccoptimize/
 │   ├── diagrams/                    PlantUML 流程图
 │   ├── logs/                        历史任务归档
 │   └── project-docs/                本文档目录
-├── aide-program/                    核心程序（~55 文件）
+├── aide-program/                    核心程序（~72 文件）
 │   ├── aide/                        Python 源码
 │   │   ├── core/                    核心模块
 │   │   ├── env/                     环境检测
@@ -70,10 +70,10 @@ ccoptimize/
 │   ├── docs/                        程序文档
 │   ├── lib/                         依赖库
 │   └── offline-installer/           离线安装器
-├── aide-marketplace/                插件市场（~20 文件）
+├── aide-marketplace/                插件市场（~21 文件）
 │   ├── .claude-plugin/              市场配置
-│   └── aide-plugin/                 Aide 插件（版本 2.0.8）
-│       ├── commands/                斜杠命令（含 install-linux/win）
+│   └── aide-plugin/                 Aide 插件（版本 2.1.0）
+│       ├── commands/                斜杠命令（含 auto-run/install-linux/win）
 │       ├── skills/                  技能定义
 │       └── docs/                    插件文档
 ├── docs/                            项目文档
@@ -118,20 +118,21 @@ Aide 是一套面向 LLM 驱动开发的工作流工具，核心设计原则：
 | 目录 | 用途 |
 |------|------|
 | `.aide/decisions/` | 待定项决策记录 |
-| `aide-program/.aide/decisions/` | 程序级决策记录 |
-| `aide-program/.aide/logs/` | 程序级日志归档 |
+| `.aide/diagrams/` | PlantUML 流程图 |
 | `discuss/` | 项目讨论记录 |
 | `reply/` | 项目回复记录 |
+| `statements/` | 声明文档 |
 
 ## 被忽略项
 
 | 目录 | 说明 |
 |------|------|
 | `anthropic-agent-skills/` | 第三方技能库 |
-| `.venv/` | 虚拟环境 |
+| `.venv/` | 根目录虚拟环境 |
 | `aide-program/.venv/` | 程序虚拟环境 |
 | `__pycache__/` | Python 字节码 |
-| `cache/`, `.cache/`, `test-cache/` | 缓存目录 |
+| `cache/`, `.cache/` | 缓存目录 |
+| `test-cache/` | 测试缓存目录 |
 
 ## 使用指南
 

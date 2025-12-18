@@ -154,6 +154,8 @@ Claude Code 功能的完整指南系列：
 
 | 目录 | 用途推断 |
 |------|----------|
+| .aide/decisions/ | 待定项决策记录存放目录 |
+| .aide/diagrams/ | PlantUML 流程图存放目录 |
 | discuss/ | 项目讨论记录存放目录 |
 | reply/ | 项目回复记录存放目录 |
 | statements/ | 声明文档目录（历史文件已清理） |

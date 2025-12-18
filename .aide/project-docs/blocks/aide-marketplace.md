@@ -15,8 +15,9 @@ aide-marketplace/
 │   └── marketplace.json             市场元数据
 └── aide-plugin/                     Aide 插件
     ├── .claude-plugin/              插件配置
-    │   └── plugin.json              插件元数据（版本 2.0.8）
+    │   └── plugin.json              插件元数据（版本 2.1.0）
     ├── commands/                    斜杠命令定义
+    │   ├── auto-run.md              /aide:auto-run 全自动任务执行（572 行）
     │   ├── docs.md                  /aide:docs 文档管理（400 行）
     │   ├── install-linux.md         /aide:install-linux Linux 环境安装（692 行）
     │   ├── install-win.md           /aide:install-win Windows 环境安装
@@ -49,7 +50,8 @@ aide-marketplace/
 | 文件 | 类型 | 说明 |
 |------|------|------|
 | .claude-plugin/marketplace.json | 配置 | 市场元数据，定义市场名和插件列表 |
-| aide-plugin/.claude-plugin/plugin.json | 配置 | 插件元数据，版本 2.0.8 |
+| aide-plugin/.claude-plugin/plugin.json | 配置 | 插件元数据，版本 2.1.0 |
+| aide-plugin/commands/auto-run.md | Command | /aide:auto-run 全自动任务执行流程 |
 | aide-plugin/commands/docs.md | Command | /aide:docs 项目文档管理流程 |
 | aide-plugin/commands/install-linux.md | Command | /aide:install-linux Linux 环境安装流程 |
 | aide-plugin/commands/install-win.md | Command | /aide:install-win Windows 环境安装流程 |
@@ -73,17 +75,35 @@ aide-marketplace/
 | `/aide:load` | 项目认知载入 | aide | 否（由 run 调用） |
 | `/aide:docs` | 项目文档创建和维护 | aide | 是 |
 | `/aide:run` | 任务执行（核心命令） | aide | 否 |
+| `/aide:auto-run` | 全自动任务执行 | aide, task-parser | 是 |
 
 ### /aide:run 工作流程
 
 ```
-task-optimize → flow-design → impl → verify → docs → finish
+task-optimize → flow-design → impl → verify → docs → confirm → finish
     │               │
     ├─ 任务分析      ├─ 流程图设计
     ├─ 复杂度评估    └─ PlantUML 校验
     ├─ 待定项处理
     └─ 生成任务细则
 ```
+
+### /aide:auto-run 工作流程
+
+`/aide:run` 的自动化版本，去除所有需要用户参与的环节：
+
+```
+task-optimize → flow-design → impl → verify → docs → finish
+    │                                              │
+    ├─ 待定项自动决策                               └─ 跳过 confirm 阶段
+    └─ 任务细则自动确认
+```
+
+**与 /aide:run 的区别**：
+- 待定项自动决策（无需用户 Web 确认）
+- 任务细则自动确认（无需用户确认）
+- 跳过 confirm 阶段（无需用户验收）
+- 错误自动处理（优先委托子代理，否则自行解决）
 
 ### Skills（技能）
 
@@ -140,7 +160,7 @@ task-optimize → flow-design → impl → verify → docs → finish
 ```json
 {
   "name": "aide-plugin",
-  "version": "2.0.8",
+  "version": "2.1.0",
   "description": "Aide 工作流体系插件"
 }
 ```
@@ -156,6 +176,9 @@ task-optimize → flow-design → impl → verify → docs → finish
    - Commands 定义"做什么"和"按什么顺序做"
    - Skills 定义"怎么调用工具"
 
-2. **版本管理**：当前版本 2.0.8，原 `/aide:init`、`/aide:prep`、`/aide:exec` 已重组为 `/aide:setup`、`/aide:load`、`/aide:docs`、`/aide:run`，并新增 `/aide:install-linux`、`/aide:install-win` 环境安装命令
+2. **版本管理**：当前版本 2.1.0
+   - 2.0.8 → 2.1.0：新增 `/aide:auto-run` 全自动任务执行命令
+   - 原 `/aide:init`、`/aide:prep`、`/aide:exec` 已重组为 `/aide:setup`、`/aide:load`、`/aide:docs`、`/aide:run`
+   - 新增 `/aide:install-linux`、`/aide:install-win` 环境安装命令
 
 3. **触发机制**：Skills 按需触发，避免信息过载

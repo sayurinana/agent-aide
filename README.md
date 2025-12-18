@@ -72,7 +72,7 @@ aide env ensure --runtime
 ```
 /aide:run          # 执行任务（核心命令）
 /aide:setup        # 环境配置
-/aide:docs         # 项目文档管理
+/aide:docs/reference         # 项目文档管理
 ```
 
 ## 核心功能
@@ -81,7 +81,7 @@ aide env ensure --runtime
 |------|------|
 | `/aide:run` | 任务执行（核心命令），整合任务准备和执行流程 |
 | `/aide:setup` | 环境配置，检测和修复开发环境 |
-| `/aide:docs` | 项目文档创建和维护 |
+| `/aide:docs/reference` | 项目文档创建和维护 |
 | `/aide:load` | 项目认知载入（由 run 内部调用） |
 
 ## aide 命令行工具
@@ -100,10 +100,10 @@ aide decide result     # 获取决策结果
 
 ## 文档
 
-- [项目详细说明](docs/project-details.md) - 项目架构和实现状态
-- [Aide 系统概述](docs/aide-overview.md) - 系统设计理念
-- [aide-plugin 文档](aide-marketplace/aide-plugin/docs/README.md) - 插件设计
-- [aide-program 文档](aide-program/docs/README.md) - 命令行工具设计
+- [项目详细说明](docs/reference/project-details.md) - 项目架构和实现状态
+- [Aide 系统概述](docs/reference/aide-overview.md) - 系统设计理念
+- [aide-plugin 文档](aide-marketplace/aide-plugin/docs/reference/README.md) - 插件设计
+- [aide-program 文档](aide-program/docs/reference/README.md) - 命令行工具设计
 
 ## 许可证
 
