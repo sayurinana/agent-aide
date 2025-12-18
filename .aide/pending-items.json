@@ -1,0 +1,128 @@
+{
+  "task": "Aide 体系多项调整任务",
+  "source": "task-now.md",
+  "items": [
+    {
+      "id": 1,
+      "title": "命令拆分方案",
+      "location": {
+        "file": "task-now.md",
+        "start": 34,
+        "end": 34
+      },
+      "context": "用户提到希望把面向用户的文档命令拆分为多个命令，便于分步执行和接续执行，但未明确具体拆分方案。",
+      "options": [
+        {
+          "value": "two_commands",
+          "label": "拆分为2个命令：/aide:readme + /aide:user-graph",
+          "score": 85,
+          "pros": ["职责清晰", "复杂度适中", "便于独立执行"],
+          "cons": ["user-docs 可能需要后续单独处理"]
+        },
+        {
+          "value": "three_commands",
+          "label": "拆分为3个命令：/aide:readme + /aide:user-docs + /aide:user-graph",
+          "score": 75,
+          "pros": ["功能划分更细", "各司其职"],
+          "cons": ["命令数量增多", "学习成本增加"]
+        },
+        {
+          "value": "single_command",
+          "label": "保持单一命令 /aide:user 内部区分子功能",
+          "score": 60,
+          "pros": ["命令简洁", "入口统一"],
+          "cons": ["内部复杂度高", "不便于分步接续"]
+        }
+      ],
+      "recommend": "two_commands"
+    },
+    {
+      "id": 2,
+      "title": "返工确认机制实现方式",
+      "location": {
+        "file": "task-now.md",
+        "start": 43,
+        "end": 44
+      },
+      "context": "用户要求在 aide flow back-part 执行前实现短 key 确认机制，以确保 LLM 已完成准备工作。",
+      "options": [
+        {
+          "value": "full_key_confirm",
+          "label": "完整实现短 key 确认机制（aide flow back-confirm --key xxx）",
+          "score": 80,
+          "pros": ["严格验证", "符合用户明确要求", "防止误操作"],
+          "cons": ["实现复杂度高", "增加操作步骤"]
+        },
+        {
+          "value": "simple_confirm",
+          "label": "简化为交互式确认（aide 输出确认提示，等待 LLM 确认响应）",
+          "score": 70,
+          "pros": ["实现简单", "交互自然"],
+          "cons": ["验证不如 key 机制严格"]
+        }
+      ],
+      "recommend": "full_key_confirm"
+    },
+    {
+      "id": 3,
+      "title": "配置项命名规范",
+      "location": {
+        "file": "task-now.md",
+        "start": 10,
+        "end": 12
+      },
+      "context": "需要为面向用户文档的相关路径配置项命名：README路径、docs目录路径、规范文件路径、流程图目录路径。",
+      "options": [
+        {
+          "value": "user_docs_namespace",
+          "label": "使用 user_docs 命名空间",
+          "score": 85,
+          "pros": ["命名空间隔离清晰", "与现有 docs 配置区分"],
+          "cons": ["配置路径略长"]
+        },
+        {
+          "value": "readme_namespace",
+          "label": "使用 readme 命名空间",
+          "score": 70,
+          "pros": ["以核心功能命名", "直观"],
+          "cons": ["可能与流程图配置语义不符"]
+        }
+      ],
+      "recommend": "user_docs_namespace"
+    },
+    {
+      "id": 4,
+      "title": "README 已存在时的处理策略",
+      "location": {
+        "file": "task-now.md",
+        "start": 9,
+        "end": 10
+      },
+      "context": "当项目根目录已存在 README.md 时，/aide:readme 命令应如何处理。",
+      "options": [
+        {
+          "value": "ask_user",
+          "label": "询问用户选择：覆盖/合并/跳过",
+          "score": 90,
+          "pros": ["用户控制", "灵活", "避免数据丢失"],
+          "cons": ["需要额外交互"]
+        },
+        {
+          "value": "backup_overwrite",
+          "label": "自动备份后覆盖",
+          "score": 65,
+          "pros": ["自动化", "有备份保障"],
+          "cons": ["可能丢失用户自定义内容"]
+        },
+        {
+          "value": "update_missing",
+          "label": "只更新缺失部分，保留已有内容",
+          "score": 75,
+          "pros": ["保守安全", "增量更新"],
+          "cons": ["可能导致格式不一致"]
+        }
+      ],
+      "recommend": "ask_user"
+    }
+  ]
+}
