@@ -279,7 +279,9 @@
       "task_id": "2025-12-19T05-31-03",
       "task_summary": "开始任务准备: 优化 finish 后提交信息中的任务名格式",
       "started_at": "2025-12-19T05:31:03+08:00",
-      "status": "active"
+      "status": "finished",
+      "end_commit": "4fdf7664c19b276336970421e1788a27c19815d7",
+      "finished_at": "2025-12-19T05:39:19+08:00"
     }
   ]
 }
