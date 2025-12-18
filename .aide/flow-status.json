@@ -1,7 +1,7 @@
 {
   "task_id": "2025-12-19T00-40-02",
   "current_phase": "impl",
-  "current_step": 15,
+  "current_step": 16,
   "started_at": "2025-12-19T00:40:02+08:00",
   "history": [
     {
@@ -121,7 +121,15 @@
       "action": "next-step",
       "phase": "impl",
       "step": 15,
-      "summary": "完成子计划2: readme-templates skill创建完成 (1 SKILL.md + 5模板 + 10模块)"
+      "summary": "完成子计划2: readme-templates skill创建完成 (1 SKILL.md + 5模板 + 10模块)",
+      "git_commit": "d32a4162b872391fa3f6fe8337a25df5a93148f9"
+    },
+    {
+      "timestamp": "2025-12-19T01:50:17+08:00",
+      "action": "next-step",
+      "phase": "impl",
+      "step": 16,
+      "summary": "完成子计划3: /aide:readme 命令实现 (配置项 + 命令文件)"
     }
   ],
   "source_branch": "master",
