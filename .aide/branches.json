@@ -1,5 +1,5 @@
 {
-  "next_number": 25,
+  "next_number": 26,
   "branches": [
     {
       "number": 1,
@@ -282,6 +282,16 @@
       "status": "finished",
       "end_commit": "4fdf7664c19b276336970421e1788a27c19815d7",
       "finished_at": "2025-12-19T05:39:19+08:00"
+    },
+    {
+      "number": 25,
+      "branch_name": "aide/025",
+      "source_branch": "master",
+      "start_commit": "37c434b92ad2c8a7d0533ee2070e7ac36d232b6d",
+      "task_id": "2025-12-19T05-41-57",
+      "task_summary": "开始任务准备: 分析和优化 user-docs/user-graph 的分步执行能力",
+      "started_at": "2025-12-19T05:41:57+08:00",
+      "status": "active"
     }
   ]
 }
