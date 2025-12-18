@@ -4,6 +4,33 @@
 
 ## 2025-12-18
 
+### 改进
+
+**收尾清理逻辑增强**
+- 新增删除 `pending-items.json` 文件的清理步骤
+- 新增删除流程图目录（`.aide/diagrams/`）下所有文件的清理步骤
+  - 支持删除 `.puml`、`.plantuml`、`.png` 文件
+  - 保留目录本身
+
+### 修改的文件
+- `aide-program/aide/flow/branch.py` - `_cleanup_task_files` 方法增加两个清理步骤
+
+### 改进
+
+**aide 命令递归查找项目根目录**
+- 新增 `find_project_root()` 函数，支持从子目录运行 aide 命令
+- 类似 git 查找 `.git` 目录的逻辑：从当前目录向上递归查找
+- 查找策略（两遍遍历）：
+  1. 优先查找包含 `flow-status.json` 的目录（活跃任务）
+  2. 其次查找包含 `config.toml` 的目录
+- 解决了会话重启后工作目录变更导致任务状态"丢失"的问题
+
+### 修改的文件
+- `aide-program/aide/core/config.py` - 新增 `find_project_root()` 函数
+- `aide-program/aide/main.py` - 所有 handler 函数改用 `find_project_root()` 替代 `Path.cwd()`
+
+---
+
 ### 新增功能
 
 **全自动任务执行命令 `/aide:auto-run`**

@@ -118,6 +118,8 @@ class BranchManager:
         - 清空任务原文件 (task.source)，保留文件本身
         - 备份并删除 flow-status.json
         - 备份并删除 decisions/*.json
+        - 删除 pending-items.json
+        - 删除流程图目录下的所有文件 (.puml, .plantuml, .png)
         """
         # 确保 logs 目录存在
         self.logs_dir.mkdir(parents=True, exist_ok=True)
@@ -172,6 +174,25 @@ class BranchManager:
                     try:
                         shutil.copy2(decision_file, backup_decisions_dir / decision_file.name)
                         decision_file.unlink()
+                    except OSError:
+                        pass
+
+        # 6. 删除 pending-items.json
+        pending_items_path = self.aide_dir / "pending-items.json"
+        if pending_items_path.exists():
+            try:
+                pending_items_path.unlink()
+            except OSError:
+                pass
+
+        # 7. 删除流程图目录下的所有文件
+        diagram_path = self.cfg.get_value("flow.diagram_path") or ".aide/diagrams"
+        diagram_dir = self.root / diagram_path
+        if diagram_dir.exists() and diagram_dir.is_dir():
+            for diagram_file in diagram_dir.iterdir():
+                if diagram_file.is_file() and diagram_file.suffix in (".puml", ".plantuml", ".png"):
+                    try:
+                        diagram_file.unlink()
                     except OSError:
                         pass
 

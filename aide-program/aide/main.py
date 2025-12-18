@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from aide.core import output
-from aide.core.config import ConfigManager
+from aide.core.config import ConfigManager, find_project_root
 from aide.env.manager import EnvManager
 from aide.flow.tracker import FlowTracker
 
@@ -162,7 +162,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def handle_init(args: argparse.Namespace) -> bool:
-    root = Path.cwd()
+    root = find_project_root()
     cfg = ConfigManager(root)
     cfg.ensure_config()
     cfg.ensure_gitignore()
@@ -174,7 +174,7 @@ def handle_env_default(args: argparse.Namespace) -> bool:
     """aide env（无子命令）等同于 aide env ensure。"""
     if args.env_command is None:
         # 无子命令，执行默认的 ensure
-        root = Path.cwd()
+        root = find_project_root()
         cfg = ConfigManager(root)
         manager = EnvManager(root, cfg)
         return manager.ensure()
@@ -183,7 +183,7 @@ def handle_env_default(args: argparse.Namespace) -> bool:
 
 def handle_env_ensure(args: argparse.Namespace) -> bool:
     """aide env ensure 处理。"""
-    root = Path.cwd()
+    root = find_project_root()
     cfg = ConfigManager(root)
     manager = EnvManager(root, cfg)
 
@@ -202,7 +202,7 @@ def handle_env_ensure(args: argparse.Namespace) -> bool:
 
 def handle_env_list(args: argparse.Namespace) -> bool:
     """aide env list 处理。"""
-    root = Path.cwd()
+    root = find_project_root()
     cfg = ConfigManager(root)
     manager = EnvManager(root, cfg)
     manager.list_modules()
@@ -211,7 +211,7 @@ def handle_env_list(args: argparse.Namespace) -> bool:
 
 def handle_env_set(args: argparse.Namespace) -> bool:
     """aide env set 处理。"""
-    root = Path.cwd()
+    root = find_project_root()
     cfg = ConfigManager(root)
     manager = EnvManager(root, cfg)
 
@@ -238,7 +238,7 @@ def handle_env_set(args: argparse.Namespace) -> bool:
 
 
 def handle_config_get(args: argparse.Namespace) -> bool:
-    root = Path.cwd()
+    root = find_project_root()
     cfg = ConfigManager(root)
     value = cfg.get_value(args.key)
     if value is None:
@@ -249,7 +249,7 @@ def handle_config_get(args: argparse.Namespace) -> bool:
 
 
 def handle_config_set(args: argparse.Namespace) -> bool:
-    root = Path.cwd()
+    root = find_project_root()
     cfg = ConfigManager(root)
     parsed_value = _parse_value(args.value)
     cfg.set_value(args.key, parsed_value)
@@ -262,49 +262,49 @@ def handle_flow_help(args: argparse.Namespace) -> bool:
 
 
 def handle_flow_start(args: argparse.Namespace) -> bool:
-    root = Path.cwd()
+    root = find_project_root()
     cfg = ConfigManager(root)
     tracker = FlowTracker(root, cfg)
     return tracker.start(args.phase, args.summary)
 
 
 def handle_flow_next_step(args: argparse.Namespace) -> bool:
-    root = Path.cwd()
+    root = find_project_root()
     cfg = ConfigManager(root)
     tracker = FlowTracker(root, cfg)
     return tracker.next_step(args.summary)
 
 
 def handle_flow_back_step(args: argparse.Namespace) -> bool:
-    root = Path.cwd()
+    root = find_project_root()
     cfg = ConfigManager(root)
     tracker = FlowTracker(root, cfg)
     return tracker.back_step(args.reason)
 
 
 def handle_flow_next_part(args: argparse.Namespace) -> bool:
-    root = Path.cwd()
+    root = find_project_root()
     cfg = ConfigManager(root)
     tracker = FlowTracker(root, cfg)
     return tracker.next_part(args.phase, args.summary)
 
 
 def handle_flow_back_part(args: argparse.Namespace) -> bool:
-    root = Path.cwd()
+    root = find_project_root()
     cfg = ConfigManager(root)
     tracker = FlowTracker(root, cfg)
     return tracker.back_part(args.phase, args.reason)
 
 
 def handle_flow_issue(args: argparse.Namespace) -> bool:
-    root = Path.cwd()
+    root = find_project_root()
     cfg = ConfigManager(root)
     tracker = FlowTracker(root, cfg)
     return tracker.issue(args.description)
 
 
 def handle_flow_error(args: argparse.Namespace) -> bool:
-    root = Path.cwd()
+    root = find_project_root()
     cfg = ConfigManager(root)
     tracker = FlowTracker(root, cfg)
     return tracker.error(args.description)
@@ -314,7 +314,7 @@ def handle_flow_status(args: argparse.Namespace) -> bool:
     """aide flow status - 查看当前任务状态。"""
     from aide.flow.storage import FlowStorage
 
-    root = Path.cwd()
+    root = find_project_root()
     storage = FlowStorage(root)
 
     try:
@@ -346,7 +346,7 @@ def handle_flow_list(args: argparse.Namespace) -> bool:
     """aide flow list - 列出所有任务。"""
     from aide.flow.storage import FlowStorage
 
-    root = Path.cwd()
+    root = find_project_root()
     storage = FlowStorage(root)
 
     try:
@@ -374,7 +374,7 @@ def handle_flow_show(args: argparse.Namespace) -> bool:
     """aide flow show <task_id> - 查看指定任务的详细状态。"""
     from aide.flow.storage import FlowStorage
 
-    root = Path.cwd()
+    root = find_project_root()
     storage = FlowStorage(root)
 
     try:

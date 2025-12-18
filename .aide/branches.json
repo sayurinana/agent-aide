@@ -1,5 +1,5 @@
 {
-  "next_number": 17,
+  "next_number": 18,
   "branches": [
     {
       "number": 1,
@@ -186,6 +186,18 @@
       "status": "finished",
       "end_commit": "645a30cace5e7653c19c60fa1f23c22d1db73d34",
       "finished_at": "2025-12-18T13:58:35+08:00"
+    },
+    {
+      "number": 17,
+      "branch_name": "aide/017",
+      "source_branch": "master",
+      "start_commit": "f4a82c96eec49822c39da4f68c87351fe527b0fe",
+      "task_id": "2025-12-18T14-09-44",
+      "task_summary": "开始任务准备: 调整aide收尾清理逻辑",
+      "started_at": "2025-12-18T14:09:44+08:00",
+      "status": "finished",
+      "end_commit": "f4a82c96eec49822c39da4f68c87351fe527b0fe",
+      "finished_at": "2025-12-18T18:18:43+08:00"
     }
   ]
 }

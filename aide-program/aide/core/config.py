@@ -10,6 +10,63 @@ from tomli_w import dumps as toml_dumps
 
 from aide.core import output
 
+
+def find_project_root(start_path: Path | None = None) -> Path:
+    """递归向上查找包含有效 .aide 目录的项目根目录。
+
+    类似于 git 查找 .git 目录的逻辑：从当前目录开始向上遍历，
+    直到找到包含有效 .aide 目录的父目录。
+
+    查找策略（两遍遍历）：
+    1. 第一遍：优先查找包含 flow-status.json 的目录（活跃任务）
+    2. 第二遍：如果第一遍未找到，查找包含 config.toml 的目录
+
+    这样可以确保从子目录运行时，优先找到有活跃任务的项目根目录。
+
+    Args:
+        start_path: 起始路径，默认为当前工作目录
+
+    Returns:
+        找到有效 .aide 目录的父目录路径，如果未找到则返回起始路径
+    """
+    if start_path is None:
+        start_path = Path.cwd()
+
+    start_path = start_path.resolve()
+
+    def search_upward(check_fn) -> Path | None:
+        """向上遍历查找满足条件的目录"""
+        current = start_path
+        while current != current.parent:
+            if check_fn(current):
+                return current
+            current = current.parent
+        # 检查根目录本身
+        if check_fn(current):
+            return current
+        return None
+
+    def has_flow_status(path: Path) -> bool:
+        """检查是否有活跃任务状态文件"""
+        return (path / ".aide" / "flow-status.json").exists()
+
+    def has_config(path: Path) -> bool:
+        """检查是否有配置文件"""
+        return (path / ".aide" / "config.toml").exists()
+
+    # 第一遍：优先查找有活跃任务的目录
+    result = search_upward(has_flow_status)
+    if result is not None:
+        return result
+
+    # 第二遍：查找有配置文件的目录
+    result = search_upward(has_config)
+    if result is not None:
+        return result
+
+    # 未找到有效 .aide 目录，返回原始起始路径
+    return start_path
+
 DEFAULT_CONFIG = """################################################################################
 #                           Aide 配置文件 (config.toml)
 ################################################################################
