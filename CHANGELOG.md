@@ -6,6 +6,15 @@
 
 ### 优化
 
+**user-docs 分步执行和接续执行能力**
+
+- 重构 `commands/user-docs.md`，添加与 `user-graph.md` 相同的分步执行机制
+- 新增"分析和计划阶段"：首次运行时分析项目、规划结构、生成计划文档
+- 新增"接续执行阶段"：后续运行时读取计划、显示进度、支持接续
+- 新增"步骤执行流程"：每步完成后更新计划、支持暂停保存进度
+- 新增配置项 `user_docs.docs_plan_path`（默认 `docs/user-docs-plan.md`）
+- 适用于大型项目的文档生成，支持分多次对话完成
+
 **finish 清理代码移除**
 
 - 移除 `run.md` 和 `auto-run.md` 中的"清理临时文件"指令和 `aide flow next-step "任务完成"` 命令
