@@ -101,10 +101,10 @@ DEFAULT_CONFIG = """############################################################
 
 [general]
 # 是否在 .gitignore 中忽略 .aide 目录
-# - true（默认）：自动添加 .aide/ 到 .gitignore，不跟踪 aide 状态
-# - false：不修改 .gitignore，允许 git 跟踪 .aide 目录
-#   适用于需要在多设备同步 aide 状态的场景
-gitignore_aide = true
+# - true：自动添加 .aide/ 到 .gitignore，不跟踪 aide 状态
+# - false（默认）：不修改 .gitignore，允许 git 跟踪 .aide 目录
+#   推荐使用此设置，便于多设备同步 aide 状态和任务历史
+gitignore_aide = false
 
 ################################################################################
 # [runtime] - Aide 运行时要求
@@ -327,11 +327,11 @@ class ConfigManager:
 
     def ensure_gitignore(self) -> None:
         """根据配置决定是否在 .gitignore 中添加 .aide/ 忽略项。"""
-        # 读取配置，默认为 True（忽略 .aide 目录）
+        # 读取配置，默认为 False（不忽略 .aide 目录）
         config = self.load_config()
         gitignore_aide = self._walk_get(config, "general.gitignore_aide")
         if gitignore_aide is None:
-            gitignore_aide = True  # 默认值
+            gitignore_aide = False  # 默认值
 
         if not gitignore_aide:
             # 配置为 False，不添加忽略项

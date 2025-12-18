@@ -166,7 +166,8 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def handle_init(args: argparse.Namespace) -> bool:
-    root = find_project_root()
+    # 使用当前工作目录（原地初始化，类似 git init）
+    root = Path.cwd()
     cfg = ConfigManager(root)
     cfg.ensure_config()
     cfg.ensure_gitignore()

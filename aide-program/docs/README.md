@@ -199,9 +199,9 @@ aide-program/
 
 ### 5.2 .gitignore 处理
 
-- `aide init` 时自动检查 `.gitignore`
-- 默认添加 `.aide/` 为忽略项
-- 可通过配置 `general.gitignore_aide = false` 禁用此行为
+- `aide init` 时根据配置决定是否修改 `.gitignore`
+- 默认不修改（`gitignore_aide = false`），推荐将 .aide/ 纳入版本控制
+- 可通过配置 `general.gitignore_aide = true` 自动添加 `.aide/` 为忽略项
 
 ---
 
