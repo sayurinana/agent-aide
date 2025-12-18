@@ -6,6 +6,19 @@
 
 ### 新增功能
 
+**PlantUML 渲染配置**
+
+- 新增 `plantuml.font_name` 配置项：默认字体 "Arial"
+- 新增 `plantuml.dpi` 配置项：默认 DPI 300
+- 新增 `plantuml.scale` 配置项：默认缩放 0.5
+- run.md 流程图示例更新：添加配置获取说明和 skinparam/scale 示例
+
+**finish 环节清理任务计划文件**
+
+- run.md finish 环节新增清理任务计划文件（`.aide/task-plans/`）的指导
+
+### 新增功能
+
 **返工流程优化**
 
 - 新增 `rework` skill：提供返工流程指南，包含返工类型判断、文档更新格式、用户提醒模板
