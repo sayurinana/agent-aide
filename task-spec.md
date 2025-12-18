@@ -2,73 +2,103 @@
 
 ## 任务概述
 
-对现有的 commands、skills 和 aide-program 体系做两项调整：
-1. finish 环节添加任务计划文件清理功能
-2. 流程图编写添加字体、DPI、缩放配置支持
+对现有的 commands、skills 和 aide-program 体系做调整：
+1. finish 环节添加任务计划文件清理功能 ✅ 已完成
+2. 流程图编写添加字体、DPI、缩放配置支持 ✅ 已完成
 
-## 任务 1：finish 环节清理任务计划文件
+---
 
-### 目标
+## 返工需求（2025-12-19）
 
-在 finish 环节更新状态文件之后，添加对任务计划文件的清理。
+用户在 confirm 阶段提出返工，新增以下需求：
 
-### 具体步骤
+### 任务 3：移除 install 命令文件
 
-1. 修改 `aide-marketplace/aide-plugin/commands/run.md`
-   - 在「阶段 7：收尾 (finish)」部分添加清理任务计划文件的指导
-   - 清理范围：`task.plans_path` 配置的目录下的所有文件（guide.md, spec-*.md 等）
-   - 需要先通过 `aide config get task.plans_path` 获取路径
+#### 目标
 
-### 验证标准
+删除不再使用的安装命令文件。
 
-- run.md 的 finish 环节包含清理任务计划文件的明确指导
-- 指导中包含如何获取配置路径
+#### 具体步骤
 
-## 任务 2：流程图配置优化
+1. 删除文件：
+   - `aide-marketplace/aide-plugin/commands/install-linux.md`
+   - `aide-marketplace/aide-plugin/commands/install-win.md`
 
-### 目标
+#### 验证标准
 
-保证编写的 PlantUML 带有字体、DPI、缩放配置信息，这些值从 aide 环境配置中获取。
+- 两个命令文件已删除
+- 相关引用已清理
 
-### 具体步骤
+### 任务 4：移除 offline-installer 目录
 
-1. 修改 `aide-program/aide/core/config.py` 中的 DEFAULT_CONFIG
-   - 在 `[plantuml]` 节添加三个新配置项：
-     - `font_name = "Arial"` - 默认字体
-     - `dpi = 300` - DPI 值
-     - `scale = 0.5` - 缩放系数
-   - 添加相应的注释说明
+#### 目标
 
-2. 修改 `aide-marketplace/aide-plugin/commands/run.md`
-   - 在「2.2 创建流程图」→「流程图示例结构」部分添加配置获取和使用说明
-   - 示例结构需包含：
-     ```plantuml
-     skinparam defaultFontName "Arial"
-     skinparam dpi 300
-     scale 0.5
-     ```
-   - 说明这些值需要通过 `aide config get plantuml.font_name` 等命令获取
+删除半自动化安装相关的程序目录。
 
-### 验证标准
+#### 具体步骤
 
-- config.py 的 DEFAULT_CONFIG 包含三个新配置项
-- run.md 的流程图示例包含配置获取说明和示例代码
-- 配置默认值正确：Arial、300、0.5
+1. 删除目录及其全部内容：
+   - `aide-program/offline-installer/linux/`（含 install.sh、README.md、resources.json）
+   - `aide-program/offline-installer/windows/`（含 install.ps1、README.md、resources.json）
+2. 如果 `offline-installer` 父目录为空，一并删除
 
-## 文件变更清单
+#### 验证标准
+
+- offline-installer 目录及其内容已完全删除
+
+### 任务 5：更新相关文档引用
+
+#### 目标
+
+清理文档中对已删除文件的引用。
+
+#### 具体步骤
+
+1. 搜索所有文档中对以下内容的引用：
+   - `install-linux`
+   - `install-win`
+   - `offline-installer`
+2. 更新或移除相关引用
+
+#### 验证标准
+
+- 无文档引用已删除的文件
+
+### 任务 6：修改 aide flow back-part 警告
+
+#### 目标
+
+当执行 `aide flow back-part` 时，在输出 key 前，输出警告要求 LLM 必须先学习 rework skill，确认已完成要求的准备工作后才能通过指定的 key 确认返工流程执行。
+
+#### 具体步骤
+
+1. 修改 `aide-program/aide/flow/flow_cmd.py` 中的 `back-part` 命令处理
+2. 在输出确认 key 之前添加警告信息
+
+#### 验证标准
+
+- 执行 `aide flow back-part` 时输出 rework skill 学习警告
+- 警告信息清晰明确
+
+## 文件变更清单（返工部分）
 
 | 文件 | 变更类型 | 说明 |
 |------|----------|------|
-| `aide-program/aide/core/config.py` | 修改 | 添加 plantuml 配置项 |
-| `aide-marketplace/aide-plugin/commands/run.md` | 修改 | 更新 finish 和流程图部分 |
+| `aide-marketplace/aide-plugin/commands/install-linux.md` | 删除 | 移除 linux 安装命令 |
+| `aide-marketplace/aide-plugin/commands/install-win.md` | 删除 | 移除 windows 安装命令 |
+| `aide-program/offline-installer/` | 删除 | 移除整个目录 |
+| `aide-program/aide/flow/flow_cmd.py` | 修改 | 添加 back-part 警告 |
+| 相关文档 | 修改 | 清理引用 |
 
 ## 执行顺序
 
-1. 先完成任务 2 的 config.py 修改（添加配置项）
-2. 再完成任务 1 和任务 2 的 run.md 修改（可合并在一次编辑中）
-3. 验证修改内容
+1. 删除命令文件（任务 3）
+2. 删除 offline-installer 目录（任务 4）
+3. 搜索并更新文档引用（任务 5）
+4. 修改 back-part 警告（任务 6）
+5. 验证所有修改
 
 ## 风险评估
 
-- **低风险**：仅修改文档和默认配置，不影响现有功能
-- **向后兼容**：新配置项有默认值，旧项目无需修改配置
+- **低风险**：删除不再使用的文件和目录
+- **注意**：确保没有遗漏的引用

@@ -1,7 +1,7 @@
 {
   "task_id": "2025-12-19T03-01-27",
   "current_phase": "task-optimize",
-  "current_step": 13,
+  "current_step": 14,
   "started_at": "2025-12-19T03:01:27+08:00",
   "history": [
     {
@@ -105,7 +105,15 @@
       "action": "back-part",
       "phase": "task-optimize",
       "step": 13,
-      "summary": "用户要求返工：移除 win-install/linux-install 及半自动化安装程序"
+      "summary": "用户要求返工：移除 win-install/linux-install 及半自动化安装程序",
+      "git_commit": "0572fcca0c7d4226a3dd4c463907af020b31464f"
+    },
+    {
+      "timestamp": "2025-12-19T03:47:04+08:00",
+      "action": "next-step",
+      "phase": "task-optimize",
+      "step": 14,
+      "summary": "返工任务细则已确认"
     }
   ],
   "source_branch": "master",
