@@ -1,7 +1,7 @@
 {
   "task_id": "2025-12-18T10-09-00",
   "current_phase": "task-optimize",
-  "current_step": 1,
+  "current_step": 2,
   "started_at": "2025-12-18T10:09:00+08:00",
   "history": [
     {
@@ -9,7 +9,15 @@
       "action": "start",
       "phase": "task-optimize",
       "step": 1,
-      "summary": "开始任务准备: 修复 aide finish 后 .lock 文件残留问题"
+      "summary": "开始任务准备: 修复 aide finish 后 .lock 文件残留问题",
+      "git_commit": "dcf9eb38cfc77adc5944e60d7ddb5857f43ba958"
+    },
+    {
+      "timestamp": "2025-12-18T10:10:40+08:00",
+      "action": "next-step",
+      "phase": "task-optimize",
+      "step": 2,
+      "summary": "问题定位完成：finish 环节在锁内执行 git add，导致 .lock 文件被提交"
     }
   ],
   "source_branch": "master",
