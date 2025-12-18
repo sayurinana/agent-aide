@@ -12,3 +12,12 @@
 
 我希望可以尽可能少的改动commands&skills，把这些全部封装到aide flow中，可能都不需要改commands，只要在skill中更新一部分信息让LLM简单了解到aide flow会发生这些副作用即可，
 这样的封装能实现吗？
+
+aide flow start task-optimize 测试
+aide flow next-part  flow-design test
+aide flow next-part impl test
+aide flow next-part verify test
+aide flow next-part docs test
+echo "" >>  CHANGELOG.md
+aide flow next-part finish test
+
