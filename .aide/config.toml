@@ -236,7 +236,7 @@ diagram_path = ".aide/diagrams"
 jar_path = "lib/plantuml.jar"
 font_name = "PingFang SC"
 dpi = 300
-scale = 0.5
+scale = 0.3
 
 # Java 命令路径（可选）
 # 默认使用系统 PATH 中的 java

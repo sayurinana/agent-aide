@@ -109,7 +109,7 @@ aide
 @startuml main
 skinparam defaultFontName "PingFang SC"
 skinparam dpi 300
-scale 0.5
+scale 0.3
 
 title aide CLI 主流程
 

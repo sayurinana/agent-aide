@@ -108,7 +108,7 @@ aide env ensure
 @startuml env
 skinparam defaultFontName "PingFang SC"
 skinparam dpi 300
-scale 0.5
+scale 0.3
 
 title aide env ensure 流程
 

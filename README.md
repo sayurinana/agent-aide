@@ -3,160 +3,200 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Python](https://img.shields.io/badge/Python-3.11+-green.svg)](https://www.python.org/)
 
-**面向 LLM 驱动开发的工作流工具**
+**面向 LLM 驱动开发的工作流工具** - 让 AI 辅助开发更加高效可控。
 
-Aide 是一套为 Claude Code 设计的工作流辅助体系，通过结构化的任务管理、进度追踪和交互式决策，让 AI 辅助开发更加高效可控。
-
-## 核心特性
-
-- **任务进度追踪** - 自动记录开发进度，与 Git 深度集成
-- **环境智能检测** - 支持 Python/Node/Rust/Flutter 等多种环境
-- **交互式决策** - Web 界面处理待定项确认，让 AI 遵循你的选择
-- **渐进式披露** - 按需加载信息，避免上下文过载
-- **Claude Code 插件** - 8 个斜杠命令 + 5 个技能定义
-
-## 项目结构
-
-```
-agent-aide/
-├── aide-program/          # 核心 CLI 工具（Python）
-│   ├── aide/              # 源码
-│   │   ├── core/          # 配置管理
-│   │   ├── env/           # 环境检测
-│   │   ├── flow/          # 流程追踪
-│   │   └── decide/        # 待定项确认
-│   └── bin/               # 可执行脚本
-├── aide-marketplace/      # Claude Code 插件市场
-│   └── aide-plugin/       # Aide 插件
-│       ├── commands/      # 斜杠命令（8 个）
-│       └── skills/        # 技能定义（5 个）
-└── docs/                  # 项目文档
-```
-
-## 子项目
-
-| 项目 | 路径 | 说明 | 技术栈 |
-|------|------|------|--------|
-| aide-program | `aide-program/` | 核心命令行工具，提供环境检测、流程追踪、待定项确认 | Python 3.11+ |
-| aide-plugin | `aide-marketplace/aide-plugin/` | Claude Code 插件，提供工作流命令和技能 | Markdown |
+---
 
 ## 快速开始
 
-只需 3 步，即可体验 Aide 的核心功能：
-
-### 1. 安装
+### 安装
 
 ```bash
-# 克隆仓库
-git clone https://github.com/your-username/agent-aide.git
+git clone https://github.com/sayurinana/agent-aide.git
 cd agent-aide/aide-program
-
-# 创建虚拟环境并安装依赖
-uv venv .venv
-source .venv/bin/activate
+uv venv .venv && source .venv/bin/activate
 uv pip install -r requirements.txt
 ```
 
-### 2. 初始化
+### 初始化
 
 ```bash
 # 在你的项目目录中
 aide init
 ```
 
-### 3. 运行
+### 配置 Claude Code 插件
 
 ```bash
-# 检测环境
-aide env ensure --runtime
+cd /path/to/agent-aide
 
-# 开始任务追踪
-aide flow start task-optimize "开始任务: 实现新功能"
+# 进入claude后交互式操作
+claude
+
+# 在claude cli里输入 /plugin 根据引导信息完成安装
+# 本地插件市场路径为 ./aide-marketplace
+/plugin
 ```
 
-**预期输出**：
+---
 
-```
-✓ python: 3.11.x (>=3.11)
-✓ uv: 0.x.x
-✓ 环境就绪
+## 命令使用指南
 
-✓ 任务已开始: 2025-12-19T10-00-00
-✓ Git 提交: abc1234
-```
+Aide 提供 8 个斜杠命令，覆盖开发工作流的各个环节。
 
-### 下一步
+### 命令体系概览
 
-- [完整使用指南](#使用说明)
-- [Claude Code 插件安装](#安装-aide-插件)
-- [命令参考](#命令参考)
+![Commands Flow](docs/graph-guide/aide-marketplace/commands.png)
 
-## 使用说明
+### 使用场景对照表
 
-### aide 命令行工具
+| 场景 | 推荐命令 | 说明 |
+|------|----------|------|
+| 首次使用/环境问题 | `/aide:setup` | 环境配置和检测 |
+| 了解项目结构 | `/aide:load` | 载入项目认知 |
+| 生成项目文档 | `/aide:docs` | 创建 LLM 友好的项目文档 |
+| 执行开发任务 | `/aide:run` | 核心工作流命令 |
+| 全自动执行 | `/aide:auto-run` | 减少交互的自动模式 |
+| 生成 README | `/aide:readme` | 生成项目 README |
+| 生成用户文档 | `/aide:user-docs` | 面向最终用户的文档 |
+| 生成流程图 | `/aide:user-graph` | 可视化项目架构 |
 
-#### 环境管理
+### 典型工作流
+
+#### ennnnn
+
+> 其他内容都是AI生成的，没啥时间了，过几天就考试了，暂时就先做到这里吧，
+
+> 其实这里下面例子挺潦草的，就这样吧先，
+> 
+> 本来想放一个写个小游戏的demo仓库的，暂时没时间了，
+>
+> 可以看看现在这个仓库的历史提交和分支提交
+
+对于已有基础成果的项目，在项目目录下执行初始化
 
 ```bash
-aide env ensure              # 检测并修复环境
-aide env ensure --runtime    # 仅检测 aide 运行时
-aide env list                # 列出可用模块
-aide env set modules python,venv  # 设置启用模块
+aide init
 ```
 
-#### 流程追踪
+然后其他的就不需要自己执行shell命令了，进claude操作
 
 ```bash
-aide flow start <phase> "<summary>"   # 开始新任务
-aide flow next-step "<summary>"       # 步骤前进
-aide flow next-part <phase> "<summary>"  # 环节前进
-aide flow status                      # 查看当前状态
-aide flow list                        # 列出所有任务
+claude --dangerously-skip-permissions
 ```
-
-#### 待定项确认
 
 ```bash
-aide decide submit <file.json>   # 提交待定项，启动 Web 服务
-aide decide result               # 获取用户决策结果
-```
+# 进了claude cli之后，
 
-#### 配置管理
+# 创建项目文档（面向LLM专用的）
+/aide-plugin:docs
 
-```bash
-aide config get <key>        # 获取配置值
-aide config set <key> <value>  # 设置配置值
-```
+# 项目文档建好后先 /exit 退出
+# 重新进然后载入项目文档
+/aide-plugin:load
 
-### 安装 Aide 插件
+# 有什么想做的事，写在 task-now.md 里 （这个文件路径可以改，去看.aide/config.toml）
+# 可以去看一下 .aide/config.toml 找到[decide]把url换成一个能访问的地方
+# 任务写好之后
+/aide-plugin:run
 
-在 Claude Code 中添加 Aide 市场：
-
-1. 编辑 `~/.claude/settings.json`：
-
-```json
-{
-  "marketplaces": [
-    "/path/to/agent-aide/aide-marketplace"
-  ]
-}
-```
-
-2. 使用 Aide 命令：
+# 如果跑到中途上下文超了触发压缩了，直接Esc然后/exit ，重新进来，load 再 run
 
 ```
-/aide:run          # 任务执行（核心命令）
-/aide:auto-run     # 全自动任务执行
-/aide:setup        # 环境配置
-/aide:docs         # 项目文档管理
-/aide:readme       # README 生成
+
+#### 新项目入门
+
+```
+/aide:setup  →  /aide:docs  →  /aide:load
+   │               │               │
+   ▼               ▼               ▼
+ 环境配置       项目文档       载入认知
 ```
 
-## 架构
+1. `/aide:setup` - 检测并修复开发环境
+2. `/aide:docs` - 生成项目文档（`.aide/project-docs/`）
+3. `/aide:load` - 载入项目认知，了解项目结构
 
-### 系统概览
+#### 任务执行流程
 
-Aide 采用分层架构设计，将关注点分离：
+```
+/aide:run
+    │
+    ├── task-optimize (任务准备)
+    │   ├─ 任务分析与优化
+    │   └─ 待定项处理
+    │
+    ├── flow-design (流程设计)
+    │   └─ 创建 PlantUML 流程图
+    │
+    ├── impl (迭代实现)
+    │   └─ 代码编写与测试
+    │
+    ├── verify (验证交付)
+    │   └─ 功能验证与测试
+    │
+    ├── docs (文档更新)
+    │   └─ 更新相关文档
+    │
+    └── finish (收尾)
+        └─ 任务归档
+```
+
+#### 文档维护流程
+
+```
+/aide:readme     /aide:user-docs     /aide:user-graph
+     │                  │                   │
+     ▼                  ▼                   ▼
+  README.md         用户文档           流程图
+```
+
+---
+
+## 深入了解
+
+### 流程图索引
+
+所有流程图位于 `docs/graph-guide/` 目录：
+
+#### aide-program（6 个）
+
+| 流程图 | 说明 |
+|--------|------|
+| ![](docs/graph-guide/aide-program/guide.png) | **整体架构** - 系统架构和模块关系 |
+| [main.png](docs/graph-guide/aide-program/main.png) | CLI 主入口流程 |
+| [env.png](docs/graph-guide/aide-program/env.png) | 环境检测流程 |
+| [flow.png](docs/graph-guide/aide-program/flow.png) | 流程追踪核心流程 |
+| [decide.png](docs/graph-guide/aide-program/decide.png) | 待定项确认流程 |
+| [branch.png](docs/graph-guide/aide-program/branch.png) | 分支管理流程 |
+
+#### aide-marketplace（3 个）
+
+| 流程图 | 说明 |
+|--------|------|
+| [guide.png](docs/graph-guide/aide-marketplace/guide.png) | 插件架构和组件关系 |
+| [commands.png](docs/graph-guide/aide-marketplace/commands.png) | 核心命令执行流程 |
+| [skills.png](docs/graph-guide/aide-marketplace/skills.png) | 技能体系和触发机制 |
+
+#### project-config-docs（1 个）
+
+| 流程图 | 说明 |
+|--------|------|
+| [guide.png](docs/graph-guide/project-config-docs/guide.png) | 配置体系导航图 |
+
+> 查看完整流程图目录：[docs/graph-guide/](docs/graph-guide/)
+
+### 详细文档
+
+| 文档 | 路径 | 说明 |
+|------|------|------|
+| 系统概述 | [docs/reference/aide-overview.md](docs/reference/aide-overview.md) | Aide 系统整体介绍 |
+| 斜杠命令指南 | [docs/reference/01-自定义斜杠命令指南.md](docs/reference/01-自定义斜杠命令指南.md) | 命令开发指南 |
+| 技能指南 | [docs/reference/02-技能指南.md](docs/reference/02-技能指南.md) | Skill 开发指南 |
+| 插件指南 | [docs/reference/03-插件指南.md](docs/reference/03-插件指南.md) | 插件开发指南 |
+| 插件市场指南 | [docs/reference/04-插件市场指南.md](docs/reference/04-插件市场指南.md) | 市场配置指南 |
+
+### 架构概述
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -175,157 +215,70 @@ Aide 采用分层架构设计，将关注点分离：
 └─────────────────────────────────────────────────────────┘
 ```
 
-### 核心组件
+#### 核心设计原则
 
-| 组件 | 职责 | 位置 |
-|------|------|------|
-| ConfigManager | 配置管理，维护 .aide/ 目录 | `aide/core/config.py` |
-| EnvManager | 环境检测与修复 | `aide/env/manager.py` |
-| FlowTracker | 流程追踪，协调 Git 提交 | `aide/flow/tracker.py` |
-| DecideServer | 待定项 Web 服务 | `aide/decide/server.py` |
+| 原则 | 说明 |
+|------|------|
+| **渐进式披露** | 信息按需加载，避免上下文过载 |
+| **确定性封装** | 工具调用产生确定性输出 |
+| **信息隔离** | Commands 定义流程，Skills 定义工具用法 |
 
-### 设计原则
-
-1. **渐进式披露** - 按需加载信息，避免上下文过载
-2. **确定性封装** - 工具调用产生确定性输出
-3. **信息隔离** - Commands 定义流程，Skills 定义工具用法
-
-### 工作流程
+### 项目结构
 
 ```
-task-optimize → flow-design → impl → verify → docs → confirm → finish
-      │              │
-      ├─ 任务分析     ├─ 流程图设计
-      ├─ 复杂度评估   └─ PlantUML 校验
-      └─ 待定项处理
+agent-aide/
+├── aide-program/          # 核心 CLI 工具（Python）
+│   ├── aide/              # 源码
+│   │   ├── core/          # 配置管理
+│   │   ├── env/           # 环境检测
+│   │   ├── flow/          # 流程追踪
+│   │   └── decide/        # 待定项确认
+│   └── bin/               # 可执行脚本
+├── aide-marketplace/      # Claude Code 插件市场
+│   └── aide-plugin/       # Aide 插件
+│       ├── commands/      # 斜杠命令（8 个）
+│       └── skills/        # 技能定义（5 个）
+└── docs/                  # 项目文档
+    ├── reference/         # 参考文档
+    └── graph-guide/       # 流程图
 ```
 
-## 命令参考
-
-### aide-program CLI
-
-| 命令 | 说明 |
-|------|------|
-| `aide init` | 初始化 .aide 目录 |
-| `aide env ensure` | 检测并修复环境 |
-| `aide env list` | 列出可用模块 |
-| `aide flow start` | 开始新任务 |
-| `aide flow status` | 查看任务状态 |
-| `aide decide submit` | 提交待定项 |
-| `aide config get/set` | 配置管理 |
-
-### aide-plugin Commands
-
-| 命令 | 说明 |
-|------|------|
-| `/aide:run` | 任务执行（核心命令） |
-| `/aide:auto-run` | 全自动任务执行 |
-| `/aide:setup` | 环境配置 |
-| `/aide:docs` | 项目文档管理 |
-| `/aide:load` | 项目认知载入 |
-| `/aide:readme` | README 生成 |
-| `/aide:user-docs` | 用户文档生成 |
-| `/aide:user-graph` | 用户流程图生成 |
+---
 
 ## 贡献指南
 
-感谢你考虑为 Aide 做贡献！
-
-### 贡献方式
-
-- 报告 Bug
-- 提交功能建议
-- 改进文档
-- 提交代码 PR
+欢迎为 Aide 做贡献！
 
 ### 开发环境
 
-#### 环境要求
-
-- Python >= 3.11
-- uv 包管理器
-- Git
-
-#### 环境搭建
-
 ```bash
-# 克隆仓库
-git clone https://github.com/your-username/agent-aide.git
-cd agent-aide
-
-# 安装 aide-program 依赖
-cd aide-program
-uv venv .venv
-source .venv/bin/activate
+git clone https://github.com/sayurinana/agent-aide.git
+cd agent-aide/aide-program
+uv venv .venv && source .venv/bin/activate
 uv pip install -r requirements.txt
-
-# 运行测试
-python -m pytest
 ```
 
-### 代码规范
-
-- 使用 Python 3.11+ 语法特性
-- 遵循 PEP 8 编码规范
-- 保持函数简洁，单一职责
-
-#### 提交信息格式
+### 提交规范
 
 ```
 <type>(<scope>): <subject>
 
-<body>
-
-<footer>
+# type: feat/fix/docs/style/refactor/test/chore
+# 示例: feat(flow): add branch management
 ```
-
-**type 类型**：
-- `feat`: 新功能
-- `fix`: 修复 Bug
-- `docs`: 文档更新
-- `style`: 代码格式
-- `refactor`: 重构
-- `test`: 测试相关
-- `chore`: 构建/工具
-
-### 提交 PR
-
-1. Fork 本仓库
-2. 创建特性分支：`git checkout -b feature/your-feature`
-3. 提交更改：`git commit -m 'feat: add some feature'`
-4. 推送分支：`git push origin feature/your-feature`
-5. 创建 Pull Request
 
 ### PR 检查清单
 
 - [ ] 代码通过所有测试
-- [ ] 新功能有对应测试
 - [ ] 更新了相关文档
 - [ ] 提交信息格式正确
 
+---
+
 ## 许可证
 
-本项目采用 Apache License 2.0 许可证。
-
-### 简要说明
-
-Apache 2.0 是一个宽松的开源许可证，允许商业使用、修改和分发。
-
-### 你可以
-
-- 商业使用
-- 修改代码
-- 分发副本
-- 私有使用
-
-### 你必须
-
-- 保留版权声明
-- 声明重大修改
-- 包含许可证副本
-
-查看 [LICENSE](LICENSE) 文件获取完整许可证文本。
+本项目采用 [Apache License 2.0](LICENSE) 许可证。
 
 ---
 
-**Made with ❤️ for LLM-driven development**
+**Made with Claude Code**

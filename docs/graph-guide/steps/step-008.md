@@ -132,7 +132,7 @@ auto-run: task-optimize → flow-design → impl → verify → docs → finish
 @startuml commands
 skinparam defaultFontName "PingFang SC"
 skinparam dpi 300
-scale 0.5
+scale 0.3
 
 title /aide:run 任务执行流程
 

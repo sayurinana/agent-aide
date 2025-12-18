@@ -289,7 +289,7 @@ aide config get plantuml.scale      # 默认 0.5
 @startuml
 skinparam defaultFontName "Arial"
 skinparam dpi 300
-scale 0.5
+scale 0.3
 
 ' 主程序流程图
 start

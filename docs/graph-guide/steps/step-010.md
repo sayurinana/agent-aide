@@ -116,7 +116,7 @@
 @startuml guide
 skinparam defaultFontName "PingFang SC"
 skinparam dpi 300
-scale 0.5
+scale 0.3
 
 title 项目配置与文档体系
 

@@ -101,7 +101,7 @@ Skills（技能）：
 @startuml guide
 skinparam defaultFontName "PingFang SC"
 skinparam dpi 300
-scale 0.5
+scale 0.3
 
 title aide-plugin 架构概览
 

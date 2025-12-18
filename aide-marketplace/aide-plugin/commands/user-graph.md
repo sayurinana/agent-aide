@@ -197,7 +197,7 @@ main.py
 @startuml [filename]
 skinparam defaultFontName "PingFang SC"
 skinparam dpi 300
-scale 0.5
+scale 0.3
 
 ' TODO: 基于上述模块结构绘制流程图
 

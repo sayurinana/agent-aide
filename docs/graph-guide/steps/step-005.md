@@ -122,7 +122,7 @@ aide decide result → cli.py → storage.load_result() → 输出 JSON
 @startuml decide
 skinparam defaultFontName "PingFang SC"
 skinparam dpi 300
-scale 0.5
+scale 0.3
 
 title aide decide 待定项确认流程
 
