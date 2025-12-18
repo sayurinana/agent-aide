@@ -1,7 +1,7 @@
 {
   "task_id": "2025-12-19T05-00-29",
   "current_phase": "confirm",
-  "current_step": 11,
+  "current_step": 12,
   "started_at": "2025-12-19T05:00:29+08:00",
   "history": [
     {
@@ -89,7 +89,15 @@
       "action": "next-part",
       "phase": "confirm",
       "step": 11,
-      "summary": "文档更新完成，进入用户确认环节"
+      "summary": "文档更新完成，进入用户确认环节",
+      "git_commit": "b2588d1b761956d0584ff292ff854ff7fa535f1c"
+    },
+    {
+      "timestamp": "2025-12-19T05:16:50+08:00",
+      "action": "next-step",
+      "phase": "confirm",
+      "step": 12,
+      "summary": "用户确认通过"
     }
   ],
   "source_branch": "master",
