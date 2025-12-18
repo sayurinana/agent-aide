@@ -4,6 +4,27 @@
 
 ## 2025-12-19
 
+### 优化
+
+**finish 清理代码移除**
+
+- 移除 `run.md` 和 `auto-run.md` 中的"清理临时文件"指令和 `aide flow next-step "任务完成"` 命令
+- 原因：aide 程序在 finish 时已自动执行清理，无需在命令文档中重复指导
+
+**finish 提交信息格式优化**
+
+- 修改 `branch.py` 中的收尾提交信息格式：
+  - 正常完成：`完成：<分支名> - <任务名>`
+  - 强制清理：`任务中断，清理：<分支名> - <任务名>`
+- 替代原有的 `{短哈希}的任务收尾` 格式，更加语义化
+
+**decide 界面源文件显示**
+
+- `handlers.py` 新增 `_read_source_lines` 方法：读取待定项来源文件的指定行内容
+- `handle_get_items` 方法增强：返回数据中包含 `source_content` 字段
+- `app.js` 更新：显示待定项来源文件的原文内容（以代码块形式）
+- `style.css` 新增：`.location-label` 和 `.source-content` 样式
+
 ### 新增功能
 
 **PlantUML 渲染配置**
