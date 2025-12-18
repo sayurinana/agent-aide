@@ -1,0 +1,18 @@
+{
+  "task_id": "2025-12-19T05-31-03",
+  "current_phase": "task-optimize",
+  "current_step": 1,
+  "started_at": "2025-12-19T05:31:03+08:00",
+  "history": [
+    {
+      "timestamp": "2025-12-19T05:31:03+08:00",
+      "action": "start",
+      "phase": "task-optimize",
+      "step": 1,
+      "summary": "开始任务准备: 优化 finish 后提交信息中的任务名格式"
+    }
+  ],
+  "source_branch": "master",
+  "start_commit": "5942bd2d6c906d57574aba6a4bff52f6ae649604",
+  "task_branch": "aide/024"
+}
