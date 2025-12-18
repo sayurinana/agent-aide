@@ -240,6 +240,11 @@ path = ".aide/project-docs"
 # 默认：.aide/project-docs/block-plan.md
 block_plan_path = ".aide/project-docs/block-plan.md"
 
+# 步骤文档目录路径
+# 存放分步执行的步骤文档，用于接续执行
+# 默认：.aide/project-docs/steps
+steps_path = ".aide/project-docs/steps"
+
 ################################################################################
 # [user_docs] - 面向用户的文档配置
 ################################################################################
@@ -257,12 +262,24 @@ rules_path = "make-readme-rules.md"
 # 用户文档目录路径
 docs_path = "docs"
 
+# 用户文档计划文件路径
+# 存放用户文档编写计划和进度，用于分步执行和接续执行
+docs_plan_path = "docs/user-docs-plan.md"
+
+# 用户文档步骤目录路径
+# 存放分步执行的步骤文档
+docs_steps_path = "docs/steps"
+
 # 用户流程图目录路径
 graph_path = "docs/graph-guide"
 
 # 流程图计划文件路径
 # 存放流程图编写计划和进度，用于分步执行和接续执行
 graph_plan_path = "docs/graph-guide/plan.md"
+
+# 流程图步骤目录路径
+# 存放分步执行的步骤文档
+graph_steps_path = "docs/graph-guide/steps"
 
 ################################################################################
 # [flow] - 流程追踪配置

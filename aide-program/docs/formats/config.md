@@ -36,6 +36,7 @@ use_uv = true            # 是否使用 uv 管理依赖
 [task]
 source = "task-now.md"   # 任务原文档默认路径
 spec = "task-spec.md"    # 任务细则文档默认路径
+plans_path = ".aide/task-plans/"  # 复杂任务计划文档目录
 
 # env: 环境模块配置
 [env]
@@ -57,15 +58,31 @@ path = "requirements.txt"
 # docs: 项目文档配置
 [docs]
 path = ".aide/project-docs"  # 项目文档存放路径
+block_plan_path = ".aide/project-docs/block-plan.md"  # 区块计划文件路径
+steps_path = ".aide/project-docs/steps"  # 步骤文档目录路径
+
+# user_docs: 面向用户的文档配置
+[user_docs]
+readme_path = "README.md"  # README 文件路径
+rules_path = "make-readme-rules.md"  # README 编写规范文件路径
+docs_path = "docs"  # 用户文档目录路径
+docs_plan_path = "docs/user-docs-plan.md"  # 用户文档计划文件路径
+docs_steps_path = "docs/steps"  # 用户文档步骤目录路径
+graph_path = "docs/graph-guide"  # 用户流程图目录路径
+graph_plan_path = "docs/graph-guide/plan.md"  # 流程图计划文件路径
+graph_steps_path = "docs/graph-guide/steps"  # 流程图步骤目录路径
 
 # flow: 流程配置
 [flow]
-phases = ["task-optimize", "flow-design", "impl", "verify", "docs", "finish"]
+phases = ["task-optimize", "flow-design", "impl", "verify", "docs", "confirm", "finish"]
+diagram_path = ".aide/diagrams"  # 流程图存放路径
 
 # plantuml: PlantUML 配置
 [plantuml]
 jar_path = ""            # plantuml.jar 路径，为空时使用内置 jar
-diagram_path = ".aide/diagrams"  # 流程图存放路径
+font_name = "Arial"      # 默认字体名称
+dpi = 300                # DPI 值
+scale = 0.5              # 缩放系数
 
 # decide: 待定项确认服务配置
 [decide]
@@ -105,10 +122,12 @@ timeout = 0
 |------|------|--------|------|
 | `source` | string | `"task-now.md"` | 任务原文档默认路径 |
 | `spec` | string | `"task-spec.md"` | 任务细则文档默认路径 |
+| `plans_path` | string | `".aide/task-plans/"` | 复杂任务计划文档目录 |
 
 **使用场景**：
 - `/aide:run` 未传参数时，使用 `source` 作为默认路径
 - `/aide:run` 续接任务时，使用 `spec` 读取任务细则
+- 当任务被拆分为多个子计划时，存放在 `plans_path` 目录下
 
 ### 4.4 [env] 环境配置
 
@@ -181,33 +200,67 @@ manager = "pnpm"
 | 字段 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
 | `path` | string | `".aide/project-docs"` | 项目文档存放路径 |
+| `block_plan_path` | string | `".aide/project-docs/block-plan.md"` | 区块计划文件路径 |
+| `steps_path` | string | `".aide/project-docs/steps"` | 步骤文档目录路径 |
 
 **使用场景**：
-- `/aide:docs` 创建和更新项目文档时使用此路径
-- `/aide:load` 载入项目文档时读取此路径
+- `/aide:docs` 创建和更新项目文档时使用 `path`
+- `/aide:load` 载入项目文档时读取 `path`
+- `block_plan_path` 记录文档区块划分和生成进度，用于多对话续接
+- `steps_path` 存放分步执行的步骤文档，用于接续执行
 
-### 4.6 [flow] 流程配置
+### 4.6 [user_docs] 面向用户的文档配置
 
 | 字段 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
-| `phases` | array | `["task-optimize", "flow-design", "impl", "verify", "docs", "finish"]` | 环节名称列表 |
+| `readme_path` | string | `"README.md"` | README 文件路径 |
+| `rules_path` | string | `"make-readme-rules.md"` | README 编写规范文件路径 |
+| `docs_path` | string | `"docs"` | 用户文档目录路径 |
+| `docs_plan_path` | string | `"docs/user-docs-plan.md"` | 用户文档计划文件路径 |
+| `docs_steps_path` | string | `"docs/steps"` | 用户文档步骤目录路径 |
+| `graph_path` | string | `"docs/graph-guide"` | 用户流程图目录路径 |
+| `graph_plan_path` | string | `"docs/graph-guide/plan.md"` | 流程图计划文件路径 |
+| `graph_steps_path` | string | `"docs/graph-guide/steps"` | 流程图步骤目录路径 |
+
+**使用场景**：
+- `/aide:readme` 生成 README 时使用 `readme_path` 和 `rules_path`
+- `/aide:user-docs` 生成用户文档时使用 `docs_path`、`docs_plan_path`、`docs_steps_path`
+- `/aide:user-graph` 生成流程图时使用 `graph_path`、`graph_plan_path`、`graph_steps_path`
+- `*_plan_path` 用于分步执行和接续执行的计划管理
+- `*_steps_path` 存放分步执行的步骤文档
+
+### 4.7 [flow] 流程配置
+
+| 字段 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `phases` | array | `["task-optimize", "flow-design", "impl", "verify", "docs", "confirm", "finish"]` | 环节名称列表 |
+| `diagram_path` | string | `".aide/diagrams"` | 流程图存放路径 |
 
 **使用场景**：
 - `aide flow` 校验环节跳转合法性
 - 定义有效的环节名称
+- `diagram_path` 存放 PlantUML 源文件（.puml）和生成的图片（.png）
 
-### 4.7 [plantuml] PlantUML 配置
+### 4.8 [plantuml] PlantUML 配置
 
 | 字段 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
 | `jar_path` | string | `""` | plantuml.jar 路径，为空时使用内置 jar |
-| `diagram_path` | string | `".aide/diagrams"` | 流程图存放路径 |
+| `font_name` | string | `"Arial"` | 默认字体名称 |
+| `dpi` | int | `300` | DPI 值（影响图片清晰度） |
+| `scale` | float | `0.5` | 缩放系数（0.5 表示缩小到 50%） |
 
 **使用场景**：
 - `aide flow next-part` 离开 flow-design 时校验和生成流程图
 - 支持自定义 jar 路径以使用特定版本的 PlantUML
+- LLM 编写 PlantUML 时应在文件头部添加：
+  ```plantuml
+  skinparam defaultFontName "<font_name>"
+  skinparam dpi <dpi>
+  scale <scale>
+  ```
 
-### 4.8 [decide] 待定项确认配置
+### 4.9 [decide] 待定项确认配置
 
 | 字段 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
