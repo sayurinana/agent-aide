@@ -1,7 +1,7 @@
 {
   "task_id": "2025-12-19T00-40-02",
   "current_phase": "impl",
-  "current_step": 17,
+  "current_step": 18,
   "started_at": "2025-12-19T00:40:02+08:00",
   "history": [
     {
@@ -137,7 +137,15 @@
       "action": "next-step",
       "phase": "impl",
       "step": 17,
-      "summary": "完成子计划4: /aide:user-docs 命令实现"
+      "summary": "完成子计划4: /aide:user-docs 命令实现",
+      "git_commit": "59125688891cf3b63018c4a8c4172fbe54082f7f"
+    },
+    {
+      "timestamp": "2025-12-19T01:57:58+08:00",
+      "action": "next-step",
+      "phase": "impl",
+      "step": 18,
+      "summary": "完成子计划5: /aide:user-graph 命令实现 (配置项 + 命令文件)"
     }
   ],
   "source_branch": "master",
