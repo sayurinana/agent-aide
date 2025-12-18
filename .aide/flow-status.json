@@ -209,7 +209,8 @@
       "action": "next-part",
       "phase": "finish",
       "step": 26,
-      "summary": "用户确认通过，进入收尾"
+      "summary": "用户确认通过，进入收尾",
+      "git_commit": "3ed7848bd721f2c7f5fb7b247259c5c3a201ded6"
     }
   ],
   "source_branch": "master",

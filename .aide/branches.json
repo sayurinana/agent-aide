@@ -231,7 +231,9 @@
       "task_id": "2025-12-19T03-01-27",
       "task_summary": "开始任务准备: 调整 commands/skills/aide-program 体系",
       "started_at": "2025-12-19T03:01:27+08:00",
-      "status": "active"
+      "status": "finished",
+      "end_commit": "3ed7848bd721f2c7f5fb7b247259c5c3a201ded6",
+      "finished_at": "2025-12-19T03:58:34+08:00"
     }
   ]
 }
