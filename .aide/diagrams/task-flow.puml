@@ -1,0 +1,86 @@
+@startuml task-flow
+!theme plain
+title Aide 体系多项调整任务 - 执行流程图
+
+start
+
+partition "阶段1: 任务准备 (task-optimize)" {
+    :读取任务文档;
+    :口语化内容解析;
+    :任务分析与复杂度评估;
+    :生成待定项;
+    :用户确认待定项;
+    :生成任务细则\n(guide.md + 6个spec文档);
+    :用户确认细则;
+}
+
+partition "阶段2: 流程设计 (flow-design)" {
+    :设计任务执行流程图;
+    :设计程序逻辑流图;
+}
+
+partition "阶段3: 迭代实现 (impl)" {
+    fork
+        :子计划1: 基础配置修改;
+        note right
+            - gitignore_aide 默认值
+            - aide init 任意目录
+        end note
+    fork again
+        :子计划2: README skill 模板集;
+        note right
+            - SKILL.md
+            - 5个模板 + 10个模块
+        end note
+    fork again
+        :子计划6: 返工流程优化;
+        note right
+            - rework skill
+            - back-confirm 机制
+        end note
+    end fork
+
+    :子计划3: README 命令实现;
+    note right
+        依赖子计划2
+    end note
+
+    :子计划4: 用户文档命令实现;
+    note right
+        依赖子计划3
+    end note
+
+    :子计划5: 用户流程图命令实现;
+    note right
+        依赖子计划4
+    end note
+}
+
+partition "阶段4: 验证交付 (verify)" {
+    :对照任务细则验证;
+    :执行功能测试;
+}
+
+partition "阶段5: 文档更新 (docs)" {
+    :更新 README.md;
+    :更新 CHANGELOG.md;
+}
+
+partition "阶段6: 用户确认 (confirm)" {
+    :汇报完成信息;
+    if (用户确认?) then (通过)
+    else (返工)
+        :触发 rework skill;
+        :返工处理;
+        detach
+    endif
+}
+
+partition "阶段7: 收尾 (finish)" {
+    :清理临时文件;
+    :任务完成;
+}
+
+stop
+
+@enduml

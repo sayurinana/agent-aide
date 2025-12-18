@@ -1,0 +1,94 @@
+@startuml spec-06-back-confirm
+!theme plain
+title 子计划6: back-confirm 机制 - 程序逻辑流图
+
+|handle_flow_back_part|
+start
+:接收参数: phase, reason;
+:root = find_project_root();
+
+:检查状态文件\n.aide/back-confirm-state.json;
+
+if (状态文件存在?) then (是)
+    :输出错误: 存在未完成的确认流程;
+    :提示先执行 back-confirm 或取消;
+    stop
+else (否)
+    :生成随机 key (6位);
+    :创建状态文件;
+    note right
+      {
+        "pending_key": "abc123",
+        "target_part": phase,
+        "reason": reason,
+        "created_at": timestamp
+      }
+    end note
+    :输出提示信息;
+    note right
+      → 返工确认码: abc123
+      → 目标环节: flow-design
+      → 请确认已完成以下准备工作:
+        1. 更新相关文档
+        2. 记录返工原因
+      → 确认后执行:
+        aide flow back-confirm --key abc123
+    end note
+    stop
+endif
+
+|handle_flow_back_confirm|
+start
+:接收参数: key;
+:root = find_project_root();
+
+:读取状态文件;
+
+if (状态文件存在?) then (是)
+    :读取 pending_key;
+    if (key == pending_key?) then (匹配)
+        :读取 target_part 和 reason;
+        :删除状态文件;
+        note right
+          先清理再提交
+          避免状态文件入库
+        end note
+
+        :执行 back-part 操作;
+        :更新 flow-status.json;
+        :记录历史;
+
+        :执行 git add .;
+        :执行 git commit\n"[aide] 返工前清洁提交";
+
+        :输出成功消息;
+        :输出警告;
+        note right
+          ⚠ 流程状态已返工到 flow-design
+          ⚠ 建议使用 /exit 结束对话
+          ⚠ 重新执行 load+run 接续任务
+        end note
+        stop
+    else (不匹配)
+        :输出错误: key 不匹配;
+        stop
+    endif
+else (否)
+    :输出错误: 无待确认的返工请求;
+    :提示先执行 back-part;
+    stop
+endif
+
+legend right
+  **涉及文件**:
+  - aide-program/aide/main.py
+    - 新增 handle_flow_back_confirm()
+    - 修改 handle_flow_back_part()
+  - aide-program/aide/flow/tracker.py
+    - 新增确认状态管理逻辑
+
+  **新增文件**:
+  - .aide/back-confirm-state.json (运行时)
+endlegend
+
+@enduml
