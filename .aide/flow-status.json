@@ -1,0 +1,18 @@
+{
+  "task_id": "2025-12-19T04-37-00",
+  "current_phase": "task-optimize",
+  "current_step": 1,
+  "started_at": "2025-12-19T04:37:00+08:00",
+  "history": [
+    {
+      "timestamp": "2025-12-19T04:37:00+08:00",
+      "action": "start",
+      "phase": "task-optimize",
+      "step": 1,
+      "summary": "开始任务准备: 调整 aide 体系的 finish 清理、提交信息和 decide 界面"
+    }
+  ],
+  "source_branch": "master",
+  "start_commit": "af40327146d6be0781bb8f9ccdcaf8b2ce216455",
+  "task_branch": "aide/022"
+}
