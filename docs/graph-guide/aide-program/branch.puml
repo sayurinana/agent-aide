@@ -1,0 +1,114 @@
+@startuml branch
+skinparam defaultFontName "PingFang SC"
+skinparam dpi 300
+scale 0.5
+
+title aide 分支管理流程
+
+|BranchManager|
+start
+
+switch (操作)
+
+case (创建任务分支)
+    :aide flow start 触发;
+
+    |Git|
+    :get_current_branch();
+
+    |BranchManager|
+    :检查当前分支;
+
+    if (在主分支?) then (是)
+        :生成分支名;
+        note right: aide/{task_id}
+
+        |Git|
+        :create_branch(branch_name);
+        :checkout_branch(branch_name);
+
+        |BranchManager|
+        :记录分支信息;
+
+        |Storage|
+        :load_branches_data();
+        :添加新分支记录;
+        note right
+          {
+            "name": "aide/2025-12-19T10-00-00",
+            "task_id": "2025-12-19T10-00-00",
+            "status": "active",
+            "created_at": "...",
+            "summary": "任务描述"
+          }
+        end note
+        :save_branches_data();
+
+        |BranchManager|
+        :update_branches_doc();
+        note right: 更新 branches.md
+
+        #LightGreen:分支创建成功;
+    else (否)
+        #Orange:⚠ 已在任务分支;
+    endif
+
+case (完成任务分支)
+    :aide flow finish 触发;
+
+    |BranchManager|
+    :获取当前任务分支;
+
+    if (任务已完成?) then (是)
+        |Git|
+        :get_current_branch();
+        :确认在任务分支;
+
+        :checkout_branch(main);
+        :merge_branch(task_branch);
+
+        if (合并成功?) then (是)
+            |Storage|
+            :load_branches_data();
+            :更新分支状态;
+            note right: status: "completed"
+            :save_branches_data();
+
+            |BranchManager|
+            :update_branches_doc();
+
+            #LightGreen:分支合并成功;
+        else (冲突)
+            #Pink:✗ 合并冲突，需手动解决;
+            stop
+        endif
+    else (否)
+        #Orange:⚠ 任务未完成;
+    endif
+
+case (查看分支状态)
+    |Storage|
+    :load_branches_data();
+
+    |BranchManager|
+    :格式化输出;
+    :显示分支列表;
+
+endswitch
+
+stop
+
+legend right
+  **分支状态**
+  ----
+  active：活跃任务分支
+  completed：已完成并合并
+  abandoned：已废弃
+  ----
+  **数据文件**
+  ----
+  branches.json：分支元数据
+  branches.md：人类可读文档
+endlegend
+
+@enduml

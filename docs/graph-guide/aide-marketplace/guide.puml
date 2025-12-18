@@ -1,0 +1,93 @@
+@startuml guide
+skinparam defaultFontName "PingFang SC"
+skinparam dpi 300
+scale 0.5
+
+title aide-plugin 架构概览
+
+' 样式配置
+skinparam componentStyle rectangle
+skinparam ArrowColor #666666
+skinparam ComponentBackgroundColor #F5F5F5
+skinparam ComponentBorderColor #999999
+skinparam PackageBackgroundColor #FAFAFA
+skinparam PackageBorderColor #CCCCCC
+
+' 市场
+package "aide-marketplace" as market {
+    component "marketplace.json\n市场配置" as market_config #E0E0E0
+}
+
+' 插件
+package "aide-plugin (v2.1.3)" as plugin {
+
+    ' Commands
+    package "Commands（斜杠命令）" as commands {
+        component "**/aide:run**\n任务执行" as run #E3F2FD
+        component "**/aide:auto-run**\n全自动执行" as autorun #E3F2FD
+        component "/aide:setup\n环境配置" as setup #BBDEFB
+        component "/aide:load\n项目认知" as load #BBDEFB
+        component "/aide:docs\n文档管理" as docs #BBDEFB
+        component "/aide:readme\nREADME生成" as readme #BBDEFB
+        component "/aide:user-docs\n用户文档" as userdocs #BBDEFB
+        component "/aide:user-graph\n用户流程图" as usergraph #BBDEFB
+    }
+
+    ' Skills
+    package "Skills（技能）" as skills {
+        component "**aide**\n命令使用指南" as skill_aide #E8F5E9
+        component "**env-config**\n环境配置指南" as skill_env #E8F5E9
+        component "readme-templates\nREADME模板" as skill_readme #C8E6C9
+        component "rework\n返工流程" as skill_rework #C8E6C9
+        component "task-parser\n口语化解析" as skill_parser #C8E6C9
+    }
+}
+
+' 外部依赖
+component "aide CLI\n命令行工具" as cli #FFF3E0
+
+' 触发关系
+run --> skill_aide : 强制触发
+run --> skill_rework : 条件触发
+autorun --> skill_aide : 强制触发
+autorun --> skill_parser : 条件触发
+setup --> skill_env : 强制触发
+load --> skill_aide : 强制触发
+docs --> skill_aide : 强制触发
+readme --> skill_readme : 强制触发
+userdocs --> skill_readme : 强制触发
+
+' CLI 调用
+run --> cli : 调用
+autorun --> cli : 调用
+setup --> cli : 调用
+load --> cli : 调用
+docs --> cli : 调用
+
+' 市场关系
+market_config --> plugin
+
+note right of run
+  **核心命令**
+  任务准备 → 流程设计 →
+  迭代实现 → 验证 →
+  文档 → 确认 → 收尾
+end note
+
+note right of skill_aide
+  **基础技能**
+  aide env/flow/decide/config
+  命令使用方法
+end note
+
+legend bottom
+  **设计原则**
+  ----
+  Commands：定义"做什么"和"按什么顺序做"
+  Skills：定义"怎么调用工具"
+  ----
+  Commands 是流程的"目录"
+  Skills 是流程的"参考手册"
+endlegend
+
+@enduml

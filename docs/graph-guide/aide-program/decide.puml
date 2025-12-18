@@ -1,0 +1,116 @@
+@startuml decide
+skinparam defaultFontName "PingFang SC"
+skinparam dpi 300
+scale 0.5
+
+title aide decide 待定项确认流程
+
+actor 用户 as user
+participant "aide decide submit" as cli_submit
+participant "cli.py" as cli
+participant "storage.py" as storage
+participant "daemon.py" as daemon
+participant "server.py" as server
+participant "handlers.py" as handlers
+participant "Web 界面" as web
+participant "aide decide result" as cli_result
+
+== 提交待定项 ==
+
+user -> cli_submit : aide decide submit items.json
+activate cli_submit
+
+cli_submit -> cli : handle_submit(file)
+activate cli
+
+cli -> cli : 读取 JSON 文件
+cli -> cli : 验证数据格式
+
+cli -> storage : save_pending(items)
+activate storage
+storage -> storage : 写入 .aide/decisions/pending.json
+storage --> cli : 保存成功
+deactivate storage
+
+cli -> daemon : 启动后台服务
+activate daemon
+
+daemon -> server : DecideServer.start_daemon()
+activate server
+
+server -> server : 探测可用端口
+note right: 默认 3721
+
+server -> server : 启动 HTTP 服务
+
+daemon --> cli : 服务已启动
+deactivate daemon
+
+cli --> cli_submit : → 请访问: http://localhost:3721
+deactivate cli
+deactivate cli_submit
+
+== 用户决策 ==
+
+user -> web : 访问 Web 界面
+activate web
+
+web -> handlers : GET /api/items
+activate handlers
+handlers -> storage : load_pending()
+storage --> handlers : 待定项数据
+handlers --> web : JSON 响应
+deactivate handlers
+
+web -> web : 渲染决策界面
+note right
+  - 显示待定项列表
+  - 展示选项和推荐
+  - 用户选择和填写备注
+end note
+
+user -> web : 提交决策
+
+web -> handlers : POST /api/submit
+activate handlers
+handlers -> handlers : 验证决策数据
+handlers -> storage : save_result(decisions)
+storage --> handlers : 保存成功
+handlers --> web : 提交成功
+deactivate handlers
+
+web -> server : 通知完成
+server -> server : 关闭服务
+deactivate server
+
+web --> user : 显示完成提示
+deactivate web
+
+== 获取结果 ==
+
+user -> cli_result : aide decide result
+activate cli_result
+
+cli_result -> cli : handle_result()
+activate cli
+
+cli -> storage : load_result()
+activate storage
+storage -> storage : 读取 .aide/decisions/result.json
+storage --> cli : 决策结果
+deactivate storage
+
+cli --> cli_result : 输出 JSON 结果
+deactivate cli
+deactivate cli_result
+
+note right of cli_result
+  {
+    "decisions": [
+      {"id": 1, "chosen": "option_a"},
+      {"id": 2, "chosen": "option_b", "note": "备注"}
+    ]
+  }
+end note
+
+@enduml

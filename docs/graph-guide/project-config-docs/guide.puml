@@ -1,0 +1,74 @@
+@startuml guide
+skinparam defaultFontName "PingFang SC"
+skinparam dpi 300
+scale 0.5
+
+title 项目配置与文档体系
+
+@startmindmap
+<style>
+mindmapDiagram {
+    node {
+        BackgroundColor #F5F5F5
+        FontName "PingFang SC"
+    }
+    :depth(1) {
+        BackgroundColor #E3F2FD
+    }
+    :depth(2) {
+        BackgroundColor #E8F5E9
+    }
+    :depth(3) {
+        BackgroundColor #FFF3E0
+    }
+}
+</style>
+
+* 项目配置与文档
+** .aide/\n(Aide 数据目录)
+*** config.toml\n核心配置
+**** [general]\n通用配置
+**** [runtime]\n运行时要求
+**** [task]\n任务文档路径
+**** [env]\n环境检测配置
+**** [docs]\n项目文档配置
+**** [user_docs]\n用户文档配置
+**** [flow]\n流程追踪配置
+**** [plantuml]\nPlantUML 配置
+**** [decide]\n待定项配置
+*** branches.json\n分支数据
+*** branches.md\n分支文档
+*** decisions/\n决策记录
+*** diagrams/\n流程图
+*** task-plans/\n任务计划
+**** guide.md
+**** spec-NN.md
+*** logs/\n历史归档
+**** *-status.json
+**** *-decisions/
+*** project-docs/\nLLM 项目文档
+**** README.md
+**** block-plan.md
+**** blocks/
+** docs/\n(项目文档)
+*** reference/\n参考文档
+**** aide-overview.md
+**** project-details.md
+**** 01-斜杠命令指南
+**** 02-技能指南
+**** 03-插件指南
+**** 04-市场指南
+** 根目录配置
+*** CLAUDE.md\nClaude 指令
+**** 简体中文要求
+**** Sequential-Thinking
+**** 虚拟环境要求
+**** 批量文件操作
+*** README.md\n项目说明
+*** CHANGELOG.md\n变更日志
+*** AGENTS.md\nAgent 配置
+*** requirements.txt\nPython 依赖
+*** .gitignore\n忽略规则
+@endmindmap
+
+@enduml

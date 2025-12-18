@@ -1,0 +1,94 @@
+@startuml main
+skinparam defaultFontName "PingFang SC"
+skinparam dpi 300
+scale 0.5
+
+title aide CLI 主流程
+
+start
+
+:接收命令行参数;
+
+:argparse 解析参数;
+
+if (command?) then
+    switch (command)
+    case (init)
+        :handle_init();
+        :创建 .aide/ 目录;
+        :生成默认 config.toml;
+        :更新 .gitignore;
+
+    case (env)
+        :handle_env_command();
+        switch (subcommand)
+        case (ensure)
+            :EnvManager.ensure();
+            :遍历启用模块;
+            :检测并修复环境;
+        case (list)
+            :EnvManager.list_modules();
+            :输出可用模块列表;
+        case (set)
+            :EnvManager.set_*();
+            :更新配置;
+        endswitch
+
+    case (flow)
+        :handle_flow_command();
+        switch (subcommand)
+        case (start)
+            :FlowTracker.start();
+        case (next-step)
+            :FlowTracker.next_step();
+        case (back-step)
+            :FlowTracker.back_step();
+        case (next-part)
+            :FlowTracker.next_part();
+        case (back-part)
+            :FlowTracker.back_part();
+        case (back-confirm)
+            :FlowTracker.back_confirm();
+        case (issue)
+            :FlowTracker.issue();
+        case (error)
+            :FlowTracker.error();
+        case (status)
+            :FlowTracker.status();
+        case (list)
+            :FlowStorage.list_all_tasks();
+        case (show)
+            :FlowStorage.show_task();
+        endswitch
+
+    case (decide)
+        :handle_decide_command();
+        switch (subcommand)
+        case (submit)
+            :handle_submit();
+            :保存待定项;
+            :启动后台服务;
+        case (result)
+            :handle_result();
+            :读取决策结果;
+        endswitch
+
+    case (config)
+        :handle_config_command();
+        switch (subcommand)
+        case (get)
+            :ConfigManager.get_value();
+        case (set)
+            :ConfigManager.set_value();
+        endswitch
+
+    endswitch
+else (无命令)
+    :显示帮助信息;
+endif
+
+:输出结果 (✓/⚠/✗/→);
+
+stop
+
+@enduml

@@ -1,0 +1,156 @@
+@startuml flow
+skinparam defaultFontName "PingFang SC"
+skinparam dpi 300
+scale 0.5
+
+title aide flow 核心流程
+
+|FlowTracker|
+start
+
+:接收 flow 命令;
+
+switch (操作类型)
+
+case (start)
+    :开始新任务;
+
+    |Storage|
+    :archive_existing_status();
+    note right: 归档旧任务到 logs/
+
+    |FlowTracker|
+    :创建新状态;
+    note right
+      task_id: 时间戳
+      phase: 指定环节
+      step: 1
+    end note
+
+    |Branch|
+    :create_task_branch();
+    note right: 创建 aide/{task_id} 分支
+
+case (next-step)
+    :步骤前进;
+
+    |Storage|
+    :load_status();
+
+    |FlowTracker|
+    :step += 1;
+    :记录操作;
+
+case (back-step)
+    :步骤回退;
+
+    |Storage|
+    :load_status();
+
+    |FlowTracker|
+    :step -= 1;
+    :记录回退原因;
+
+case (next-part)
+    :环节前进;
+
+    |Storage|
+    :load_status();
+
+    |Validator|
+    :validate_transition(current, target);
+
+    if (校验结果) then (通过)
+        |Hooks|
+        :run_phase_hooks(target);
+        note right
+          - PlantUML 校验
+          - CHANGELOG 检查
+        end note
+
+        |FlowTracker|
+        :phase = target;
+        :step = 1;
+    else (失败)
+        #Pink:抛出校验错误;
+        stop
+    endif
+
+case (back-part)
+    :环节回退;
+
+    |Storage|
+    :load_status();
+
+    |FlowTracker|
+    :生成确认 key;
+    #Orange:输出 ⚠ 需要确认;
+    note right
+      执行 aide flow back-confirm --key xxx
+    end note
+    stop
+
+case (back-confirm)
+    :确认返工;
+
+    |FlowTracker|
+    :验证 key;
+
+    if (key 有效?) then (是)
+        :执行回退;
+        :phase = 目标环节;
+        #Orange:输出 ⚠ 建议重新开始对话;
+    else (否)
+        #Pink:输出 ✗ key 无效;
+        stop
+    endif
+
+case (issue)
+    :记录问题;
+
+    |Storage|
+    :load_status();
+
+    |FlowTracker|
+    :添加 issue 记录;
+
+case (error)
+    :记录错误;
+
+    |Storage|
+    :load_status();
+
+    |FlowTracker|
+    :添加 error 记录;
+
+endswitch
+
+|Storage|
+:save_status();
+
+|Git|
+:add_all();
+:commit(message);
+note right: [aide] {phase}: {summary}
+
+|FlowTracker|
+#LightGreen:输出结果;
+
+stop
+
+legend right
+  **环节流转规则**
+  ----
+  有效跳转：
+  task-optimize → flow-design
+  flow-design → impl
+  impl → verify
+  verify → docs
+  docs → confirm
+  confirm → finish
+  ----
+  回退需确认：
+  任意环节 → 之前的环节
+endlegend
+
+@enduml

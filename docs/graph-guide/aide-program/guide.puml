@@ -1,0 +1,89 @@
+@startuml guide
+skinparam defaultFontName "PingFang SC"
+skinparam dpi 300
+scale 0.5
+
+title aide-program 架构概览
+
+' 样式配置
+skinparam componentStyle rectangle
+skinparam ArrowColor #666666
+skinparam ComponentBackgroundColor #F5F5F5
+skinparam ComponentBorderColor #999999
+skinparam PackageBackgroundColor #FAFAFA
+skinparam PackageBorderColor #CCCCCC
+
+' 入口
+component "**main.py**\nCLI 主入口\n命令解析与分发" as main #E3F2FD
+
+' 核心模块
+package "core/" as core {
+    component "**config.py**\nConfigManager\n配置文件管理" as config #FFF3E0
+    component "**output.py**\n输出格式工具\n✓/⚠/✗/→" as output #FFF3E0
+}
+
+' 环境检测模块
+package "env/" as env {
+    component "**manager.py**\nEnvManager\n环境管理器" as env_mgr #E8F5E9
+    component "**registry.py**\n模块注册表" as registry #E8F5E9
+    package "modules/" {
+        component "python/uv/rust\nnode/flutter/android\nvenv/requirements" as modules #C8E6C9
+    }
+}
+
+' 流程追踪模块
+package "flow/" as flow {
+    component "**tracker.py**\nFlowTracker\n流程追踪器" as tracker #FCE4EC
+    component "**storage.py**\n状态存储" as storage #FCE4EC
+    component "**git.py**\nGit 集成" as git #FCE4EC
+    component "**validator.py**\n流程校验" as validator #FCE4EC
+    component "**hooks.py**\n环节钩子" as hooks #FCE4EC
+    component "**branch.py**\n分支管理" as branch #FCE4EC
+}
+
+' 待定项确认模块
+package "decide/" as decide {
+    component "**cli.py**\n命令处理" as decide_cli #E1F5FE
+    component "**server.py**\nHTTP 服务" as server #E1F5FE
+    component "**handlers.py**\n请求处理" as handlers #E1F5FE
+    component "**storage.py**\n数据存储" as decide_storage #E1F5FE
+    component "**web/**\n前端界面" as web #E1F5FE
+}
+
+' 主要依赖关系
+main --> core : 配置管理
+main --> env : "aide env *"
+main --> flow : "aide flow *"
+main --> decide : "aide decide *"
+
+' 模块内部关系
+env_mgr --> registry
+env_mgr --> modules
+registry --> modules
+
+tracker --> storage
+tracker --> git
+tracker --> validator
+tracker --> hooks
+tracker --> branch
+
+decide_cli --> decide_storage
+decide_cli --> server
+server --> handlers
+handlers --> web
+
+' 跨模块依赖
+tracker --> config : 读取配置
+env_mgr --> config : 读取配置
+decide_cli --> config : 读取配置
+
+note right of main
+  **命令列表**
+  - aide init
+  - aide env ensure/list/set
+  - aide flow start/next-step/...
+  - aide decide submit/result
+  - aide config get/set
+end note
+
+@enduml

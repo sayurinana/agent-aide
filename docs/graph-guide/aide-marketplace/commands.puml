@@ -1,0 +1,142 @@
+@startuml commands
+skinparam defaultFontName "PingFang SC"
+skinparam dpi 300
+scale 0.5
+
+title /aide:run 任务执行流程
+
+|主流程|
+start
+
+:触发 aide skill;
+:aide flow status 检查状态;
+
+if (有活跃任务?) then (是)
+    :接续任务;
+else (否)
+    :开始新任务;
+    :aide flow start task-optimize;
+endif
+
+partition "**task-optimize** (任务优化)" #E3F2FD {
+    :读取任务文档 (task-now.md);
+    :任务分析和理解;
+    :复杂度评估;
+
+    if (存在待定项?) then (是)
+        :aide decide submit;
+        :用户 Web 确认;
+        :aide decide result;
+        note right: /aide:auto-run 自动决策
+    endif
+
+    :生成任务细则;
+    note right
+      .aide/task-plans/
+      - guide.md
+      - spec-01.md
+      - spec-02.md
+    end note
+
+    if (用户确认?) then (是)
+        :aide flow next-step "细则确认";
+        note right: /aide:auto-run 自动确认
+    else (否)
+        :修改细则;
+    endif
+}
+
+:aide flow next-part flow-design;
+
+partition "**flow-design** (流程设计)" #E8F5E9 {
+    :设计流程图 (PlantUML);
+    :创建 .puml 文件;
+
+    :aide flow next-step "流程图完成";
+
+    note right
+      PlantUML 校验钩子
+      自动生成 PNG
+    end note
+}
+
+:aide flow next-part impl;
+
+partition "**impl** (迭代实现)" #FCE4EC {
+    while (还有待实现项) is (是)
+        :按流程图实现代码;
+        :aide flow next-step "完成 xxx";
+
+        if (发现问题?) then (是)
+            :aide flow issue "问题描述";
+        endif
+
+        if (严重错误?) then (是)
+            :aide flow error "错误描述";
+            note right: /aide:auto-run 自动处理
+        endif
+    endwhile (完成)
+}
+
+:aide flow next-part verify;
+
+partition "**verify** (验证交付)" #FFF3E0 {
+    :运行测试;
+    :功能验证;
+
+    if (验证通过?) then (是)
+        :aide flow next-step "验证通过";
+    else (否)
+        :aide flow back-part impl;
+        note right: 返回实现阶段
+        stop
+    endif
+}
+
+:aide flow next-part docs;
+
+partition "**docs** (文档更新)" #E1F5FE {
+    :更新相关文档;
+    :更新 CHANGELOG.md;
+    :aide flow next-step "文档完成";
+}
+
+:aide flow next-part confirm;
+
+partition "**confirm** (用户确认)" #F3E5F5 {
+    note right: /aide:auto-run 跳过此阶段
+    :等待用户验收;
+
+    if (用户确认?) then (通过)
+        :aide flow next-step "确认通过";
+    else (需修改)
+        :触发 rework skill;
+        :aide flow back-part <目标环节>;
+        stop
+    endif
+}
+
+:aide flow next-part finish;
+
+partition "**finish** (收尾)" #E0E0E0 {
+    :合并任务分支;
+    :归档任务状态;
+    :aide flow next-step "任务完成";
+}
+
+#LightGreen:任务完成;
+
+stop
+
+legend right
+  **/aide:run vs /aide:auto-run**
+  ----
+  | 差异点 | run | auto-run |
+  |--------|-----|----------|
+  | 待定项 | Web确认 | 自动决策 |
+  | 细则 | 用户确认 | 自动确认 |
+  | confirm | 需要 | 跳过 |
+  | 错误 | 人工处理 | 自动处理 |
+endlegend
+
+@enduml

@@ -1,0 +1,98 @@
+@startuml skills
+skinparam defaultFontName "PingFang SC"
+skinparam dpi 300
+scale 0.5
+
+title aide-plugin 技能体系
+
+@startmindmap
+<style>
+mindmapDiagram {
+    node {
+        BackgroundColor #F5F5F5
+        FontName "PingFang SC"
+    }
+    :depth(1) {
+        BackgroundColor #E3F2FD
+    }
+    :depth(2) {
+        BackgroundColor #E8F5E9
+    }
+    :depth(3) {
+        BackgroundColor #FFF3E0
+    }
+}
+</style>
+
+* Skills\n技能体系
+** aide\n(基础技能)
+*** 触发方式
+**** 强制触发
+**** /aide:run
+**** /aide:load
+**** /aide:docs
+*** 内容
+**** aide env 命令
+**** aide flow 命令
+**** aide decide 命令
+**** aide config 命令
+*** 作用
+**** CLI 操作指南
+** env-config\n(环境技能)
+*** 触发方式
+**** 强制触发: /aide:setup
+**** 条件触发: env ensure 失败
+*** 内容
+**** 模块分类说明
+**** 项目类型配置
+**** 多项目场景
+**** 故障排除
+*** 作用
+**** 环境配置详细指导
+** readme-templates\n(模板技能)
+*** 触发方式
+**** 强制触发
+**** /aide:readme
+**** /aide:user-docs
+*** 基础模板 (5个)
+**** minimal.md
+**** library.md
+**** application.md
+**** documentation.md
+**** monorepo.md
+*** 可选模块 (10个)
+**** quickstart
+**** installation
+**** examples
+**** api
+**** configuration
+**** architecture
+**** contributing
+**** changelog
+**** license
+**** faq
+** rework\n(返工技能)
+*** 触发方式
+**** 条件触发
+**** 检测到返工场景
+*** 内容
+**** 返工类型判断
+**** task.source 更新
+**** 确认机制
+**** 用户提醒
+*** 作用
+**** 返工流程指导
+** task-parser\n(解析技能)
+*** 触发方式
+**** 条件触发
+**** 检测到口语化内容
+*** 内容
+**** 语义解析
+**** 批判性分析
+**** 建设性优化
+**** 上下文关联
+*** 作用
+**** 口语化→结构化
+@endmindmap
+
+@enduml
