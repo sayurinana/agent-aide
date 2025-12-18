@@ -419,13 +419,8 @@ aide flow next-step "文档更新完成"
 aide flow next-part finish "文档更新完成，进入收尾"
 ```
 
-- 清理临时文件
 - 检查遗漏的 TODO
 - 输出完成摘要
-
-```bash
-aide flow next-step "任务完成"
-```
 
 ---
 
