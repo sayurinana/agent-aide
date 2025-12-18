@@ -17,6 +17,20 @@
 
 - run.md finish 环节新增清理任务计划文件（`.aide/task-plans/`）的指导
 
+**返工流程警告增强**
+
+- `aide flow back-part` 输出确认 key 前，新增 rework skill 学习提示
+- 明确要求完成准备工作后才能确认返工
+
+### 移除
+
+**移除安装命令和离线安装程序**
+
+- 删除 `/aide:install-linux` 命令（`aide-marketplace/aide-plugin/commands/install-linux.md`）
+- 删除 `/aide:install-win` 命令（`aide-marketplace/aide-plugin/commands/install-win.md`）
+- 删除 `aide-program/offline-installer/` 目录及其全部内容
+- 清理项目文档中的相关引用
+
 ### 新增功能
 
 **返工流程优化**
