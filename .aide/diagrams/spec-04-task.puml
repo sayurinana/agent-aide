@@ -1,0 +1,63 @@
+@startuml spec-04-task
+!theme plain
+title 子计划4: 用户文档命令实现 - 任务执行流程图
+
+start
+
+partition "4.1 添加配置项" {
+    :在 DEFAULT_CONFIG 中添加\nuser_docs.docs_path;
+    :测试 aide config get 命令;
+}
+
+partition "4.2 创建命令文件" {
+    :创建 commands/user-docs.md;
+
+    partition "编写前置检查" {
+        :检查 make-readme-rules.md;
+        if (存在?) then (是)
+            :继续;
+        else (否)
+            :提示先执行 /aide:readme;
+            stop
+        endif
+
+        :检查项目文档 .aide/project-docs/;
+        if (存在?) then (是)
+            :继续;
+        else (否)
+            :建议先执行 /aide:docs + /aide:load;
+        endif
+    }
+
+    partition "编写文档生成逻辑" {
+        :分析项目类型和结构;
+
+        switch (项目类型?)
+        case (纯文档项目)
+            :生成导航结构;
+            :overview.md + navigation.md;
+        case (单体程序项目)
+            :生成开发文档结构;
+            :getting-started + usage + api;
+        case (多项目仓库)
+            :生成多项目结构;
+            :各项目独立文档目录;
+        endswitch
+    }
+
+    partition "编写增量更新机制" {
+        :检测项目变更;
+        :更新受影响文档;
+        :保留用户手动编辑内容;
+    }
+}
+
+partition "4.3 验证" {
+    :测试不同项目类型;
+    :测试增量更新;
+    :测试与 README 的关联;
+}
+
+stop
+
+@enduml

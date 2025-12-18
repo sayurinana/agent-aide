@@ -1,0 +1,65 @@
+@startuml spec-05-task
+!theme plain
+title 子计划5: 用户流程图命令实现 - 任务执行流程图
+
+start
+
+partition "5.1 添加配置项" {
+    :在 DEFAULT_CONFIG 中添加\nuser_docs.graph_path;
+    :添加 user_docs.graph_plan_path;
+    :测试 aide config get 命令;
+}
+
+partition "5.2 创建命令文件" {
+    :创建 commands/user-graph.md;
+
+    partition "编写计划文件检查" {
+        :检查 plan.md 是否存在;
+        if (存在?) then (是)
+            :进入接续执行阶段;
+        else (否)
+            :进入分析和计划阶段;
+        endif
+    }
+
+    partition "编写分析和计划阶段" {
+        :加载项目文档;
+        :按业务逻辑划分区块;
+        :分析每个区块复杂度;
+        :估算工作量;
+        :生成计划文档 plan.md;
+        note right
+          包含：
+          - 区块列表和状态
+          - 执行步骤
+          - 当前进度
+        end note
+        :用户确认计划;
+    }
+
+    partition "编写接续执行阶段" {
+        :读取计划文档;
+        :定位当前进度;
+        :继续执行未完成步骤;
+        :每完成一步更新 plan.md;
+    }
+
+    partition "编写流程图生成规范" {
+        if (项目含程序?) then (是)
+            :生成引导流程图;
+            :生成程序逻辑流图;
+        else (否)
+            :生成引导流程图;
+        endif
+    }
+}
+
+partition "5.3 验证" {
+    :测试计划生成;
+    :测试接续执行;
+    :测试流程图生成;
+}
+
+stop
+
+@enduml

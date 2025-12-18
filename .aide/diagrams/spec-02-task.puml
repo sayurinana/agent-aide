@@ -1,0 +1,54 @@
+@startuml spec-02-task
+!theme plain
+title 子计划2: README skill 模板集 - 任务执行流程图
+
+start
+
+partition "2.1 创建目录结构" {
+    :创建 skills/readme-templates/ 目录;
+    :创建 templates/ 子目录;
+    :创建 modules/ 子目录;
+}
+
+partition "2.2 编写 SKILL.md" {
+    :编写技能说明;
+    :编写模板选择指南;
+    :编写模块组合建议;
+    :编写使用示例;
+}
+
+partition "2.3 编写完整模板" {
+    :编写 minimal.md\n（微型项目模板）;
+    :编写 library.md\n（库/工具模板）;
+    :编写 application.md\n（应用程序模板）;
+    :编写 documentation.md\n（纯文档模板）;
+    :编写 monorepo.md\n（多项目仓库模板）;
+}
+
+partition "2.4 编写可选模块" {
+    fork
+        :module-quickstart.md;
+        :module-installation.md;
+    fork again
+        :module-examples.md;
+        :module-api.md;
+    fork again
+        :module-configuration.md;
+        :module-architecture.md;
+    fork again
+        :module-contributing.md;
+        :module-changelog.md;
+    fork again
+        :module-license.md;
+        :module-faq.md;
+    end fork
+}
+
+partition "2.5 验证" {
+    :检查文件完整性;
+    :检查格式一致性;
+}
+
+stop
+
+@enduml
