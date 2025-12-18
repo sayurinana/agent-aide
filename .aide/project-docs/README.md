@@ -1,6 +1,6 @@
 # ccoptimize 项目文档
 
-> 最后更新：2025-12-17
+> 最后更新：2025-12-18
 
 ## 项目概述
 
@@ -54,31 +54,33 @@
 ccoptimize/
 ├── .aide/                           项目级 Aide 配置
 │   ├── config.toml                  配置文件
-│   ├── flow-status.json             当前任务进度
-│   ├── decisions/                   [空目录] 决策记录
+│   ├── branches.json                分支概况数据
+│   ├── branches.md                  分支概况文档
+│   ├── pending-items.json           待定项数据
 │   ├── diagrams/                    PlantUML 流程图
 │   ├── logs/                        历史任务归档
 │   └── project-docs/                本文档目录
-├── aide-program/                    核心程序（~50 文件）
+├── aide-program/                    核心程序（~55 文件）
 │   ├── aide/                        Python 源码
 │   │   ├── core/                    核心模块
 │   │   ├── env/                     环境检测
-│   │   ├── flow/                    流程追踪
+│   │   ├── flow/                    流程追踪（含分支管理）
 │   │   └── decide/                  待定项确认
 │   ├── bin/                         可执行脚本
 │   ├── docs/                        程序文档
-│   └── lib/                         依赖库
-├── aide-marketplace/                插件市场（~15 文件）
+│   ├── lib/                         依赖库
+│   └── offline-installer/           离线安装器
+├── aide-marketplace/                插件市场（~20 文件）
 │   ├── .claude-plugin/              市场配置
-│   └── aide-plugin/                 Aide 插件
-│       ├── commands/                斜杠命令
+│   └── aide-plugin/                 Aide 插件（版本 2.0.8）
+│       ├── commands/                斜杠命令（含 install-linux/win）
 │       ├── skills/                  技能定义
 │       └── docs/                    插件文档
 ├── docs/                            项目文档
 │   ├── aide-overview.md             系统概述
 │   ├── project-details.md           详细说明
 │   └── 01-04 指南系列               Claude Code 指南
-├── statements/                      声明文档
+├── statements/                      [空目录] 声明文档
 ├── discuss/                         [空目录] 讨论记录
 ├── reply/                           [空目录] 回复记录
 ├── CLAUDE.md                        Claude 配置指令

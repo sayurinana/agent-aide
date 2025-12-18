@@ -1,7 +1,7 @@
 # 项目配置与文档
 
 > 路径：`.aide/`, `docs/`, `discuss/`, `reply/`, `statements/`, 根目录配置文件
-> 最后更新：2025-12-17
+> 最后更新：2025-12-18
 
 ## 概述
 
@@ -13,8 +13,9 @@
 ccoptimize/
 ├── .aide/                           Aide 配置和数据目录
 │   ├── config.toml                  项目配置文件（225 行，全注释）
-│   ├── flow-status.json             当前任务进度
-│   ├── decisions/                   [空目录] 待定项决策记录
+│   ├── branches.json                分支概况数据（JSON）
+│   ├── branches.md                  分支概况文档（Markdown）
+│   ├── pending-items.json           待定项数据
 │   ├── diagrams/                    流程图目录
 │   │   ├── *.puml                   PlantUML 源文件
 │   │   └── *.png                    生成的图片
@@ -37,9 +38,7 @@ ccoptimize/
 │   └── 为什么要更换到command+skill+专用处理程序.md  设计背景
 ├── discuss/                         [空目录] 讨论记录目录
 ├── reply/                           [空目录] 回复记录目录
-├── statements/                      声明文档目录
-│   ├── old-task-section.md          历史任务节选
-│   └── optimize.md                  口头话解析准则
+├── statements/                      [空目录] 声明文档目录
 ├── AGENTS.md                        Agent 配置说明
 ├── CHANGELOG.md                     变更日志
 ├── CLAUDE.md                        Claude 配置指令
@@ -54,8 +53,9 @@ ccoptimize/
 | 文件 | 类型 | 说明 |
 |------|------|------|
 | .aide/config.toml | 配置 | 项目配置，全注释自文档化 |
-| .aide/flow-status.json | 数据 | 当前任务进度状态 |
-| .aide/decisions/ | 目录 | [空目录] 待定项决策记录 |
+| .aide/branches.json | 数据 | 分支概况数据（JSON 格式） |
+| .aide/branches.md | 文档 | 分支概况文档（Markdown 格式） |
+| .aide/pending-items.json | 数据 | 待定项数据 |
 | .aide/diagrams/ | 目录 | PlantUML 流程图 |
 | .aide/logs/ | 目录 | 历史任务归档 |
 | .aide/project-docs/ | 目录 | 面向 LLM 的项目文档 |
@@ -68,8 +68,7 @@ ccoptimize/
 | docs/为什么要更换...md | 文档 | 架构设计背景说明 |
 | discuss/ | 目录 | [空目录] 讨论记录 |
 | reply/ | 目录 | [空目录] 回复记录 |
-| statements/old-task-section.md | 文档 | 历史任务节选 |
-| statements/optimize.md | 文档 | 口头话解析准则 |
+| statements/ | 目录 | [空目录] 声明文档 |
 | AGENTS.md | 配置 | Agent 配置说明 |
 | CHANGELOG.md | 文档 | 变更日志 |
 | CLAUDE.md | 配置 | Claude 指令（简体中文要求） |
@@ -157,7 +156,7 @@ Claude Code 功能的完整指南系列：
 |------|----------|
 | discuss/ | 项目讨论记录存放目录 |
 | reply/ | 项目回复记录存放目录 |
-| .aide/decisions/ | aide decide 决策记录 |
+| statements/ | 声明文档目录（历史文件已清理） |
 
 ## 依赖关系
 

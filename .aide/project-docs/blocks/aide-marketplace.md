@@ -1,7 +1,7 @@
 # aide-marketplace（插件市场）
 
 > 路径：`aide-marketplace/`
-> 最后更新：2025-12-17
+> 最后更新：2025-12-18
 
 ## 概述
 
@@ -15,9 +15,11 @@ aide-marketplace/
 │   └── marketplace.json             市场元数据
 └── aide-plugin/                     Aide 插件
     ├── .claude-plugin/              插件配置
-    │   └── plugin.json              插件元数据（版本 2.0.6）
+    │   └── plugin.json              插件元数据（版本 2.0.8）
     ├── commands/                    斜杠命令定义
     │   ├── docs.md                  /aide:docs 文档管理（400 行）
+    │   ├── install-linux.md         /aide:install-linux Linux 环境安装（692 行）
+    │   ├── install-win.md           /aide:install-win Windows 环境安装
     │   ├── load.md                  /aide:load 项目认知载入（96 行）
     │   ├── run.md                   /aide:run 任务执行（392 行）
     │   └── setup.md                 /aide:setup 环境配置（93 行）
@@ -47,8 +49,10 @@ aide-marketplace/
 | 文件 | 类型 | 说明 |
 |------|------|------|
 | .claude-plugin/marketplace.json | 配置 | 市场元数据，定义市场名和插件列表 |
-| aide-plugin/.claude-plugin/plugin.json | 配置 | 插件元数据，版本 2.0.6 |
+| aide-plugin/.claude-plugin/plugin.json | 配置 | 插件元数据，版本 2.0.8 |
 | aide-plugin/commands/docs.md | Command | /aide:docs 项目文档管理流程 |
+| aide-plugin/commands/install-linux.md | Command | /aide:install-linux Linux 环境安装流程 |
+| aide-plugin/commands/install-win.md | Command | /aide:install-win Windows 环境安装流程 |
 | aide-plugin/commands/load.md | Command | /aide:load 项目认知载入流程 |
 | aide-plugin/commands/run.md | Command | /aide:run 任务执行核心流程 |
 | aide-plugin/commands/setup.md | Command | /aide:setup 环境配置流程 |
@@ -64,6 +68,8 @@ aide-marketplace/
 | 命令 | 职责 | 触发 Skill | 独立运行 |
 |------|------|------------|----------|
 | `/aide:setup` | 环境配置（分析、检测、修复） | env-config | 是 |
+| `/aide:install-linux` | Linux 环境安装 | aide | 是 |
+| `/aide:install-win` | Windows 环境安装 | aide | 是 |
 | `/aide:load` | 项目认知载入 | aide | 否（由 run 调用） |
 | `/aide:docs` | 项目文档创建和维护 | aide | 是 |
 | `/aide:run` | 任务执行（核心命令） | aide | 否 |
@@ -134,7 +140,7 @@ task-optimize → flow-design → impl → verify → docs → finish
 ```json
 {
   "name": "aide-plugin",
-  "version": "2.0.6",
+  "version": "2.0.8",
   "description": "Aide 工作流体系插件"
 }
 ```
@@ -150,6 +156,6 @@ task-optimize → flow-design → impl → verify → docs → finish
    - Commands 定义"做什么"和"按什么顺序做"
    - Skills 定义"怎么调用工具"
 
-2. **版本管理**：当前版本 2.0.6，原 `/aide:init`、`/aide:prep`、`/aide:exec` 已重组为 `/aide:setup`、`/aide:load`、`/aide:docs`、`/aide:run`
+2. **版本管理**：当前版本 2.0.8，原 `/aide:init`、`/aide:prep`、`/aide:exec` 已重组为 `/aide:setup`、`/aide:load`、`/aide:docs`、`/aide:run`，并新增 `/aide:install-linux`、`/aide:install-win` 环境安装命令
 
 3. **触发机制**：Skills 按需触发，避免信息过载

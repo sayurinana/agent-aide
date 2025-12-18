@@ -1,6 +1,6 @@
 # 区块计划
 
-> 最后更新：2025-12-17
+> 最后更新：2025-12-18
 
 ## 项目概况
 
@@ -17,20 +17,22 @@
 ccoptimize/
 ├── .aide/                       Aide 配置和数据目录
 │   ├── config.toml              项目配置文件
-│   ├── decisions/               [空目录] 待定项决策记录
+│   ├── branches.json            分支概况数据
+│   ├── branches.md              分支概况文档
+│   ├── pending-items.json       待定项数据
 │   ├── diagrams/                流程图目录（含 .puml 和 .png）
-│   ├── flow-status.json         当前任务进度
 │   ├── logs/                    历史任务归档
 │   └── project-docs/            项目文档目录（本文档所在）
 ├── aide-marketplace/            Aide 插件市场
 │   ├── .claude-plugin/          插件市场配置
-│   └── aide-plugin/             Aide 插件源码
+│   └── aide-plugin/             Aide 插件源码（版本 2.0.8）
 ├── aide-program/                Aide 主程序
 │   ├── .aide/                   程序级配置
 │   ├── aide/                    Python 源码目录
 │   ├── bin/                     可执行脚本
 │   ├── docs/                    程序文档
 │   ├── lib/                     依赖库（plantuml.jar）
+│   ├── offline-installer/       离线安装器
 │   ├── .venv/                   [ignored] 虚拟环境
 │   ├── requirements.txt         依赖清单
 │   └── .gitignore               忽略规则
@@ -50,9 +52,7 @@ ccoptimize/
 │   ├── project-details.md
 │   └── 为什么要更换到command+skill+专用处理程序.md
 ├── reply/                       [空目录] 回复目录
-├── statements/                  声明文档目录
-│   ├── old-task-section.md
-│   └── optimize.md
+├── statements/                  [空目录] 声明文档目录
 ├── AGENTS.md                    Agent 配置说明
 ├── CHANGELOG.md                 变更日志
 ├── CLAUDE.md                    Claude 配置指令
@@ -67,52 +67,44 @@ ccoptimize/
 ### 区块 1：aide-program（核心程序）
 
 - **路径**：`aide-program/`
-- **文件数**：约 50 个源码文件
+- **文件数**：约 55 个源码文件
 - **空目录**：2 个（decisions/, logs/）
-- **状态**：待处理
+- **状态**：已完成
 - **说明**：Aide 命令行工具的核心实现，包括：
   - `aide/core/` - 核心功能模块（配置、输出）
   - `aide/env/` - 环境检测模块
-  - `aide/flow/` - 流程追踪模块
+  - `aide/flow/` - 流程追踪模块（含分支管理）
   - `aide/decide/` - 待定项确认模块
   - `bin/` - 可执行脚本
   - `docs/` - 程序文档
+  - `offline-installer/` - 离线安装器（Linux/Windows）
 
 ### 区块 2：aide-marketplace（插件市场）
 
 - **路径**：`aide-marketplace/`
-- **文件数**：约 15 个文件
+- **文件数**：约 20 个文件
 - **空目录**：0 个
-- **状态**：待处理
-- **说明**：Aide 插件市场和 aide-plugin 源码，包括：
+- **状态**：已完成
+- **说明**：Aide 插件市场和 aide-plugin 源码（版本 2.0.8），包括：
   - `.claude-plugin/` - 市场配置
-  - `aide-plugin/commands/` - 斜杠命令定义
+  - `aide-plugin/commands/` - 斜杠命令定义（含 install-linux、install-win）
   - `aide-plugin/skills/` - 技能定义
   - `aide-plugin/docs/` - 插件文档
 
-### 区块 3：项目配置（根目录配置）
+### 区块 3：项目配置与文档（合并原区块 3 和 4）
 
-- **路径**：`.aide/`, 根目录配置文件
-- **文件数**：约 15 个文件
-- **空目录**：1 个（decisions/）
-- **状态**：待处理
-- **说明**：项目级配置和 Aide 数据目录，包括：
+- **路径**：`.aide/`, `docs/`, `discuss/`, `reply/`, `statements/`, 根目录配置文件
+- **文件数**：约 25 个文件
+- **空目录**：3 个（discuss/, reply/, statements/）
+- **状态**：已完成
+- **说明**：项目级配置、Aide 数据目录和项目文档资源，包括：
   - `.aide/config.toml` - 项目配置
+  - `.aide/branches.json/.md` - 分支概况数据
+  - `.aide/pending-items.json` - 待定项数据
   - `.aide/diagrams/` - 流程图
-  - `.aide/flow-status.json` - 任务状态
-  - 根目录 `.md` 文件
-
-### 区块 4：项目文档与资源
-
-- **路径**：`docs/`, `discuss/`, `reply/`, `statements/`
-- **文件数**：约 10 个文件
-- **空目录**：2 个（discuss/, reply/）
-- **状态**：待处理
-- **说明**：项目文档和资源文件目录，包括：
   - `docs/` - 指南和概览文档
-  - `statements/` - 声明文档
-  - `discuss/` - [空目录] 讨论记录
-  - `reply/` - [空目录] 回复记录
+  - `discuss/`, `reply/`, `statements/` - [空目录]
+  - 根目录 `.md` 文件
 
 ## 被忽略项清单
 

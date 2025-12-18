@@ -1,7 +1,7 @@
 # aide-program（核心程序）
 
 > 路径：`aide-program/`
-> 最后更新：2025-12-17
+> 最后更新：2025-12-18
 
 ## 概述
 
@@ -13,8 +13,7 @@ Aide 命令行工具的核心实现，提供环境检测、流程追踪、待定
 aide-program/
 ├── .aide/                           程序级 Aide 配置
 │   ├── config.toml                  配置文件
-│   ├── decisions/                   [空目录] 决策记录
-│   └── logs/                        [空目录] 日志归档
+│   └── decisions/                   [空目录] 决策记录
 ├── aide/                            Python 源码包
 │   ├── __init__.py                  包入口（docstring）
 │   ├── __main__.py                  模块入口
@@ -47,6 +46,7 @@ aide-program/
 │   │   ├── storage.py               状态存储（147 行）
 │   │   ├── validator.py             流程校验（55 行）
 │   │   ├── git.py                   Git 集成（79 行）
+│   │   ├── branch.py                分支管理（462 行）
 │   │   ├── hooks.py                 环节钩子（148 行）
 │   │   ├── errors.py                错误类型（9 行）
 │   │   └── utils.py                 工具函数（19 行）
@@ -94,6 +94,15 @@ aide-program/
 │       └── data.md                  数据格式
 ├── lib/                             依赖库
 │   └── plantuml.jar                 PlantUML（二进制）
+├── offline-installer/               离线安装器目录
+│   ├── linux/                       Linux 安装
+│   │   ├── install.sh               安装脚本（470 行）
+│   │   ├── README.md                安装说明
+│   │   └── resources.json           资源配置
+│   └── windows/                     Windows 安装
+│       ├── install.ps1              PowerShell 安装脚本（405 行）
+│       ├── README.md                安装说明
+│       └── resources.json           资源配置
 ├── .venv/                           [ignored] 虚拟环境
 ├── requirements.txt                 Python 依赖
 └── .gitignore                       忽略规则
@@ -125,6 +134,7 @@ aide-program/
 | aide/flow/storage.py | 源码 | 状态文件读写和归档 |
 | aide/flow/validator.py | 源码 | 环节跳转校验 |
 | aide/flow/git.py | 源码 | Git 操作封装 |
+| aide/flow/branch.py | 源码 | 分支管理器，任务分支创建、记录、合并 |
 | aide/flow/hooks.py | 源码 | PlantUML/CHANGELOG 钩子 |
 | aide/flow/errors.py | 源码 | FlowError 异常类 |
 | aide/flow/utils.py | 源码 | 时间戳和文本处理 |
