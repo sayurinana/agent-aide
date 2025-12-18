@@ -47,6 +47,37 @@ class FlowTracker:
     def error(self, description: str) -> bool:
         return self._run(action="error", to_phase=None, text=description)
 
+    def clean(self) -> bool:
+        """强制清理当前任务
+
+        前提条件：工作区必须干净
+        """
+        try:
+            self.storage.ensure_ready()
+
+            with self.storage.lock():
+                status = self.storage.load_status()
+                if status is None:
+                    output.err("未找到活跃任务，无需清理")
+                    return False
+
+                # 执行强制清理
+                success, msg = self.branch_mgr.clean_branch_merge()
+
+                if success:
+                    output.ok(f"强制清理完成: {msg}")
+                else:
+                    if "工作区不干净" in msg or "未找到活跃" in msg:
+                        output.err(msg)
+                    else:
+                        # 临时分支情况，需要手动处理
+                        output.warn(msg)
+                return success
+
+        except FlowError as exc:
+            output.err(str(exc))
+            return False
+
     def _run(self, *, action: str, to_phase: str | None, text: str) -> bool:
         try:
             self.storage.ensure_ready()
@@ -129,12 +160,18 @@ class FlowTracker:
 
                 # 如果进入 finish 环节，执行分支合并（必须在提交后执行）
                 if action == "next-part" and to_phase == "finish":
-                    # 再次提交状态文件（因为 save_status 更新了 git_commit hash）
-                    self.git.add_all()
-                    self.git.commit("[aide] finish: 更新状态文件")
+                    # finish 提交的哈希就是 end_commit
+                    finish_commit = None
+                    finish_timestamp = None
+                    if final_status.history:
+                        last_entry = final_status.history[-1]
+                        finish_commit = last_entry.git_commit
+                        finish_timestamp = last_entry.timestamp
 
                     success, merge_msg = self.branch_mgr.finish_branch_merge(
                         task_summary=normalized_text,
+                        end_commit=finish_commit,
+                        finished_at=finish_timestamp,
                     )
                     if not success:
                         output.warn(merge_msg)

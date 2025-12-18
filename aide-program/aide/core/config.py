@@ -17,11 +17,14 @@ def find_project_root(start_path: Path | None = None) -> Path:
     类似于 git 查找 .git 目录的逻辑：从当前目录开始向上遍历，
     直到找到包含有效 .aide 目录的父目录。
 
-    查找策略（两遍遍历）：
+    查找策略（三遍遍历）：
+    0. 首先：如果当前目录有 .aide 目录，直接使用（不向上查找）
     1. 第一遍：优先查找包含 flow-status.json 的目录（活跃任务）
     2. 第二遍：如果第一遍未找到，查找包含 config.toml 的目录
 
-    这样可以确保从子目录运行时，优先找到有活跃任务的项目根目录。
+    这样可以确保：
+    - 在子项目目录运行时，使用子项目的配置
+    - 从子目录运行时，优先找到有活跃任务的项目根目录
 
     Args:
         start_path: 起始路径，默认为当前工作目录
@@ -46,6 +49,10 @@ def find_project_root(start_path: Path | None = None) -> Path:
             return current
         return None
 
+    def has_aide_dir(path: Path) -> bool:
+        """检查是否有 .aide 目录"""
+        return (path / ".aide").is_dir()
+
     def has_flow_status(path: Path) -> bool:
         """检查是否有活跃任务状态文件"""
         return (path / ".aide" / "flow-status.json").exists()
@@ -53,6 +60,10 @@ def find_project_root(start_path: Path | None = None) -> Path:
     def has_config(path: Path) -> bool:
         """检查是否有配置文件"""
         return (path / ".aide" / "config.toml").exists()
+
+    # 步骤 0：如果当前目录有 .aide 目录，直接使用（不向上查找）
+    if has_aide_dir(start_path):
+        return start_path
 
     # 第一遍：优先查找有活跃任务的目录
     result = search_upward(has_flow_status)

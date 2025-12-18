@@ -127,6 +127,13 @@ class GitIntegration:
         if result.returncode != 0:
             raise FlowError(_format_git_error(f"squash 合并分支 {branch} 失败", result))
 
+    def amend(self) -> str:
+        """将暂存区内容追加到上一次提交（不修改提交消息）"""
+        result = self._run(["commit", "--amend", "--no-edit"], check=False)
+        if result.returncode != 0:
+            raise FlowError(_format_git_error("git commit --amend 失败", result))
+        return self.rev_parse_head()
+
     def _run(self, args: list[str], check: bool) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
             ["git", *args],

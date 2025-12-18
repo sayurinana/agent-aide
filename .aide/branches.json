@@ -1,5 +1,5 @@
 {
-  "next_number": 18,
+  "next_number": 19,
   "branches": [
     {
       "number": 1,
@@ -198,6 +198,18 @@
       "status": "finished",
       "end_commit": "f4a82c96eec49822c39da4f68c87351fe527b0fe",
       "finished_at": "2025-12-18T18:18:43+08:00"
+    },
+    {
+      "number": 18,
+      "branch_name": "aide/018",
+      "source_branch": "master",
+      "start_commit": "714848745d2e443ff4ee1d907b3e3df0b5e65dc4",
+      "task_id": "2025-12-18T18-38-48",
+      "task_summary": "开始任务准备: aide flow clean 指令与分支概况文档分析",
+      "started_at": "2025-12-18T18:38:48+08:00",
+      "status": "force-cleaned",
+      "end_commit": "19aa94e2e2e084b1c72b8b9e55d565948b8ac19d",
+      "finished_at": "2025-12-18T20:33:37+08:00"
     }
   ]
 }

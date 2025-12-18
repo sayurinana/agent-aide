@@ -162,20 +162,14 @@ class BranchManager:
             except OSError:
                 pass
 
-        # 5. 备份并删除 decisions/*.json
+        # 5. 直接删除 decisions/*.json（不备份）
         decisions_dir = self.aide_dir / "decisions"
         if decisions_dir.exists():
-            decision_files = list(decisions_dir.glob("*.json"))
-            if decision_files:
-                # 创建备份目录
-                backup_decisions_dir = self.logs_dir / f"{task_id}-decisions"
-                backup_decisions_dir.mkdir(parents=True, exist_ok=True)
-                for decision_file in decision_files:
-                    try:
-                        shutil.copy2(decision_file, backup_decisions_dir / decision_file.name)
-                        decision_file.unlink()
-                    except OSError:
-                        pass
+            for decision_file in decisions_dir.glob("*.json"):
+                try:
+                    decision_file.unlink()
+                except OSError:
+                    pass
 
         # 6. 删除 pending-items.json
         pending_items_path = self.aide_dir / "pending-items.json"
@@ -252,10 +246,13 @@ class BranchManager:
             if branch.end_commit:
                 lines.append(f"- **结束提交**: {branch.end_commit[:7]}")
             lines.append(f"- **状态**: {branch.status}")
-            time_str = branch.started_at[:16].replace("T", " ")
+            # 起始时间
+            start_time_str = branch.started_at[:16].replace("T", " ")
+            lines.append(f"- **起始时间**: {start_time_str}")
+            # 结束时间（单独列出）
             if branch.finished_at:
-                time_str += f" ~ {branch.finished_at[11:16]}"
-            lines.append(f"- **时间**: {time_str}")
+                end_time_str = branch.finished_at[:16].replace("T", " ")
+                lines.append(f"- **结束时间**: {end_time_str}")
             if branch.temp_branch:
                 lines.append(f"- **临时分支**: {branch.temp_branch}")
             lines.append("")
@@ -349,7 +346,7 @@ class BranchManager:
         end_commit: str | None = None,
         temp_branch: str | None = None,
     ) -> None:
-        """记录分支结束信息"""
+        """记录分支结束信息（兼容旧接口，一次性更新所有字段）"""
         data = self.load_branches()
         branch_info = self.get_active_branch_info()
 
@@ -378,8 +375,96 @@ class BranchManager:
         self._current_branch_info = None
         self.save_branches()
 
-    def finish_branch_merge(self, task_summary: str) -> tuple[bool, str]:
+    def record_end_commit(self, end_commit: str) -> None:
+        """记录结束提交和时间（不更新状态）
+
+        用于在任务分支上先记录结束点，再执行清理操作。
+        """
+        data = self.load_branches()
+        branch_info = self.get_active_branch_info()
+
+        if branch_info is None:
+            return
+
+        # 更新分支信息（只更新 end_commit 和 finished_at）
+        for i, branch in enumerate(data.branches):
+            if branch.number == branch_info.number:
+                data.branches[i] = BranchInfo(
+                    number=branch.number,
+                    branch_name=branch.branch_name,
+                    source_branch=branch.source_branch,
+                    start_commit=branch.start_commit,
+                    end_commit=end_commit,
+                    task_id=branch.task_id,
+                    task_summary=branch.task_summary,
+                    started_at=branch.started_at,
+                    finished_at=now_iso(),
+                    status=branch.status,  # 保持原状态
+                    temp_branch=branch.temp_branch,
+                )
+                break
+
+        self._data = data
+        self.save_branches()
+
+    def update_branch_status(self, status: str) -> None:
+        """更新分支状态（不修改其他字段）
+
+        用于在切回源分支后更新最终状态。
+        """
+        data = self.load_branches()
+
+        # 查找当前任务分支（可能已不是当前分支）
+        current_branch = self.git.get_current_branch()
+
+        # 优先使用缓存的分支信息
+        target_number = None
+        if self._current_branch_info is not None:
+            target_number = self._current_branch_info.number
+        else:
+            # 查找最近的活跃分支
+            for branch in reversed(data.branches):
+                if branch.status == "active":
+                    target_number = branch.number
+                    break
+
+        if target_number is None:
+            return
+
+        # 更新分支状态
+        for i, branch in enumerate(data.branches):
+            if branch.number == target_number:
+                data.branches[i] = BranchInfo(
+                    number=branch.number,
+                    branch_name=branch.branch_name,
+                    source_branch=branch.source_branch,
+                    start_commit=branch.start_commit,
+                    end_commit=branch.end_commit,
+                    task_id=branch.task_id,
+                    task_summary=branch.task_summary,
+                    started_at=branch.started_at,
+                    finished_at=branch.finished_at,
+                    status=status,
+                    temp_branch=branch.temp_branch,
+                )
+                break
+
+        self._data = data
+        self._current_branch_info = None
+        self.save_branches()
+
+    def finish_branch_merge(
+        self,
+        task_summary: str,
+        end_commit: str | None = None,
+        finished_at: str | None = None,
+    ) -> tuple[bool, str]:
         """执行分支合并逻辑
+
+        Args:
+            task_summary: 任务摘要
+            end_commit: 结束提交哈希（由 tracker 传入）
+            finished_at: 结束时间（由 tracker 传入）
 
         返回 (是否成功, 消息)
         """
@@ -398,49 +483,148 @@ class BranchManager:
             return self._merge_with_temp_branch(
                 branch_info=branch_info,
                 task_summary=task_summary,
+                end_commit=end_commit,
+                finished_at=finished_at,
             )
         else:
             # 正常合并流程
             return self._merge_normal(
                 branch_info=branch_info,
                 task_summary=task_summary,
+                end_commit=end_commit,
+                finished_at=finished_at,
+            )
+
+    def clean_branch_merge(self) -> tuple[bool, str]:
+        """强制清理当前任务分支
+
+        如果工作区不干净，会自动创建一个提交。
+        返回 (是否成功, 消息)
+        """
+        # 如果工作区不干净，自动创建提交
+        if not self.git.is_clean():
+            self.git.add_all()
+            self.git.commit("[aide] 强制清理前保存未提交的变更")
+
+        branch_info = self.get_active_branch_info()
+
+        if branch_info is None:
+            return False, "未找到活跃的任务分支"
+
+        source_branch = branch_info.source_branch
+        start_commit = branch_info.start_commit
+
+        # 检查源分支是否有新提交
+        if self.git.has_commits_since(start_commit, source_branch):
+            # 源分支有新提交，使用临时分支策略（强制清理模式）
+            return self._merge_with_temp_branch(
+                branch_info=branch_info,
+                task_summary="强制清理",
+                is_force_clean=True,
+            )
+        else:
+            # 正常合并流程（强制清理模式）
+            return self._merge_normal(
+                branch_info=branch_info,
+                task_summary="强制清理",
+                is_force_clean=True,
             )
 
     def _merge_normal(
         self,
         branch_info: BranchInfo,
         task_summary: str,
+        is_force_clean: bool = False,
+        end_commit: str | None = None,
+        finished_at: str | None = None,
     ) -> tuple[bool, str]:
-        """正常合并流程：清理 → 临时提交 → squash 合并 → 收尾提交"""
+        """正常合并流程：更新状态 → 清理 → squash 合并 → 收尾提交
+
+        Args:
+            branch_info: 分支信息
+            task_summary: 任务摘要
+            is_force_clean: 是否为强制清理模式
+            end_commit: 结束提交哈希（finish 时由 tracker 传入）
+            finished_at: 结束时间（finish 时由 tracker 传入）
+        """
         source_branch = branch_info.source_branch
         task_branch = branch_info.branch_name
         task_id = branch_info.task_id
         start_commit = branch_info.start_commit
+        branch_number = branch_info.number
 
-        # 1. 执行任务文件清理（在工作分支上）
+        # === 在任务分支上执行 ===
+
+        # 对于强制清理，需要创建结束提交；对于正常 finish，使用 tracker 传入的
+        if is_force_clean:
+            # 1. 创建"结束提交"（强制清理模式）
+            self.git.add_all()
+            end_commit_msg = f"[aide] 强制清理: {task_summary}"
+            self.git.commit(end_commit_msg)
+            end_commit = self.git.rev_parse_head()
+            finished_at = now_iso()
+
+        # 如果没有 end_commit（兜底），使用当前 HEAD
+        if end_commit is None:
+            end_commit = self.git.rev_parse_head()
+        if finished_at is None:
+            finished_at = now_iso()
+
+        # 2. 更新分支状态（记录 end_commit 和完成时间）
+        status = "force-cleaned" if is_force_clean else "finished"
+        data = self.load_branches()
+        for i, branch in enumerate(data.branches):
+            if branch.number == branch_number:
+                data.branches[i] = BranchInfo(
+                    number=branch.number,
+                    branch_name=branch.branch_name,
+                    source_branch=branch.source_branch,
+                    start_commit=branch.start_commit,
+                    end_commit=end_commit,
+                    task_id=branch.task_id,
+                    task_summary=branch.task_summary,
+                    started_at=branch.started_at,
+                    finished_at=finished_at,
+                    status=status,
+                    temp_branch=branch.temp_branch,
+                )
+                break
+        self._data = data
+        self._current_branch_info = None
+        self.save_branches()
+
+        # 3. 提交状态更新（包含 flow-status.json 和 branches.json/md）
+        self.git.add_all()
+        if is_force_clean:
+            self.git.commit("[aide] 强制清理: 更新状态")
+        else:
+            self.git.commit("[aide] finish: 更新状态")
+
+        # 4. 执行任务文件清理
         self._cleanup_task_files(task_id)
 
-        # 2. 创建临时提交保存清理后的变更
+        # 5. 创建"清理提交"
         self.git.add_all()
         self.git.commit("[aide] 清理任务临时文件")
 
-        # 3. 切回源分支
+        # === 切回源分支执行 ===
+
+        # 6. 切回源分支
         self.git.checkout(source_branch)
 
         # 切换分支后清理 lock 文件
         self._cleanup_lock_file()
 
-        # 4. squash 合并任务分支
+        # 7. squash 合并任务分支
         self.git.merge_squash(task_branch)
 
-        # 5. 先更新分支记录（不再记录 end_commit）
-        self.record_branch_finish(status="finished")
-
-        # 6. 创建收尾提交（包含 squash 内容和分支记录更新）
-        # 格式：{起始哈希}的任务收尾
+        # 8. 创建收尾提交
         self.git.add_all()
         short_hash = start_commit[:7] if start_commit else "unknown"
-        commit_msg = f"{short_hash}的任务收尾"
+        if is_force_clean:
+            commit_msg = f"{short_hash}的强制清理"
+        else:
+            commit_msg = f"{short_hash}的任务收尾"
         self.git.commit(commit_msg)
 
         return True, f"任务分支已合并到 {source_branch}"
@@ -449,35 +633,103 @@ class BranchManager:
         self,
         branch_info: BranchInfo,
         task_summary: str,
+        is_force_clean: bool = False,
+        end_commit: str | None = None,
+        finished_at: str | None = None,
     ) -> tuple[bool, str]:
-        """临时分支合并策略：源分支有新提交时使用"""
+        """临时分支合并策略：源分支有新提交时使用
+
+        流程：更新状态 → 清理 → 临时分支 squash 合并
+
+        Args:
+            branch_info: 分支信息
+            task_summary: 任务摘要
+            is_force_clean: 是否为强制清理模式
+            end_commit: 结束提交哈希（finish 时由 tracker 传入）
+            finished_at: 结束时间（finish 时由 tracker 传入）
+        """
         start_commit = branch_info.start_commit
         task_branch = branch_info.branch_name
+        task_id = branch_info.task_id
+        branch_number = branch_info.number
         temp_branch = f"{task_branch}-merge"
 
-        # 从起始提交检出临时分支
+        # === 在任务分支上执行 ===
+
+        # 对于强制清理，需要创建结束提交；对于正常 finish，使用 tracker 传入的
+        if is_force_clean:
+            # 1. 创建"结束提交"（强制清理模式）
+            self.git.add_all()
+            end_commit_msg = f"[aide] 强制清理: {task_summary}"
+            self.git.commit(end_commit_msg)
+            end_commit = self.git.rev_parse_head()
+            finished_at = now_iso()
+
+        # 如果没有 end_commit（兜底），使用当前 HEAD
+        if end_commit is None:
+            end_commit = self.git.rev_parse_head()
+        if finished_at is None:
+            finished_at = now_iso()
+
+        # 2. 更新分支状态（记录 end_commit 和完成时间）
+        status = "force-cleaned-to-temp" if is_force_clean else "merged-to-temp"
+        data = self.load_branches()
+        for i, branch in enumerate(data.branches):
+            if branch.number == branch_number:
+                data.branches[i] = BranchInfo(
+                    number=branch.number,
+                    branch_name=branch.branch_name,
+                    source_branch=branch.source_branch,
+                    start_commit=branch.start_commit,
+                    end_commit=end_commit,
+                    task_id=branch.task_id,
+                    task_summary=branch.task_summary,
+                    started_at=branch.started_at,
+                    finished_at=finished_at,
+                    status=status,
+                    temp_branch=temp_branch,
+                )
+                break
+        self._data = data
+        self._current_branch_info = None
+        self.save_branches()
+
+        # 3. 提交状态更新（包含 flow-status.json 和 branches.json/md）
+        self.git.add_all()
+        if is_force_clean:
+            self.git.commit("[aide] 强制清理: 更新状态")
+        else:
+            self.git.commit("[aide] finish: 更新状态")
+
+        # 4. 执行任务文件清理
+        self._cleanup_task_files(task_id)
+
+        # 5. 创建"清理提交"
+        self.git.add_all()
+        self.git.commit("[aide] 清理任务临时文件")
+
+        # === 切换到临时分支执行 ===
+
+        # 6. 从起始提交检出临时分支
         self.git.checkout_new_branch(temp_branch, start_commit)
 
         # 切换分支后清理 lock 文件
         self._cleanup_lock_file()
 
-        # 在临时分支执行 squash 合并
+        # 7. 在临时分支执行 squash 合并
         self.git.merge_squash(task_branch)
 
-        # 创建提交
+        # 8. 创建压缩提交
         self.git.add_all()
-        commit_msg = f"[aide] 任务压缩提交: {task_summary}"
-        end_commit = self.git.commit(commit_msg)
+        if is_force_clean:
+            commit_msg = f"[aide] 强制清理压缩提交: {task_summary}"
+        else:
+            commit_msg = f"[aide] 任务压缩提交: {task_summary}"
+        self.git.commit(commit_msg)
 
-        # 记录完成（保留任务分支和临时分支）
-        self.record_branch_finish(
-            status="merged-to-temp",
-            end_commit=end_commit,
-            temp_branch=temp_branch,
-        )
-
+        action_name = "强制清理" if is_force_clean else "任务完成"
         return False, (
             f"⚠ 源分支 {branch_info.source_branch} 有新提交\n"
-            f"已在临时分支 {temp_branch} 完成合并\n"
+            f"已在临时分支 {temp_branch} 完成{action_name}合并\n"
             f"请手动处理后续操作"
         )

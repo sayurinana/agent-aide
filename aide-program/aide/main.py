@@ -140,6 +140,10 @@ def build_parser() -> argparse.ArgumentParser:
     flow_show.add_argument("task_id", help="任务 ID（时间戳格式，如 20251215-103000）")
     flow_show.set_defaults(func=handle_flow_show)
 
+    # aide flow clean
+    flow_clean = flow_sub.add_parser("clean", help="强制清理当前任务（工作区需干净）")
+    flow_clean.set_defaults(func=handle_flow_clean)
+
     flow_parser.set_defaults(func=handle_flow_help)
 
     # aide decide
@@ -308,6 +312,14 @@ def handle_flow_error(args: argparse.Namespace) -> bool:
     cfg = ConfigManager(root)
     tracker = FlowTracker(root, cfg)
     return tracker.error(args.description)
+
+
+def handle_flow_clean(args: argparse.Namespace) -> bool:
+    """aide flow clean - 强制清理当前任务。"""
+    root = find_project_root()
+    cfg = ConfigManager(root)
+    tracker = FlowTracker(root, cfg)
+    return tracker.clean()
 
 
 def handle_flow_status(args: argparse.Namespace) -> bool:

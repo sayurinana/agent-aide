@@ -4,6 +4,83 @@
 
 ## 2025-12-18
 
+### 修复
+
+**修复 end_commit 记录逻辑**
+- `end_commit` 现在记录 tracker 创建的 finish 提交哈希（`[aide] finish: {summary}`）
+- `finished_at` 使用 finish 提交的时间戳
+- tracker.py：移除多余的 `[aide] finish: 更新状态文件` 提交，改为传递 end_commit 和 finished_at 给 branch_mgr
+- branch.py：finish_branch_merge 接收 end_commit 和 finished_at 参数
+- 正常 finish 流程不再创建额外的结束提交，直接使用 tracker 传入的值
+- 强制清理（clean）仍会创建自己的结束提交
+- flow-status.json 和 branches.json/md 的更新合并到同一个提交 `[aide] finish: 更新状态`
+- 新增 `git.amend()` 方法（备用）
+
+**修复 find_project_root 在子项目中定位错误的问题**
+- 原因：从复制的测试目录运行时，因没有 `flow-status.json` 而向上查找到父项目
+- 解决：添加"步骤 0"，如果当前目录已有 `.aide` 目录，直接使用不向上查找
+- 新的查找策略：
+  0. 当前目录有 `.aide` → 直接使用
+  1. 向上查找有 `flow-status.json` 的目录（活跃任务）
+  2. 向上查找有 `config.toml` 的目录
+
+### 新增功能
+
+**`aide flow clean` 强制清理命令**
+- 用于在任务中途强制终止流程
+- 如果工作区不干净，自动创建一个提交
+- 执行流程与 finish 类似，但：
+  - 提交消息格式为 `{start_commit[:7]}的强制清理`
+  - 分支状态标记为 `force-cleaned`
+- 保留任务分支供后续参考
+
+### 修复
+
+**修复 finish 流程中起始/结束提交哈希相同的 bug**
+- 原因：切回源分支后才调用 `record_branch_finish`，导致 `rev_parse_head()` 获取的是源分支 HEAD
+- 解决：在任务分支上先创建"结束提交"并记录哈希，在最终保存时直接使用保存的变量
+- 新增 `record_end_commit` 方法：仅记录结束提交和时间，不更新状态
+- 在 `_merge_normal` 和 `_merge_with_temp_branch` 中，直接使用保存的 `end_commit` 变量，确保不会丢失
+
+### 变更
+
+**finish/clean 流程重构**
+- 新流程：结束提交 → 记录哈希 → 清理 → 清理提交 → 切回源分支 → squash 合并 → 更新状态(使用保存的end_commit) → 收尾提交
+- `_merge_normal` 方法新增 `is_force_clean` 参数，不再调用 `update_branch_status`，直接内联更新
+- `_merge_with_temp_branch` 方法也同步更新
+
+**decisions 清理逻辑简化**
+- 清理时不再备份 `decisions/*.json`，直接删除
+- 移除备份目录创建逻辑
+
+**branches.md 时间格式调整**
+- 起始时间和结束时间分别单独列出
+- 原格式：`- **时间**: 2025-12-18 10:30 ~ 11:45`
+- 新格式：
+  - `- **起始时间**: 2025-12-18 10:30`
+  - `- **结束时间**: 2025-12-18 11:45`
+
+### 修改的文件
+- `aide-program/aide/core/config.py`
+  - `find_project_root` 函数：添加步骤 0，当前目录有 .aide 时不向上查找
+- `aide-program/aide/flow/git.py`
+  - 新增 `amend` 方法：将暂存区内容追加到上一次提交
+- `aide-program/aide/flow/branch.py`
+  - `_cleanup_task_files` 方法：decisions 直接删除不备份
+  - `record_branch_finish` 方法：保持兼容
+  - 新增 `record_end_commit` 方法
+  - `clean_branch_merge` 方法：脏工作区时自动创建提交
+  - `_merge_normal` 方法：重构流程，结束提交后立即更新状态再清理
+  - `_merge_with_temp_branch` 方法：同步重构
+  - `_generate_markdown` 方法：时间格式分开显示
+- `aide-program/aide/flow/tracker.py`
+  - 新增 `clean` 方法
+- `aide-program/aide/main.py`
+  - 新增 `flow clean` 子命令
+  - 新增 `handle_flow_clean` 处理函数
+
+---
+
 ### 改进
 
 **收尾清理逻辑增强**
