@@ -291,7 +291,9 @@
       "task_id": "2025-12-19T05-41-57",
       "task_summary": "开始任务准备: 分析和优化 user-docs/user-graph 的分步执行能力",
       "started_at": "2025-12-19T05:41:57+08:00",
-      "status": "active"
+      "status": "finished",
+      "end_commit": "cb7e960a28a46b615b34ffc1dc4e74cc22e50584",
+      "finished_at": "2025-12-19T06:06:51+08:00"
     }
   ]
 }

@@ -145,7 +145,8 @@
       "action": "next-part",
       "phase": "finish",
       "step": 18,
-      "summary": "用户已确认，进入收尾环节"
+      "summary": "用户已确认，进入收尾环节",
+      "git_commit": "cb7e960a28a46b615b34ffc1dc4e74cc22e50584"
     }
   ],
   "source_branch": "master",
