@@ -1,0 +1,56 @@
+@startuml
+skinparam defaultFontName "Arial"
+skinparam dpi 300
+scale 0.5
+
+title 任务执行流程图：任务计划文件清理功能迁移
+
+start
+:分析任务需求;
+note right: 理解口语化任务描述\n确定迁移目标
+
+:确认任务细则;
+
+:设计实现方案;
+note right: 在 hooks.py 中添加钩子\n修改 run.md 和 auto-run.md
+
+partition "实现阶段" {
+  :修改 hooks.py;
+  note right
+    添加 _hook_clean_task_plans 函数
+    修改 run_pre_commit_hooks
+  end note
+
+  :修改 run.md;
+  note right
+    删除手动清理指令
+  end note
+
+  :修改 auto-run.md;
+  note right
+    同步删除清理指令
+  end note
+}
+
+partition "验证阶段" {
+  :准备测试数据;
+  note right: 创建 .aide/task-plans/ 目录\n添加测试文件
+
+  :执行 aide flow next-part finish;
+
+  if (清理成功?) then (是)
+    :验证 git 记录;
+  else (否)
+    :调试修复;
+    -> 修改 hooks.py;
+  endif
+}
+
+:更新文档;
+
+:用户确认;
+
+:收尾;
+
+stop
+@enduml

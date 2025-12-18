@@ -1,0 +1,65 @@
+@startuml
+skinparam defaultFontName "Arial"
+skinparam dpi 300
+scale 0.5
+
+title 程序逻辑流图：任务计划文件清理钩子
+
+start
+:run_pre_commit_hooks 被调用;
+note right
+  参数: root, git, status,
+  from_phase, to_phase, action, config
+end note
+
+if (to_phase == "finish" \n&& action == "next-part"?) then (是)
+  :调用 _hook_clean_task_plans;
+else (否)
+  :跳过清理;
+endif
+
+' 其他已有钩子逻辑
+if (from_phase == "flow-design" \n&& action in ["next-part", "back-part"]?) then (是)
+  :调用 _hook_plantuml;
+endif
+
+if (from_phase == "docs" \n&& action in ["next-part", "back-part"]?) then (是)
+  :调用 _hook_changelog_on_leave_docs;
+endif
+
+stop
+
+== _hook_clean_task_plans 函数详情 ==
+
+start
+:获取 task.plans_path 配置;
+note right: 默认值 ".aide/task-plans"
+
+:构建目录路径;
+:plans_dir = root / plans_path;
+
+if (plans_dir 存在?) then (否)
+  :直接返回;
+  stop
+else (是)
+endif
+
+:列出目录下所有文件;
+:files = plans_dir.glob("*");
+
+if (files 为空?) then (是)
+  :直接返回;
+  stop
+else (否)
+endif
+
+:遍历删除文件;
+while (还有文件?) is (是)
+  :file.unlink();
+endwhile (否)
+
+:输出清理结果;
+note right: "已清理任务计划文件: N 个"
+
+stop
+@enduml
