@@ -1,7 +1,7 @@
 {
   "task_id": "2025-12-18T10-09-00",
   "current_phase": "task-optimize",
-  "current_step": 3,
+  "current_step": 4,
   "started_at": "2025-12-18T10:09:00+08:00",
   "history": [
     {
@@ -25,7 +25,15 @@
       "action": "next-step",
       "phase": "task-optimize",
       "step": 3,
-      "summary": "修复已实现：git add_all 方法排除 .lock 文件"
+      "summary": "修复已实现：git add_all 方法排除 .lock 文件",
+      "git_commit": "f3de256fa3dfa6ca35020a2bac138f6f8b736581"
+    },
+    {
+      "timestamp": "2025-12-18T10:12:35+08:00",
+      "action": "next-step",
+      "phase": "task-optimize",
+      "step": 4,
+      "summary": "从 git 历史中移除 .lock 文件跟踪"
     }
   ],
   "source_branch": "master",
