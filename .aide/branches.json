@@ -219,7 +219,9 @@
       "task_id": "2025-12-19T00-40-02",
       "task_summary": "开始任务准备: Aide 体系多项调整任务",
       "started_at": "2025-12-19T00:40:02+08:00",
-      "status": "active"
+      "status": "finished",
+      "end_commit": "de4a3a63975faf59c89a28c2e29c1ac58a48789b",
+      "finished_at": "2025-12-19T02:30:45+08:00"
     }
   ]
 }
