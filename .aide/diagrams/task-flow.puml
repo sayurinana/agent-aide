@@ -1,45 +1,56 @@
 @startuml task-flow
-title 任务执行流程图：改进 aide flow 的 git 工作流
+!theme plain
+title 任务执行流程图：调整 Aide 工作流流程
 
 start
-:阅读任务细则;
-note right: task-spec.md
 
-partition "代码修改" {
-  :修改 branch.py;
-  note right
-    - 重构 _merge_normal()
-    - 添加清理函数
-    - 修改提交信息格式
-  end note
+partition "1. 准备阶段" {
+  :读取 config.py;
+  :添加 plans_path 默认配置;
+}
 
-  :修改 tracker.py;
+partition "2. run.md 修改 - 任务细则部分" {
+  :定位"1.8 生成任务细则"部分;
+  :增加复杂任务处理逻辑;
   note right
-    调整 finish 触发逻辑
-    （如需要）
+    - 判断是否为复杂任务
+    - 创建 .aide/task-plans/ 目录
+    - 生成 guide.md 总导览
+    - 生成 spec-NN.md 子计划
   end note
 }
 
-partition "测试验证" {
-  :创建测试任务;
-  :执行完整 flow 流程;
-  :检查最终 git 历史;
+partition "3. run.md 修改 - 子计划执行部分" {
+  :定位"复杂任务的子计划执行"部分;
+  :明确文档结构和操作方式;
+}
 
-  if (只有 2 个提交?) then (是)
-    :检查文件清理结果;
-    if (清理正确?) then (是)
-      :验证通过;
-    else (否)
-      :修复清理逻辑;
-      -> 执行完整 flow 流程;
-    endif
+partition "4. run.md 修改 - 插入 confirm 阶段" {
+  :定位"阶段 5：文档更新"之后;
+  :插入"阶段 6：用户确认 (confirm)";
+  note right
+    - 报告完成信息
+    - 等待用户确认
+    - 返工机制说明
+  end note
+  :将原"阶段 6：收尾"改为"阶段 7：收尾";
+}
+
+partition "5. aide skill 更新" {
+  :读取 aide.md;
+  :添加 plans_path 配置说明;
+  :更新环节列表（增加 confirm）;
+}
+
+partition "6. 验证" {
+  :检查所有修改点;
+  if (验证通过?) then (是)
+    :完成;
   else (否)
-    :修复合并逻辑;
-    -> 执行完整 flow 流程;
+    :修复问题;
   endif
 }
 
-:更新文档;
 stop
 
 @enduml

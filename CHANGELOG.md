@@ -4,6 +4,38 @@
 
 ## 2025-12-18
 
+### 新增功能
+
+**用户确认阶段 (confirm)**
+- 在 docs 和 finish 之间新增 `confirm` 阶段
+- 用于用户审阅和测试已完成的工作
+- 支持返工机制：根据问题类型返回相应阶段
+- 返工前强制更新任务文档，便于上下文恢复
+
+**复杂任务子计划文档规范**
+- 新增 `task.plans_path` 配置项（默认 `.aide/task-plans/`）
+- 规范化文档结构：
+  - `guide.md` - 任务计划总导览
+  - `spec-01.md`, `spec-02.md`, ... - 各子计划细则
+- 更新复杂任务执行模式：`task-optimize → [flow-design → impl → verify → docs → confirm] × N → finish`
+- 子计划状态管理：在 guide.md 中维护状态表
+
+### 变更
+
+- 流程阶段更新为 7 个：task-optimize → flow-design → impl → verify → docs → confirm → finish
+- run.md 中"阶段 6：收尾"更新为"阶段 7：收尾"
+- 更新 aide skill 文档，添加 confirm 环节和 task-plans 目录说明
+
+### 修改的文件
+- `aide-program/aide/core/config.py` - 添加 plans_path 配置和 confirm 阶段
+- `aide-marketplace/aide-plugin/commands/run.md` - 任务细则规范、子计划执行、confirm 阶段
+- `aide-marketplace/aide-plugin/skills/aide/SKILL.md` - 环节列表、数据存储、流程示例
+- `.aide/config.toml` - 项目配置更新
+
+---
+
+## 2025-12-18 (earlier)
+
 ### 变更
 
 **aide flow finish 流程重构**

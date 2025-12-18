@@ -1,5 +1,5 @@
 {
-  "next_number": 15,
+  "next_number": 16,
   "branches": [
     {
       "number": 1,
@@ -162,6 +162,18 @@
       "status": "finished",
       "end_commit": "d2882c9b995ee686fac48e183191848d6071c995",
       "finished_at": "2025-12-18T11:53:15+08:00"
+    },
+    {
+      "number": 15,
+      "branch_name": "aide/015",
+      "source_branch": "master",
+      "start_commit": "80ebbd4d85aaa8b3408cd83c35627c972057beda",
+      "task_id": "2025-12-18T12-14-13",
+      "task_summary": "开始任务准备: 调整 Aide 工作流流程",
+      "started_at": "2025-12-18T12:14:13+08:00",
+      "status": "finished",
+      "end_commit": "80ebbd4d85aaa8b3408cd83c35627c972057beda",
+      "finished_at": "2025-12-18T12:50:59+08:00"
     }
   ]
 }

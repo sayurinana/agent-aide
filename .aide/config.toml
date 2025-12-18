@@ -56,6 +56,12 @@ source = "task-now.md"
 # /aide:exec 命令在未指定参数时读取此文件
 spec = "task-spec.md"
 
+# 复杂任务计划文档目录
+# 当任务被拆分为多个子计划时，存放：
+#   - guide.md: 任务计划总导览
+#   - spec-01.md, spec-02.md, ...: 各子计划细则
+plans_path = ".aide/task-plans/"
+
 ################################################################################
 # [env] - 环境检测配置
 ################################################################################
@@ -168,8 +174,9 @@ block_plan_path = ".aide/project-docs/block-plan.md"
 #   impl          - 迭代实现
 #   verify        - 验证交付
 #   docs          - 文档更新
+#   confirm       - 用户确认（审阅与返工）
 #   finish        - 收尾
-phases = ["task-optimize", "flow-design", "impl", "verify", "docs", "finish"]
+phases = ["task-optimize", "flow-design", "impl", "verify", "docs", "confirm", "finish"]
 
 # 流程图目录路径
 # 存放 PlantUML 源文件（.puml）和生成的图片（.png）

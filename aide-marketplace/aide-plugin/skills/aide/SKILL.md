@@ -252,6 +252,7 @@ aide flow show 2025-12-15T17-28-53
 | `impl` | 迭代实现 | exec 阶段使用 |
 | `verify` | 验证交付 | exec 阶段使用 |
 | `docs` | 文档更新 | exec 阶段使用 |
+| `confirm` | 用户确认 | 审阅与返工 |
 | `finish` | 收尾 | exec 阶段使用 |
 
 ### 流程校验
@@ -452,6 +453,9 @@ aide init
 ├── diagrams/            # 流程图目录
 │   ├── *.puml           # PlantUML 源文件
 │   └── *.png            # 生成的图片
+├── task-plans/          # 复杂任务计划文档（可配置）
+│   ├── guide.md         # 任务计划总导览
+│   └── spec-NN.md       # 子计划细则
 └── project-docs/        # 项目文档（面向 LLM）
     ├── README.md        # 总导览
     ├── block-plan.md    # 区块计划
@@ -498,8 +502,14 @@ aide flow next-step "验证完成: 所有测试通过"
 aide flow next-part docs "验证通过，进入文档环节"
 aide flow next-step "文档更新完成"
 
-# 9. 收尾
-aide flow next-part finish "文档更新完成，进入收尾"
+# 9. 进入用户确认
+aide flow next-part confirm "文档更新完成，进入用户确认环节"
+# 等待用户确认...
+# 如用户确认通过：
+aide flow next-step "用户确认通过"
+
+# 10. 收尾
+aide flow next-part finish "用户确认通过，进入收尾"
 aide flow next-step "任务完成"
 ```
 

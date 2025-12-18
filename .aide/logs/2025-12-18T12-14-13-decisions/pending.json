@@ -1,0 +1,158 @@
+{
+  "task": "调整 Aide 工作流流程",
+  "source": "task-now.md",
+  "items": [
+    {
+      "id": 1,
+      "title": "新阶段命名",
+      "options": [
+        {
+          "value": "review",
+          "label": "review",
+          "score": 90.0,
+          "pros": [
+            "语义清晰，表示审阅",
+            "简洁常用"
+          ],
+          "cons": [
+            "与 code review 可能混淆"
+          ]
+        },
+        {
+          "value": "confirm",
+          "label": "confirm",
+          "score": 85.0,
+          "pros": [
+            "明确表示确认动作",
+            "与任务流程含义一致"
+          ],
+          "cons": [
+            "较长"
+          ]
+        },
+        {
+          "value": "approve",
+          "label": "approve",
+          "score": 75.0,
+          "pros": [
+            "表示批准/通过",
+            "正式感强"
+          ],
+          "cons": [
+            "较正式，可能过于严肃"
+          ]
+        }
+      ],
+      "location": {
+        "file": "task-now.md",
+        "start": 3,
+        "end": 9
+      },
+      "context": "需要在 docs 和 finish 之间插入一个用户确认阶段。当前 flow phases 为: task-optimize, flow-design, impl, verify, docs, finish。新阶段需要一个简洁且语义明确的英文名称。",
+      "recommend": "review"
+    },
+    {
+      "id": 2,
+      "title": "复杂任务文档存储位置",
+      "options": [
+        {
+          "value": "aide_dir",
+          "label": ".aide/task-plans/",
+          "score": 90.0,
+          "pros": [
+            "与现有 .aide/ 结构一致",
+            "集中管理",
+            "自动被 gitignore"
+          ],
+          "cons": [
+            "路径较深"
+          ]
+        },
+        {
+          "value": "root_dir",
+          "label": "项目根目录",
+          "score": 60.0,
+          "pros": [
+            "访问方便"
+          ],
+          "cons": [
+            "污染根目录",
+            "需要手动 gitignore"
+          ]
+        },
+        {
+          "value": "spec_alongside",
+          "label": "与 task.spec 同目录",
+          "score": 75.0,
+          "pros": [
+            "与现有细则位置一致"
+          ],
+          "cons": [
+            "需要额外的命名规范"
+          ]
+        }
+      ],
+      "location": {
+        "file": "task-now.md",
+        "start": 27,
+        "end": 28
+      },
+      "context": "复杂任务需要生成任务计划总导览和多个子计划细则，每个都是独立文档。需要确定这些文档的存储位置。",
+      "recommend": "aide_dir"
+    },
+    {
+      "id": 3,
+      "title": "子计划文档命名规范",
+      "options": [
+        {
+          "value": "numbered",
+          "label": "数字编号: spec-01.md, spec-02.md",
+          "score": 85.0,
+          "pros": [
+            "简洁",
+            "顺序清晰"
+          ],
+          "cons": [
+            "无语义信息"
+          ]
+        },
+        {
+          "value": "named",
+          "label": "语义命名: spec-login.md, spec-payment.md",
+          "score": 80.0,
+          "pros": [
+            "语义清晰",
+            "易于识别"
+          ],
+          "cons": [
+            "命名需要额外考虑",
+            "可能重名"
+          ]
+        },
+        {
+          "value": "hybrid",
+          "label": "混合: spec-01-login.md, spec-02-payment.md",
+          "score": 90.0,
+          "pros": [
+            "兼顾顺序和语义",
+            "易于排序和识别"
+          ],
+          "cons": [
+            "命名较长"
+          ]
+        }
+      ],
+      "location": {
+        "file": "task-now.md",
+        "start": 27,
+        "end": 28
+      },
+      "context": "每个子计划需要独立的细则文档，需要确定命名规范以便识别和管理。",
+      "recommend": "hybrid"
+    }
+  ],
+  "_meta": {
+    "created_at": "2025-12-18T12:18:01+08:00",
+    "session_id": "2025-12-18T12-18-01"
+  }
+}

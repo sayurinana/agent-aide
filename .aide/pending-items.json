@@ -1,94 +1,108 @@
 {
-  "task": "创建环境安装 Command",
+  "task": "调整 Aide 工作流流程",
   "source": "task-now.md",
   "items": [
     {
       "id": 1,
-      "title": "离线安装程序是否需要实现？",
+      "title": "新阶段命名",
       "location": {
         "file": "task-now.md",
-        "start": 17,
-        "end": 21
+        "start": 3,
+        "end": 9
       },
-      "context": "任务文档中询问是否可以实现离线安装方案：先提供资源清单，用户下载资源后通过程序完成安装。这是一个独立的功能模块，与 Command 是两种不同的实现方式。",
+      "context": "需要在 docs 和 finish 之间插入一个用户确认阶段。当前 flow phases 为: task-optimize, flow-design, impl, verify, docs, finish。新阶段需要一个简洁且语义明确的英文名称。",
       "options": [
         {
-          "value": "defer",
-          "label": "暂不实现，作为后续迭代",
+          "value": "review",
+          "label": "review",
+          "score": 90,
+          "pros": ["语义清晰，表示审阅", "简洁常用"],
+          "cons": ["与 code review 可能混淆"]
+        },
+        {
+          "value": "confirm",
+          "label": "confirm",
           "score": 85,
-          "pros": ["聚焦核心需求", "减少本次工作量", "可以先验证 Command 方案的有效性"],
-          "cons": ["无法处理完全无网络的环境"]
+          "pros": ["明确表示确认动作", "与任务流程含义一致"],
+          "cons": ["较长"]
         },
         {
-          "value": "implement",
-          "label": "本次一并实现离线安装程序",
-          "score": 60,
-          "pros": ["一次性完整覆盖所有场景", "支持企业内网环境"],
-          "cons": ["工作量大", "维护成本高", "需要处理多平台二进制分发"]
-        },
-        {
-          "value": "resource_list_only",
-          "label": "仅提供资源清单和手动指南",
-          "score": 70,
-          "pros": ["折中方案", "用户可自行下载"],
-          "cons": ["离线体验不完整", "用户需手动操作较多"]
+          "value": "approve",
+          "label": "approve",
+          "score": 75,
+          "pros": ["表示批准/通过", "正式感强"],
+          "cons": ["较正式，可能过于严肃"]
         }
       ],
-      "recommend": "defer"
+      "recommend": "review"
     },
     {
       "id": 2,
-      "title": "是否需要支持 macOS？",
+      "title": "复杂任务文档存储位置",
       "location": {
         "file": "task-now.md",
-        "start": 5,
-        "end": 5
+        "start": 27,
+        "end": 28
       },
-      "context": "任务文档明确提到需要为 Windows 和 Linux 创建专用 command，但未提及 macOS。macOS 在开发者群体中使用广泛，需要确认是否纳入本次实现范围。",
+      "context": "复杂任务需要生成任务计划总导览和多个子计划细则，每个都是独立文档。需要确定这些文档的存储位置。",
       "options": [
         {
-          "value": "no_macos",
-          "label": "仅支持 Windows 和 Linux",
-          "score": 75,
-          "pros": ["严格按任务要求", "减少工作量"],
-          "cons": ["macOS 用户无法使用"]
+          "value": "aide_dir",
+          "label": ".aide/task-plans/",
+          "score": 90,
+          "pros": ["与现有 .aide/ 结构一致", "集中管理", "自动被 gitignore"],
+          "cons": ["路径较深"]
         },
         {
-          "value": "include_macos",
-          "label": "增加 macOS 支持",
-          "score": 80,
-          "pros": ["覆盖主流开发平台", "macOS 与 Linux 安装方式相似"],
-          "cons": ["增加一定工作量", "需要测试验证"]
+          "value": "root_dir",
+          "label": "项目根目录",
+          "score": 60,
+          "pros": ["访问方便"],
+          "cons": ["污染根目录", "需要手动 gitignore"]
+        },
+        {
+          "value": "spec_alongside",
+          "label": "与 task.spec 同目录",
+          "score": 75,
+          "pros": ["与现有细则位置一致"],
+          "cons": ["需要额外的命名规范"]
         }
       ],
-      "recommend": "include_macos"
+      "recommend": "aide_dir"
     },
     {
       "id": 3,
-      "title": "Command 命名和组织方式",
+      "title": "子计划文档命名规范",
       "location": {
         "file": "task-now.md",
-        "start": 5,
-        "end": 5
+        "start": 27,
+        "end": 28
       },
-      "context": "任务提到「为 Windows 和 Linux 单独创建专用的完整 command」，这可以理解为两种组织方式：统一命令自动检测系统，或分离命令让用户选择。",
+      "context": "每个子计划需要独立的细则文档，需要确定命名规范以便识别和管理。",
       "options": [
         {
-          "value": "unified",
-          "label": "/aide:install（统一命令，自动检测系统）",
-          "score": 90,
-          "pros": ["用户体验统一", "自动适配系统", "一个命令解决问题"],
-          "cons": ["Command 文件会较长"]
+          "value": "numbered",
+          "label": "数字编号: spec-01.md, spec-02.md",
+          "score": 85,
+          "pros": ["简洁", "顺序清晰"],
+          "cons": ["无语义信息"]
         },
         {
-          "value": "separated",
-          "label": "/aide:install-win 和 /aide:install-linux（分离命令）",
-          "score": 65,
-          "pros": ["文件结构清晰", "平台逻辑隔离"],
-          "cons": ["用户需要知道自己的系统", "维护多个文件"]
+          "value": "named",
+          "label": "语义命名: spec-login.md, spec-payment.md",
+          "score": 80,
+          "pros": ["语义清晰", "易于识别"],
+          "cons": ["命名需要额外考虑", "可能重名"]
+        },
+        {
+          "value": "hybrid",
+          "label": "混合: spec-01-login.md, spec-02-payment.md",
+          "score": 90,
+          "pros": ["兼顾顺序和语义", "易于排序和识别"],
+          "cons": ["命名较长"]
         }
       ],
-      "recommend": "unified"
+      "recommend": "hybrid"
     }
   ]
 }
