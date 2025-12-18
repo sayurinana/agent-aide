@@ -274,8 +274,23 @@ aide config get flow.diagram_path
 
 ##### 流程图示例结构
 
+**必须在 PlantUML 文件头部添加渲染配置**：
+
+```bash
+# 获取配置值
+aide config get plantuml.font_name  # 默认 "Arial"
+aide config get plantuml.dpi        # 默认 300
+aide config get plantuml.scale      # 默认 0.5
+```
+
+将获取的值添加到 PlantUML 文件头部：
+
 ```plantuml
 @startuml
+skinparam defaultFontName "Arial"
+skinparam dpi 300
+scale 0.5
+
 ' 主程序流程图
 start
 :初始化配置;
@@ -395,6 +410,12 @@ aide flow next-part finish "用户确认通过，进入收尾"
 ```
 
 - 清理临时文件
+- 清理任务计划文件（如有）：
+  ```bash
+  # 获取任务计划目录
+  aide config get task.plans_path
+  # 删除目录下的所有文件（guide.md, spec-*.md 等）
+  ```
 - 检查遗漏的 TODO
 - 向用户汇报完成情况
 

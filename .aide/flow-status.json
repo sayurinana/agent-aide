@@ -1,7 +1,7 @@
 {
   "task_id": "2025-12-19T03-01-27",
   "current_phase": "impl",
-  "current_step": 6,
+  "current_step": 7,
   "started_at": "2025-12-19T03:01:27+08:00",
   "history": [
     {
@@ -49,7 +49,15 @@
       "action": "next-step",
       "phase": "impl",
       "step": 6,
-      "summary": "完成 config.py 修改：添加 plantuml 配置项"
+      "summary": "完成 config.py 修改：添加 plantuml 配置项",
+      "git_commit": "1b22454beef76d84b79fb4ad1a4058c79930bdeb"
+    },
+    {
+      "timestamp": "2025-12-19T03:15:42+08:00",
+      "action": "next-step",
+      "phase": "impl",
+      "step": 7,
+      "summary": "完成 run.md 修改：finish 清理 + 流程图配置"
     }
   ],
   "source_branch": "master",
