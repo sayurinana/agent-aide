@@ -1,0 +1,52 @@
+@startuml task-flow
+skinparam defaultFontName "PingFang SC"
+skinparam dpi 300
+scale 0.5
+
+title 任务执行流程：优化分步执行机制
+
+start
+
+partition "1. docs.md 修改" {
+  :分析当前 docs.md 实现;
+  :设计索引式计划文档结构;
+  :设计步骤文档格式;
+  :重写命令流程;
+  note right
+    关键改进：
+    - block-plan.md 只做索引
+    - steps/ 目录存步骤详情
+    - 支持区块内细粒度进度
+  end note
+}
+
+partition "2. user-graph.md 修改" {
+  :分析当前 user-graph.md 实现;
+  :复用 docs.md 的设计模式;
+  :重写命令流程;
+  note right
+    关键改进：
+    - plan.md 只做索引
+    - 步骤文档包含已分析的模块结构
+  end note
+}
+
+partition "3. user-docs.md 修改" {
+  :分析当前 user-docs.md 实现;
+  :复用设计模式;
+  :重写命令流程;
+  note right
+    关键改进：
+    - 步骤文档包含已提取的源信息
+  end note
+}
+
+partition "4. 验证" {
+  :审阅三个命令的一致性;
+  :检查步骤文档格式;
+  :确认设计满足需求;
+}
+
+stop
+
+@enduml
