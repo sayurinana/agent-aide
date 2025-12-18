@@ -1,0 +1,106 @@
+@startuml user-docs-refactor
+skinparam defaultFontName "Arial"
+skinparam dpi 300
+scale 0.5
+
+title user-docs 分步执行流程
+
+start
+
+:前置准备;
+note right: 触发 readme-templates skill
+
+:检查计划文件;
+note right
+  aide config get user_docs.docs_plan_path
+  默认: docs/user-docs-plan.md
+end note
+
+if (计划文件存在?) then (是)
+  :==接续执行阶段==;
+  :读取计划文档;
+  :显示当前进度;
+
+  switch (用户选择?)
+    case (继续执行)
+      :从当前步骤继续;
+    case (查看详情)
+      :显示详细计划;
+    case (重新开始)
+      :删除计划文件;
+      :重新开始分析;
+  endswitch
+
+else (否)
+  :==分析和计划阶段==;
+
+  :检查前置条件;
+  note right
+    README 规范文件
+    项目文档
+  end note
+
+  :分析项目;
+  note right
+    读取项目信息
+    确定项目类型
+  end note
+
+  :规划文档结构;
+  note right
+    根据项目类型选择模板
+    确定需要生成的文档列表
+  end note
+
+  :生成计划文档;
+
+  :用户确认;
+
+  if (确认?) then (是)
+    :开始执行;
+  else (否)
+    :调整计划;
+    stop
+  endif
+endif
+
+:==步骤执行流程==;
+
+while (还有未完成步骤?) is (是)
+  :显示当前任务;
+
+  :执行步骤;
+  note right
+    步骤类型:
+    - 创建目录结构
+    - 生成文档文件
+    - 更新 README 链接
+  end note
+
+  :更新计划文档;
+  note right
+    标记步骤完成
+    更新进度
+    记录时间戳
+  end note
+
+  :步骤间询问;
+
+  switch (用户选择?)
+    case (继续)
+      :进入下一步;
+    case (查看产出)
+      :显示生成的文档;
+    case (暂停)
+      :保存进度;
+      stop
+  endswitch
+endwhile (否)
+
+:==完成==;
+:所有文档已生成;
+:显示完成提示;
+
+stop
+
+@enduml
