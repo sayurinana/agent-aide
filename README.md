@@ -7,6 +7,26 @@
 
 Aide 是一套为 Claude Code 设计的工作流辅助体系，通过结构化的任务管理、进度追踪和交互式决策，让 AI 辅助开发更加高效可控。
 
+Agent Aide: [sayurinana/agent-aide](https://github.com/sayurinana/agent-aide)
+
+一个使用Aide的示例：[sayurinana/test-aide-1](https://github.com/sayurinana/test-aide-1)
+
+视频演示：
+
+[安装Claude code + Agent Aide_哔哩哔哩_bilibili](https://www.bilibili.com/video/BV1SRqfBgEhM/?vd_source=b10eb4cb0193392f5edb13ea3567498a)
+
+安装 claude code 是 4:15 ~ 9:00
+
+安装 aide plugin 是 9:10 ~ 11:00
+
+安装 aide program 是 22:57
+
+目前看来只能用Linux或WSL运行使用，对win的兼容性蛮差的
+
+[Agent Aide 使用示例 写一个割草无双游戏_哔哩哔哩_bilibili](https://www.bilibili.com/video/BV1aeBwBHE3v/?vd_source=b10eb4cb0193392f5edb13ea3567498a)
+
+建议从 17:40 开始看
+
 ## 核心特性
 
 - **任务进度追踪** - 自动记录开发进度，与 Git 深度集成
