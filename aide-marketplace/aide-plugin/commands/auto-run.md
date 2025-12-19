@@ -277,8 +277,22 @@ aide config get flow.diagram_path
 
 ##### 流程图示例结构
 
+**必须在 PlantUML 文件头部添加渲染配置**：
+
+```bash
+# 获取配置值
+aide config get plantuml.font_name  # 默认 "Arial"
+aide config get plantuml.dpi        # 默认 300
+aide config get plantuml.scale      # 默认 0.5
+```
+
+将获取的值添加到 PlantUML 文件头部：
+
 ```plantuml
 @startuml
+skinparam defaultFontName "Arial"
+skinparam dpi 300
+scale 0.3
 ' 主程序流程图
 start
 :初始化配置;
