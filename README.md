@@ -5,6 +5,68 @@
 
 **面向 LLM 驱动开发的工作流工具** - 让 AI 辅助开发更加高效可控。
 
+Aide 是一套为 Claude Code 设计的工作流辅助体系，通过结构化的任务管理、进度追踪和交互式决策，让 AI 辅助开发更加高效可控。
+
+## 核心特性
+
+- **任务进度追踪** - 自动记录开发进度，与 Git 深度集成
+- **环境智能检测** - 支持 Python/Node/Rust/Flutter 等多种环境
+- **交互式决策** - Web 界面处理待定项确认，让 AI 遵循你的选择
+- **渐进式披露** - 按需加载信息，避免上下文过载
+- **Claude Code 插件** - 8 个斜杠命令 + 5 个技能定义
+- **确定性封装** - 工具调用产生确定性输出
+- **信息隔离** - Commands 定义流程，Skills 定义工具用法
+
+## 项目结构
+
+```
+agent-aide/
+├── aide-program/          # 核心 CLI 工具（Python）
+│   ├── aide/              # 源码
+│   │   ├── core/          # 配置管理
+│   │   ├── env/           # 环境检测
+│   │   ├── flow/          # 流程追踪
+│   │   └── decide/        # 待定项确认
+│   └── bin/               # 可执行脚本
+├── aide-marketplace/      # Claude Code 插件市场
+│   └── aide-plugin/       # Aide 插件
+│       ├── commands/      # 斜杠命令（8 个）
+│       └── skills/        # 技能定义（5 个）
+└── docs/                  # 项目文档
+```
+
+## 子项目
+
+| 项目 | 路径 | 说明 | 技术栈 |
+|------|------|------|--------|
+| aide-program | `aide-program/` | 核心命令行工具，提供环境检测、流程追踪、待定项确认 | Python 3.11+ |
+| aide-plugin | `aide-marketplace/aide-plugin/` | Claude Code 插件，提供工作流命令和技能 | Markdown |
+
+## 架构概述
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    Claude Code                          │
+├─────────────────────────────────────────────────────────┤
+│  aide-plugin                                            │
+│  ├── Commands (定义"做什么")                            │
+│  │   └── /aide:run, /aide:setup, /aide:docs...         │
+│  └── Skills (定义"怎么做")                              │
+│      └── aide, env-config, readme-templates...          │
+├─────────────────────────────────────────────────────────┤
+│  aide-program (CLI)                                     │
+│  ├── env/    环境检测                                   │
+│  ├── flow/   流程追踪 + Git 集成                        │
+│  └── decide/ 待定项确认 (Web UI)                        │
+└─────────────────────────────────────────────────────────┘
+```
+
+## 核心设计原则
+
+| 原则 | 说明 |
+|------|------|
+| **渐进式披露** | 信息按需加载，避免上下文过载 |
+
 ---
 
 ## 快速开始
@@ -16,6 +78,9 @@ git clone https://github.com/sayurinana/agent-aide.git
 cd agent-aide/aide-program
 uv venv .venv && source .venv/bin/activate
 uv pip install -r requirements.txt
+
+# linux下要把 /path/to/agent-aide/aide-program/bin 放进PATH
+# Win下要把 D:\path\to\agent-aide\aide-program\bin\for_win-git-bash 放进PATH
 ```
 
 ### 初始化
@@ -196,52 +261,6 @@ claude --dangerously-skip-permissions
 | 插件指南 | [docs/reference/03-插件指南.md](docs/reference/03-插件指南.md) | 插件开发指南 |
 | 插件市场指南 | [docs/reference/04-插件市场指南.md](docs/reference/04-插件市场指南.md) | 市场配置指南 |
 
-### 架构概述
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                    Claude Code                          │
-├─────────────────────────────────────────────────────────┤
-│  aide-plugin                                            │
-│  ├── Commands (定义"做什么")                            │
-│  │   └── /aide:run, /aide:setup, /aide:docs...         │
-│  └── Skills (定义"怎么做")                              │
-│      └── aide, env-config, readme-templates...          │
-├─────────────────────────────────────────────────────────┤
-│  aide-program (CLI)                                     │
-│  ├── env/    环境检测                                   │
-│  ├── flow/   流程追踪 + Git 集成                        │
-│  └── decide/ 待定项确认 (Web UI)                        │
-└─────────────────────────────────────────────────────────┘
-```
-
-#### 核心设计原则
-
-| 原则 | 说明 |
-|------|------|
-| **渐进式披露** | 信息按需加载，避免上下文过载 |
-| **确定性封装** | 工具调用产生确定性输出 |
-| **信息隔离** | Commands 定义流程，Skills 定义工具用法 |
-
-### 项目结构
-
-```
-agent-aide/
-├── aide-program/          # 核心 CLI 工具（Python）
-│   ├── aide/              # 源码
-│   │   ├── core/          # 配置管理
-│   │   ├── env/           # 环境检测
-│   │   ├── flow/          # 流程追踪
-│   │   └── decide/        # 待定项确认
-│   └── bin/               # 可执行脚本
-├── aide-marketplace/      # Claude Code 插件市场
-│   └── aide-plugin/       # Aide 插件
-│       ├── commands/      # 斜杠命令（8 个）
-│       └── skills/        # 技能定义（5 个）
-└── docs/                  # 项目文档
-    ├── reference/         # 参考文档
-    └── graph-guide/       # 流程图
-```
 
 ---
 
