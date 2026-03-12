@@ -1,0 +1,24 @@
+{
+  "name": "agent-aide",
+  "owner": {
+    "name": "sayurinana",
+    "email": "sayurinana@163.com"
+  },
+  "metadata": {
+    "description": "Aide 工作流体系插件",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "aide-plugin",
+      "description": "Aide 工作流体系插件，提供任务准备和执行的标准化流程",
+      "version": "1.0.0",
+      "author": {
+        "name": "sayurinana",
+        "email": "sayurinana@163.com"
+      },
+      "source": "./aide-plugin",
+      "strict": false
+    }
+  ]
+}
