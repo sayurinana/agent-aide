@@ -1,0 +1,33 @@
+[meta]
+aide_version = "0.1.0"
+schema_version = 2
+
+[general]
+gitignore_aide = false
+
+[task]
+source = "task-now.md"
+spec = "task-spec.md"
+plans_path = ".aide/task-plans/"
+
+[docs]
+path = ".aide/project-docs"
+
+[flow]
+phases = ["task-optimize", "flow-design", "impl", "verify", "docs", "confirm", "finish"]
+diagram_path = ".aide/diagrams"
+
+[plantuml]
+font_name = "Maple Mono Normal NL NF CN"
+dpi = 300
+scale = 0.5
+download_cache_path = "download-buffer"
+clean_cache_after_install = true
+install_path = "utils"
+download_url = "https://github.com/sayurinana/agent-aide/releases/download/resource-001/plantuml-1.2025.4-linux-x64.tar.gz"
+
+[decide]
+port = 3721
+bind = "127.0.0.1"
+url = "http://192.168.3.13:3721"
+timeout = 0
