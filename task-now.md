@@ -6,4 +6,14 @@
 
 首先你必须完整的审阅和分析 aide-plugin/commands 和 aide-plugin/skills 下的所有文档，不要遗漏任何一行，这样才能更好的理解和完成后面的要求。
 
+对当前的Command + Skill的结构和内容进行调整：
 
+Commands调整为：
+- make-memory、load-memory、hi、go、bye
+- 一共5个command
+- commands中仅呈现少量内容，主要用于指出一些需要遵循的基本原则和注意事项，并指导应该学习什么skill来达成目标
+
+Skills调整为：
+- make-memory、load-memory、aide-flow
+- aide-flow-parts由一系列各个子流程的专用skill组成，每一个子流程专门编写一份skill，按需学习
+- 
