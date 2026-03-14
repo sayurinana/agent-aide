@@ -14,6 +14,6 @@ Commands调整为：
 - commands中仅呈现少量内容，主要用于指出一些需要遵循的基本原则和注意事项，并指导应该学习什么skill来达成目标
 
 Skills调整为：
-- make-memory、load-memory、aide-flow
-- aide-flow-parts由一系列各个子流程的专用skill组成，每一个子流程专门编写一份skill，按需学习
-- 
+- make-memory、load-memory、aide-process-overview
+- aide-sub-process-parts由一系列各个子流程的专用skill组成，每一个子流程专门编写一份skill，按需学习
+- 一共3+n个skill（我准备对子流程的数量和内容进行调整，现在暂时未确定具体的子环节）
