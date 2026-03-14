@@ -2,4 +2,97 @@
 
 非常重要！！！：你在了解了当前的项目情况对本文档内容进行理解和思考后，必须先根据 task-parser skill的要求对本文档进行分析并编写task-optimized.md！然后经过用户检阅并答复确认后才能开始创建提案。
 
-完成下列要求：
+# 完成下列要求
+
+首先你必须完整的审阅和分析 aide-plugin/commands 和 aide-plugin/skills 下的所有文档，不要遗漏任何一行，这样才能更好的理解和完成后面的要求。
+
+对当前的Command + Skill的结构和内容进行调整：
+
+Commands调整为：
+
+- make-memory、load-memory、hi、go、bye
+- 一共5个command
+- commands中仅呈现少量内容，主要用于指出一些需要遵循的基本原则和注意事项，并指导应该学习什么skill来达成目标
+
+Skills调整为：
+
+- make-memory、load-memory、aide-process-overview
+- aide-sub-process-parts由一系列各个子流程的专用skill组成，每一个子流程专门编写一份skill，按需学习
+- 一共3+n个skill（我准备对子流程的数量和内容进行调整，现在暂时未确定具体的子环节）
+
+---
+
+> 接下来我展开描述一下我期望中这些commands和skills都应该起什么作用
+
+# 细节
+
+## 前言
+
+首先我需要说明一下，所有的command和skill都是用来在 AI Agent Cli 中用于提供给实际执行任务的LLM的Prompts，
+
+比如我们现在就是在Claude Code这个AI Agent Cli中，我是用户，你是执行我的提出的任务的LLM。
+
+也就是说，对于之后的所有command和skill你都可以当做是：在未来的某次对话和任务中，将会提供给你的Prompts。
+
+我希望command和skill的内容都要尽可能的客观、精确、清晰，
+
+比如，如果我想说：“你要是需要知道更多OpenSpec的约定或者说明的话，你可以去看看 `openspec/AGENTS.md`（它在 `openspec/` 目录里面，要是没找到的话，你就运行一下`ls openspec` 或 `openspec update`）”，
+
+但实际上更合适的Prompts应该是：“如需了解更多 OpenSpec 约定或说明，请参考 `openspec/AGENTS.md`（位于 `openspec/` 目录内——如果看不到该文件，请运行 `ls openspec` 或 `openspec update`）”。
+
+然后，后面我为了我叙述方便，我会有较大量的第一第二人称口语化表达，我希望你帮我把它们转化为更合适的言辞，
+
+比如，假设我现在想要调整的command中有一个想要添加的command是learn-more，我希望最终它的内容是前面所说的那个更合适的Prompts，但是我在本文中我可能会这样描述它起到的作用：“用于指导你怎么了解更多OpenSpec的信息，告诉你去哪里找这些信息”。
+
+能明白我的意思吗？我希望你根据我在前言中说的这些，分析提炼出一些规则，便于根据这些规则对我的描述进行解析。
+
+## commands : make-memory
+
+指导你如何更好的创建更有用的子代理，让它去学习make-memory skill，然后去为项目生成memory文档集。
+
+## commands : load-memory
+
+告诉你现在应该去学习load-memory skill，然后根据该skill的指导载入项目memory。
+
+## commands : hi
+
+如果你还没有学习过aide-process-overview skill的话让你现在去学，对aide体系有个总览认知。
+
+然后指导你如何执行aide程序的hi子命令，这个子命令会输出些什么信息，如何理解这些输出信息，
+
+再根据这些输出的信息：
+
+- 如果你现在还没有学习load-memory skill并载入项目memory的话，判断是否需要载入memory以了解项目信息
+  - 要是已经载入了可以略过
+- 如果你判断出可以不需要载入项目memory就不用学那个skill
+
+然后结合aide hi子命令输出的信息和可能需要的项目memory信息，尝试向用户提出一些建议的行动并描述用意。
+
+## commands : go
+
+如果你还没有学习过aide-process-overview skill的话让你现在去学，对aide体系有个总览认知。
+
+如果你现在还没有学习load-memory skill并载入项目memory的话，要求你学习这个skill并载入项目memory。
+
+然后指导你如何执行aide程序的hi子命令，这个子命令会输出些什么信息，如何理解这些输出信息，
+
+此时对项目的信息和当前状态有了一定的了解，
+
+再指导你如何执行aide go子命令，告诉你它会进行些什么操作，让你接续当前的状态，继续按照计划的流程实施任务。
+
+## commands : bye
+
+如果你还没有学习过aide-process-overview skill的话让你现在去学，对aide体系有个总览认知。
+
+然后指导你如何执行aide程序的hi子命令，这个子命令会输出些什么信息，如何理解这些输出信息，
+
+然后结合hi子命令输出的信息，和对aide体系的认知，判断当前应该做什么：
+
+- 如果现在是在常驻工作分支，而不是某个具体的子任务的子分支，则现在你不需要做什么事
+  - 如果hi的输出信息表示当前有几个未完成的进行中的任务，可以尝试向用户询问是否需要继续实施其中某项任务，
+  - 如果当前没有任何进行中的任务，则检查一下当前git仓库是否干净，视情况可以向用户询问是否需要暂存文件然后帮忙编写提交信息进行一次git提交
+  - 如果没有任务且git仓库也是干净的，可以向用户道别
+- 如果现在是在某个具体的子任务的子分支
+  - 如果该任务已经完成了前面的所有流程，已经到了结束这一步，则视情况对仓库文件进行清理，使用aide程序的子命令结束这个子任务，然后将此任务分支合并回常驻工作分支，然后向用户道别
+  - 如果该任务还没到结束那一步，则根据当前仓库状态，使用'git add .'将所有文件暂存，编写适当的提交消息，把消息作为参数传给aide bye子命令，暂时停止该子任务的实施，回到常驻工作分支，然后向用户道别
+
