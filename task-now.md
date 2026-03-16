@@ -139,7 +139,7 @@ Skills调整为：
 
 ---
 
-## 新的aide体系
+# 新的aide体系
 
 > 我将会直接用口语化的文字描述我期望的新的aide体系的内容，其中包含：
 >
@@ -147,5 +147,83 @@ Skills调整为：
 > - 所有可能需要的子流程（aide-sub-process-parts skills）
 > - aide程序的功能
 >
-> 需要你帮我按照 task-parser skill 的指导，先进行优化，然后再基于优化后的结果进行识别和提取，再对前面的commands和skills进行完善
+> 需要你帮我按照 task-parser skill 的指导，先进行优化，然后再基于优化后的结果进行识别和提取，再对前面的commands和skills进行完善，新建一项提案用于更新相关文档
+>
+> 同时制作一份新的aide程序功能调整方案，之后新建一项提案用于更新aide程序
+
+## aide-memory 数据和文档目录结构
+
+aide程序以及aide体系文档的数据目录要进行调整，
+
+不再用 `.aide` 目录，改为存储到项目目录下的 `aide-memory` 目录，
+
+调整为下述结构（有后缀名的就是文件，没有后缀名的就是目录）：
+
+```
+/path/to/project
+	/aide-memory
+		/memory
+			/structure
+				/index.md
+				/*.md
+			/concepts
+				/term.md
+				/arch.md
+			/diagram
+				/*.puml
+				/*.png
+			/overview.md
+		/tasks
+			/task-3
+			/task-5
+				/information.md
+				/design.md
+				/todo.md
+				/flow-graphics
+					/main.puml
+					/*.puml
+		/archived-tasks
+			/task-1
+			/task-2
+			/task-4
+		/config.toml
+		/config.md
+		/tasks-summary.md
+		/templates
+			/任务口述模板.md
+			/期望激进创造大展身手的解析指导.md
+		/AGENT.md
+```
+
+### memory
+
+这个就是make-memory和load-memory中所指的memory，
+
+overview.md用于导览。
+
+make-memory会要求你**严格按照**项目目录下的文件目录结构进行扫描然后提取**内容概述**和**概念抽象**。
+
+要扫描**每一个文件和目录**，且要**递归深入扫描每一个子目录及其内的文件**，除了被`.gitignore`忽略的。
+
+#### structure
+
+严格的、完整的目录结构保存到`index.md`中，分述的区块**内容概述**信息文档保存到`structure`目录下的其他区块文档中（先完成区块文档，最后再汇总编写`index.md`）。
+
+#### concepts
+
+而过程中提取的**抽象概念**则保存到`concepts`目录下，`term.md`用于记录一些特定的适用于本项目的专用术语，例如：
+
+> 某个flutter项目，在其 `flutter/lib/screens` 目录下有十几个 `*_screen.dart` 文件，都是app的页面，为了避免多次使用“`flutter/lib/screens/home_screen.dart`中的 `class HomeScreen` 这个 `StatefulWidget`”这中冗长的描述，并且这种文本也不便于用户口述，
+>
+> 如果用户常提到“我想在主界面中添加一个按钮”、“我希望优化一下主界面的动画”……这样的描述，可以在向用户补充确认并征求意见后，把“主界面”记录为一个用于本项目的特定术语保存到 `term.md`，此后可知，当用户提到“主界面”时，除了常规意义上的主界面这一设计概念，还很有可能指的是“`flutter/lib/screens/home_screen.dart`中的 `class HomeScreen` 这个 `StatefulWidget`”这个目标。
+
+`concepts`目录下的 `arch.md`，用于把“对项目原始内容的模块拆解、概念解构”组织为抽象维度的上层叙述，使其更具逻辑、条理清晰，
+
+可以适当引入`term.md`中的专用数据减少长难句等冗杂描述的出现，
+
+可以适当引入 `_.puml` 如“可参考`a.puml`”、“如`bootstrap.puml`所示”……用于引导用户去`/path/to/project/aide-memory/memory/diagram`下去查阅plantuml语言绘制的流程图以更好的理解相关概念（因为如果项目本身没有puml源码文件的话，项目文档中会出现.puml文件的地方就只有aide-memory中的两类，一个是diagram目录，另一个就是每一个task下的flow-graphics目录，但这里是全局文档，这里不应该引用到还未归档的临时任务中才有的信息，而如果已经归档了，信息状态就应该已经同步更新到了此处的全局信息中，所以直接使用`.puml`后缀的文件名即可准确表达出是要去diagram目录下找，并且由于.puml到.png的编译过程是由aide程序自动完成的，所以用户可以知道`bootstrap.puml`指代的目标实际上是让他去看`bootstrap.png`流程图）。
+
+#### diagram
+
+你需要为concepts的内容适当的编写相应的图解，使用plantuml语言，图解源代码保存到`diagram`目录下，保存为`*.puml`文件，使用`aide hi`子命令会自动检测puml文件变更并按需完成编译输出目标png文件。
 
