@@ -1,3 +1,5 @@
+[toc]
+
 使用task-parser优化本文档，与用户进行沟通引导用户对任务进行进一步扩展和完善后，把优化后的清晰准确的任务要求保存到task-optimized.md，然后再基于task-optimized分析和创建提案。
 
 非常重要！！！：你在了解了当前的项目情况对本文档内容进行理解和思考后，必须先根据 task-parser skill的要求对本文档进行分析并编写task-optimized.md！然后经过用户检阅并答复确认后才能开始创建提案。
@@ -62,7 +64,7 @@ Skills调整为：
 
 ## commands : hi
 
-如果你还没有学习过aide-process-overview skill的话让你现在去学，对aide体系有个总览认知。
+如果你还没有完全理解aide-process-overview.md的含义的话，让你现在去完全完整读取并学习和理解，对aide体系有个总览认知。
 
 然后指导你如何执行aide程序的hi子命令，这个子命令会输出些什么信息，如何理解这些输出信息，
 
@@ -76,7 +78,7 @@ Skills调整为：
 
 ## commands : go
 
-如果你还没有学习过aide-process-overview skill的话让你现在去学，对aide体系有个总览认知。
+如果你还没有完全理解aide-process-overview.md的含义的话，让你现在去完全完整读取并学习和理解，对aide体系有个总览认知。
 
 如果你现在还没有学习load-memory skill并载入项目memory的话，要求你学习这个skill并载入项目memory。
 
@@ -88,7 +90,7 @@ Skills调整为：
 
 ## commands : bye
 
-如果你还没有学习过aide-process-overview skill的话让你现在去学，对aide体系有个总览认知。
+如果你还没有完全理解aide-process-overview.md的含义的话，让你现在去完全完整读取并学习和理解，对aide体系有个总览认知。
 
 然后指导你如何执行aide程序的hi子命令，这个子命令会输出些什么信息，如何理解这些输出信息，
 
@@ -170,10 +172,13 @@ aide程序以及aide体系文档的数据目录要进行调整，
 			/task-4
 		/config.toml
 		/config.md
+		/branches.json
+		/branches.md
 		/tasks-summary.md
 		/templates
 			/任务口述模板.md
 			/期望激进创造大展身手的解析指导.md
+		/aide-process-overview.md
 		/AGENT.md
 ```
 
@@ -255,13 +260,27 @@ aide程序的配置项的详细文档，
 
 #### branches.json
 
+所有任务分支的相关信息记录数据，由aide程序自动生成与维护，
 
+你不应该直接读取这个文件，如果你想知道关于任务分支的信息，应该使用aide命令，
+
+#### branches.md
+
+任务分支信息的md版本，由aide程序自动生成与维护，这个文档是面向用户的，要在实现数据展示的同时注重可读性，
+
+你不能读取这个文件，
 
 #### tasks-summary.md
 
+用于记录截止至当前的**所有未归档的任务**的概要（任务归档后的信息应该被整理到项目资料集中，也就是`aide-memory/memory/`目录下），
+
+```
+# TASK-<n> <摘要标题>
+```
 
 
-#### AGENT.md
+
+#### aide-process-overview.md
 
 概述aide体系的所有子过程，让你对aide体系有一个总览认知，
 
@@ -271,6 +290,10 @@ aide程序的配置项的详细文档，
 - 或者是确实需要了解目标子过程的详细情况时，
 - 去学习相应的skill
 
+#### AGENT.md
+
+如果你还没有完全理解aide-process-overview.md的含义的话，让你现在去完全完整读取并学习和理解，对aide体系有个总览认知。
+
 然后，将你的身份定义为统筹全局的总工程师，能在具体情境中把握全局的关键人物。
 
 指出：
@@ -279,4 +302,10 @@ aide程序的配置项的详细文档，
 - 你负责统筹流程与协作
 - 你要尽可能的用创建子代理的方式来解决/实施具体事务，让子代理来解决具体执行中的问题，你来创建和指挥子代理，专业的事交给专业的人
 
-> 
+## aide体系工作过程的描述
+
+### 在进入Agent Cli环境之前，用户自己可以做的事
+
+我可以运行`aide hi`就能很方便的知道当前的项目状态，包括：
+
+- 
