@@ -10,6 +10,8 @@
 
 **将当前以"单 Agent 亲力亲为"为核心的 aide 工作流，重构为以"总工程师 Agent 统筹 + 专家子代理执行"为核心的分层协作体系**，同时重新设计数据目录结构、简化 commands、按需加载 skills、增强 aide 程序的自动化能力。
 
+**重要说明**：这是一个全新的体系，与旧 aide 体系完全独立，无需考虑迁移兼容性。旧项目需删除旧相关内容，重新构建 memory。
+
 ---
 
 ## 结构化任务描述
@@ -40,7 +42,6 @@
         flow-graphics/               # 任务相关图解
           main.puml
           *.puml
-          .no_graphics               # 无图解标记文件（可选）
         task-summary.md              # 任务摘要
       task-now/                      # 起草中的任务（临时）
     archived-tasks/                  # 已归档任务目录
@@ -56,12 +57,21 @@
     AGENT.md                         # Agent 身份与行为准则
 ```
 
-#### 关键约束
+#### 关键说明
 
+**文件位置**：
+- `task-now.md`：位于项目根目录，是用户编辑任务描述的入口文件
+- `task-now/`：位于 `aide-memory/tasks/` 下，是解析后的结构化任务数据目录
+
+**访问约束**：
 - `config.toml`：Agent 不可直接读取，必须通过 aide 程序获取配置信息
-- `config.md`：Agent 不可直接读取，除非任务本身是帮助用户理解配置
+- `config.md`：Agent 可在任务涉及配置理解时读取
 - `branches.json`：Agent 不应直接读取，应通过 aide 命令查询分支信息
-- `branches.md`：Agent 不可读取
+- `branches.md`：Agent 不可读取（面向用户的自动生成报告）
+
+**图解标记**：
+- 不使用 `.no_graphics` 文件
+- 在 `design.md` 中使用特定格式标记表示无需图解，并记录原因
 
 ---
 
@@ -129,20 +139,25 @@ Skills 分为两类：**基础 Skills** 和 **子过程 Skills**。
 
 每个阶段对应一个专用 skill，由总工程师 Agent 在执行到相应阶段时创建专家子代理并令其学习。
 
-##### skill: task-parse（需求解析）
+##### skill: build-task（任务构建）
 
-调整现有 `task-parser` skill。
-
-- 根据配置指定的解析指导文档，对任务描述进行深度解析
-- 输出 `information.md`、`design.md`、`todo.md`
-- 在 `todo.md` 中根据任务特性确定适用的阶段流程
+核心职责：
+- 指导如何构建符合 aide 体系规范的任务
+- 输出 `information.md`、`design.md`、`todo.md`、`task-summary.md`
+- 在 `todo.md` 中根据任务特性确定适用的阶段流程（从预设中选择并调整）
+- 在 `design.md` 中标记是否需要图解，不需要时记录原因
 - 引导用户对任务内容进行打磨完善
+
+**关键变更**：
+- 任务解析的具体方法和风格由用户指定的"任务解析指导文档"决定
+- aide 程序在 build-task 阶段会动态输出解析指导文档的绝对路径
+- build-task skill 聚焦于"如何构建规范的 task"，而非"如何解析口语化内容"
 
 ##### skill: make-graphics（图解绘制）
 
 - 为任务编写 PlantUML 图解
 - 保存至 `flow-graphics/` 目录
-- 判断是否确实需要图解，不需要时创建 `.no_graphics` 文件并记录原因
+- 根据 `design.md` 中的标记判断是否需要绘制图解
 
 ##### skill: impl-verify（实现与验证循环）
 
@@ -285,13 +300,18 @@ Skills 分为两类：**基础 Skills** 和 **子过程 Skills**。
 |--------|------|--------|
 | task_description_file | 任务描述文档路径（相对于项目根目录） | `task-now.md` |
 | task_template | 任务描述文档模板路径（相对于 templates/） | `任务口述模板.md` |
-| task_parse_guide | 任务解析指导文档路径（相对于 templates/） | `期望激进创造大展身手的解析指导.md` |
+| task_parse_guide | 任务解析指导文档路径（相对于 templates/） | `任务解析指导.md` |
 | branch_prefix | 任务分支名前缀 | 空 |
 | branch_format | 任务分支名格式（支持变量如 {n}） | `task-{n}` |
-| main_branch | 常驻分支名 | `master` |
+| resident_branch | 常驻分支名（不等价于主分支） | `dev` |
 | auto_commit_on_switch | 切换分支时自动暂存提交 | `true` |
 | auto_commit_message | 自动提交的默认消息 | `暂存：清理仓库状态以切换分支` |
 | bye_commit_message | bye 操作的默认提交消息 | `暂存：清理仓库状态` |
+
+**配置说明**：
+- `resident_branch`：常驻工作分支，通常为 `dev` 或 `user-name_dev`，不建议使用主分支（master/main）
+- `task_template`：模板内容参考 `/repo/agent-aide/1.md`
+- `task_parse_guide`：从 `aide-plugin/skills/task-parser/SKILL.md` 去掉 yaml 头后的内容
 
 #### 4.4 通用要求
 
@@ -319,23 +339,44 @@ Skills 分为两类：**基础 Skills** 和 **子过程 Skills**。
 阶段属于"任务实施中"情境，具有严格的先后顺序。
 
 **固定阶段**（每个任务必备）：
-1. `task-parse` — 需求解析与完善
-2. `make-graphics` — 图解绘制（可标记跳过）
-3. `impl-verify` — 实现与验证循环
-4. `confirm` — 用户确认
-5. `finish` — 收尾归档
+1. `build-task` — 任务构建与需求完善
+2. `impl-verify` — 实施与验证（是否循环取决于任务拆分）
+3. `confirm` — 用户确认
+4. `finish` — 收尾归档
 
-**可选阶段**（在 task-parse 阶段根据任务特性选定）：
-- `integration` — 集成测试（多模块/分部实现时启用）
-- `review` — 代码审查（代码变更量大或关键模块时启用）
-- `docs-update` — 文档更新（涉及 API 变更、新功能、架构变更时启用）
+**可选阶段**（在 build-task 阶段根据任务特性选定，插入固定阶段之间）：
+- `make-graphics` — 图解绘制（在 build-task 之后、impl-verify 之前）
+- `integration` — 集成测试（在 impl-verify 之后、confirm 之前）
+- `review` — 审查（代码审查/文档审校/方案评审，在 impl-verify/integration 之后、confirm 之前）
+- `docs-update` — 文档更新（在 review 之后、confirm 之前）
 
 **返工规则**：
-- 从任意阶段可返回 `task-parse` 发起返工
+- 从任意阶段可返回 `build-task` 发起返工
 - 返工后必须至少经过后续的 `impl-verify` → `confirm` 才能再次完成
 - 阶段流程写入 `todo.md` 中，由 aide 程序提取和管理
 
-#### 5.3 Agent 角色定位
+#### 5.3 场景预设（Presets）
+
+预设为常见场景提供快速起点，在 build-task 阶段可根据具体任务动态调整。
+
+**预设定义**：
+
+| 预设名 | 适用场景 | 阶段流程 |
+|--------|----------|----------|
+| **full** | 大型软件开发、多模块系统、需要完整质量保证 | build-task → make-graphics → impl-verify:loop → integration → review → docs-update → confirm → finish |
+| **standard** | 中等规模功能开发、常规软件迭代 | build-task → impl-verify:loop → review → confirm → finish |
+| **lite** | 简单功能、小型修改、bug修复 | build-task → impl-verify → confirm → finish |
+| **docs** | 纯文档工作、知识库管理、规范制定 | build-task → impl-verify → review → confirm → finish |
+| **research** | 技术调研、方案设计、可行性分析 | build-task → make-graphics → impl-verify → docs-update → confirm → finish |
+
+**说明**：
+- `impl-verify:loop` 表示该阶段启用分部循环模式
+- 预设中的阶段名称保持通用，但在不同场景下语义有所不同：
+  - 软件开发：impl = 编写代码，verify = 运行测试
+  - 文档工作：impl = 撰写文档，verify = 审校准确性
+  - 数据分析：impl = 执行分析，verify = 验证结论
+
+#### 5.4 Agent 角色定位
 
 - **用户**：把握战略与方向，最终决策者
 - **总工程师 Agent**：统筹流程与协作，指派和管理子代理
@@ -360,50 +401,73 @@ Skills 分为两类：**基础 Skills** 和 **子过程 Skills**。
 
 ---
 
-## 分析发现
+## 用户确认的关键决策
 
-### 需要澄清的问题
+基于用户在 reply.md 中的回复，以下决策已确认：
 
-**Q1. task-now.md 的存放位置**
-当前 task-now.md 位于项目根目录，而任务数据目录为 `aide-memory/tasks/task-now/`。二者的关系需要明确——task-now.md 是用户编辑的入口文件（项目根目录），task-now/ 是解析后的结构化数据目录，这个理解是否正确？
+### 已确认事项
 
-**Q2. 旧功能的保留与废弃**
-- `aide decide`（Web 界面待定项确认）是否保留？
-- `aide env`（环境管理）是否保留？
-- `aide flow` 中的 step 级别追踪是否保留，还是仅追踪阶段级别？
+1. **task-now.md 位置**：项目根目录下的 task-now.md 是用户编辑入口，task-now/ 在 aide-memory/tasks/ 下是结构化数据目录 ✓
 
-**Q3. 常驻分支的定义**
-常驻分支是否通过配置指定？默认是否为 `master`？是否允许多个常驻分支？
+2. **旧功能处理**：
+   - `aide decide` — 废弃 ✓
+   - `aide env` — 废弃 ✓
+   - `aide flow` — 保留，仅追踪阶段级别（不追踪 step） ✓
 
-**Q4. 阶段颗粒度**
-- `confirm` 和 `finish` 的核心操作主要由 aide 程序完成，是否仍需独立 skill？还是可合并为一个"收尾" skill？
-- `review`（代码审查）是否是期望包含的阶段？原文未明确提及但从团队角色角度应当有。
+3. **常驻分支**：
+   - 不等价于主分支（master/main）✓
+   - 建议使用 `dev` 或 `user-name_dev` ✓
+   - 通过配置指定 ✓
 
-**Q5. 模板文件内容**
-- `templates/任务口述模板.md` 的格式是什么？
-- `templates/期望激进创造大展身手的解析指导.md` 的用途和内容方向是什么？
+4. **阶段与 Skills**：
+   - `confirm` 和 `finish` 需要独立 skill ✓
+   - `review`（代码审查/文档审校）作为可选阶段加入 ✓
 
-**Q6. 子代理运作方式**
-在 Claude Code 中，"创建子代理"通过 Task 工具实现。子代理之间的信息传递主要通过文件系统（aide-memory 中的文档），这个理解是否正确？
+5. **模板文件**：
+   - `任务口述模板.md` 参考 `/repo/agent-aide/1.md` ✓
+   - `任务解析指导.md` 从 `aide-plugin/skills/task-parser/SKILL.md` 去掉 yaml 头 ✓
 
-**Q7. 多场景适配**
-对于不涉及代码的场景（纯文档管理、知识库管理、office 辅助办公），`impl-verify` 阶段的含义如何适配？是否需要预定义不同场景的阶段模板？
+6. **skill 重命名**：
+   - `task-parse` → `build-task` ✓
+   - 解析风格由用户指定的解析指导文档决定 ✓
+   - aide 程序在 build-task 阶段输出解析指导文档的绝对路径 ✓
 
-### 识别的风险
+7. **子代理运作**：
+   - 子代理上下文隔离是期望的设计 ✓
+   - 信息传递通过 aide-memory 中的文档实现 ✓
+   - 每个子代理自行获取所需上下文和学习必要 skills ✓
 
-1. **全面重构的兼容性风险**：新旧体系不兼容，迁移过程中可能导致现有数据丢失
-2. **阶段状态管理复杂度**：动态阶段选定 + 返工机制，状态转换逻辑较复杂
-3. **子代理上下文隔离**：子代理无法访问主 Agent 的对话上下文，信息传递依赖文件，可能出现信息损耗
-4. **并发任务冲突**：多个未归档任务同时存在时的优先级和资源竞争
-5. **task-now 冲突**：若已存在 `task-now/` 目录，用户又想起草新任务，如何处理
+8. **场景适配**：
+   - 需要预定义场景预设（full/standard/lite/docs/research）✓
+   - 阶段名称保持通用，语义在不同场景下适配 ✓
 
-### 优化建议
+9. **设计优化**：
+   - 保留 `branches.md`（自动生成，面向用户，无维护成本）✓
+   - 使用 `design.md` 标记替代 `.no_graphics` 文件 ✓
+   - 放宽 `config.md` 访问限制 ✓
 
-1. **branches.md 的必要性**：建议取消。`branches.json` 已有数据，用户可通过 `aide hi` 查看，Agent 可通过 aide 命令查询，无需维护冗余文件。
-2. **.no_graphics 机制简化**：考虑在 `design.md` 或 `todo.md` 中添加标记字段替代独立文件，减少文件碎片。
-3. **config.md 访问限制放宽**：Agent 在帮助用户理解配置时需要读取该文件，建议明确"仅当任务涉及配置理解时允许读取"。
-4. **-v 参数策略**：建议默认精简（对 Agent 友好），-v 详细（对人类友好），不需要自动识别调用者身份。
-5. **实施分阶段策略**：建议拆分为多个独立提案分阶段实施，降低单次变更的风险和复杂度。
+10. **实施策略**：
+    - 无需考虑迁移兼容性，新旧体系完全独立 ✓
+    - task-now/ 冲突时用户必须先敲定或清除（暂不做智能压栈）✓
+    - 可拆分为多个独立提案分阶段实施 ✓
+
+---
+
+## 风险评估与缓解
+
+### 已解决的风险
+
+1. ~~**全面重构的兼容性风险**~~：已明确无需考虑迁移，新旧体系独立 ✓
+2. ~~**子代理上下文隔离**~~：已确认这是期望的设计，非风险 ✓
+3. ~~**task-now 冲突**~~：已明确处理策略（用户手动敲定或清除）✓
+
+### 需要关注的风险
+
+1. **阶段状态管理复杂度**：动态阶段选定 + 返工机制，状态转换逻辑较复杂
+   - 缓解：在 build-task 阶段明确定义阶段流程，写入 todo.md，由 aide 程序严格管理
+
+2. **并发任务冲突**：多个未归档任务同时存在时的优先级和资源竞争
+   - 缓解：通过 `aide hi` 显示最近活跃任务，`aide go` 默认进入最近活跃的任务
 
 ---
 
@@ -411,17 +475,93 @@ Skills 分为两类：**基础 Skills** 和 **子过程 Skills**。
 
 | 维度 | 评估 | 说明 |
 |------|------|------|
-| 结构复杂度 | **高** | 5 个 commands、11+ 个 skills、aide 程序重构、目录结构全面调整 |
-| 逻辑复杂度 | **高** | 情境判断、阶段流转、返工机制、分支管理状态机 |
+| 结构复杂度 | **高** | 5 个 commands、13 个 skills、aide 程序重构、目录结构全面调整 |
+| 逻辑复杂度 | **高** | 情境判断、阶段流转、返工机制、分支管理、场景预设 |
 | 集成复杂度 | **高** | commands ↔ skills ↔ aide 程序 ↔ git 的多层协同 |
-| 风险等级 | **中高** | 全面重构与旧体系不兼容，但可通过分阶段实施缓解 |
+| 风险等级 | **中** | 新旧体系独立无迁移风险，可分阶段实施 |
 
-### 建议的实施拆分
+**Skills 统计**：
+- 基础 Skills：make-memory、load-memory（2个）
+- 子过程 Skills：build-task、make-graphics、impl-verify、integration、review、docs-update、confirm、finish、rework（9个）
+- 技术参考 Skills：plantuml、aide（2个）
+- **总计：13 个 skills**
 
-1. **提案 A**：aide-memory 目录结构调整 + config 迁移
-2. **提案 B**：aide 程序核心子命令（hi / go / bye）
-3. **提案 C**：aide 程序任务管理子命令（verify / confirm / archive）
-4. **提案 D**：Commands 重写（5 个）
-5. **提案 E**：基础 Skills 重写（make-memory / load-memory）
-6. **提案 F**：子过程 Skills 编写（task-parse / make-graphics / impl-verify 等）
-7. **提案 G**：aide-process-overview.md + AGENT.md 编写
+---
+
+## 建议的实施拆分
+
+为降低单次变更的复杂度和风险，建议拆分为以下独立提案：
+
+### 阶段一：基础设施（优先级：高）
+
+**提案 1**：aide-memory 目录结构设计与初始化
+- 定义完整的目录结构规范
+- 实现 `aide init` 命令创建目录结构
+- 编写 config.toml 配置项定义和 config.md 文档
+
+**提案 2**：aide 程序核心子命令（hi / go / bye）
+- 实现状态查询与展示逻辑
+- 实现分支切换与清理逻辑
+- 集成 plantuml 自动编译
+
+### 阶段二：任务管理（优先级：高）
+
+**提案 3**：aide 程序任务管理子命令
+- 实现 `aide verify` 任务审验
+- 实现 `aide confirm` 任务敲定
+- 实现 `aide archive` 任务归档
+- 实现 branches.json 和 branches.md 自动维护
+
+**提案 4**：aide 程序阶段管理（flow）
+- 实现阶段级别追踪
+- 实现阶段流程提取和管理
+- 实现场景预设定义
+
+### 阶段三：Commands 与基础 Skills（优先级：中）
+
+**提案 5**：Commands 重写
+- make-memory、load-memory、hi、go、bye（5个）
+- 编写 aide-process-overview.md 和 AGENT.md
+
+**提案 6**：基础 Skills
+- make-memory skill（迁移自 commands/docs.md）
+- load-memory skill（迁移自 commands/load.md）
+
+### 阶段四：子过程 Skills（优先级：中）
+
+**提案 7**：核心子过程 Skills
+- build-task（重命名自 task-parser）
+- impl-verify
+- confirm
+- finish
+
+**提案 8**：可选子过程 Skills
+- make-graphics
+- integration
+- review
+- docs-update
+- rework（调整现有）
+
+### 阶段五：技术参考 Skills（优先级：低）
+
+**提案 9**：技术参考 Skills 更新
+- plantuml skill（保留并调整）
+- aide skill（更新以反映新命令体系）
+
+---
+
+## 附录：模板文件示例
+
+### 任务口述模板.md
+
+```markdown
+学习并理解**任务解析指导文档**的要求后，根据**任务解析指导的要求**优化本文档，与用户进行沟通引导用户对任务进行进一步扩展和完善后，把优化后的清晰准确的任务要求保存到task-optimized.md，然后再基于task-optimized分析和构建规范的task所需文档。
+
+非常重要！！！：你在了解了当前的项目情况对本文档内容进行理解和思考后，必须先根据**任务解析指导文档中的要求**对本文档进行分析并编写task-optimized.md！然后**经过用户检阅并答复确认后**才能开始构建task。
+
+# 完成下列要求
+```
+
+### 任务解析指导.md
+
+从 `aide-plugin/skills/task-parser/SKILL.md` 去掉 yaml 头部分（前3行）后的完整内容。
