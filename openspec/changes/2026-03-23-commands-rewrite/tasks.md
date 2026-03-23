@@ -3,19 +3,19 @@
 ## 实现任务
 
 ### 1. Commands 编写
-- [ ] 编写 make-memory command
-- [ ] 编写 load-memory command
-- [ ] 编写 hi command
-- [ ] 编写 go command
-- [ ] 编写 bye command
+- [x] 编写 make-memory command
+- [x] 编写 load-memory command
+- [x] 编写 hi command
+- [x] 编写 go command
+- [x] 编写 bye command
 
 ### 2. 文档编写
-- [ ] 编写 aide-process-overview.md
-- [ ] 编写 AGENT.md
+- [x] 编写 aide-process-overview.md
+- [x] 编写 AGENT.md
 
 ### 3. 测试
-- [ ] 验证 commands 可读性
-- [ ] 验证文档完整性
+- [x] 验证 commands 可读性
+- [x] 验证文档完整性
 
 ## 依赖
 

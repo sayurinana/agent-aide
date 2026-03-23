@@ -2,205 +2,142 @@
 
 ## 一、概述
 
-aide-plugin 是 Claude Code 插件，提供 Aide 工作流体系的 Commands 和 Skill。
+`aide-plugin` 是 Aide 体系在 Claude Code 中的入口层，负责把“现在该做什么”与“具体怎么做”拆开。
 
-### 1.1 解决的问题
+- `command`：入口导航，只给出当前情境下的起点、约束和下一步
+- `skill`：方法手册，说明具体的执行方式
+- `aide` 程序：提供状态、分支、阶段、任务管理等确定性能力
+- `aide-memory/`：提供项目长期记忆和任务上下文
 
-| 问题 | 解决方案 |
-|------|----------|
-| CLAUDE.md 信息过载 | 流程规则封装到 Commands，按需触发 |
-| 操作指令分散 | 工具使用方法集中到 Skill |
-| 流程遵循不一致 | Commands 定义明确的阶段和顺序 |
+新体系强调简短入口、按需学习、分工明确。
 
-### 1.2 组件关系
+## 二、组件关系
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        Commands                                  │
-│  定义"做什么"和"按什么顺序做"                                    │
-│  ┌─────────┐  ┌─────────┐  ┌─────────┐  ┌─────────┐            │
-│  │  setup  │  │  load   │  │  docs   │  │   run   │            │
-│  └────┬────┘  └────┬────┘  └────┬────┘  └────┬────┘            │
-└───────┼────────────┼────────────┼────────────┼──────────────────┘
-        │            │            │            │
-        ▼            ▼            ▼            ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                         Skills                                   │
-│  定义"怎么调用工具"                                              │
-│  ┌─────────────────────┐  ┌─────────────────────┐              │
-│  │     aide skill      │  │  env-config skill   │              │
-│  │ (基础命令指南)       │  │ (环境配置详细指南)   │              │
-│  └─────────────────────┘  └─────────────────────┘              │
-└─────────────────────────────────────────────────────────────────┘
-        │
-        ▼ 调用
-┌─────────────────────────────────────────────────────────────────┐
-│                      aide-program                                │
-│  实际执行操作，返回精简结果                                      │
-└─────────────────────────────────────────────────────────────────┘
+```text
+Commands
+  make-memory / load-memory / hi / go / bye
+        |
+        v
+Skills
+  基础: make-memory / load-memory
+  固定阶段: build-task / impl-verify / confirm / finish
+  可选阶段: make-graphics / integration / review / docs-update / rework
+  参考: aide / plantuml
+        |
+        v
+aide 程序 + aide-memory/
 ```
 
----
+其中：
+- command 决定入口
+- skill 决定方法
+- 程序与 memory 提供真实状态和长期上下文
 
-## 二、Commands 索引
+## 三、Commands 索引
 
-| Command | 设计文档 | 执行文件 | 职责 | 独立运行 |
-|---------|----------|----------|------|----------|
-| `/aide:setup` | [commands/setup.md](commands/setup.md) | [../commands/setup.md](../commands/setup.md) | 环境配置 | 是 |
-| `/aide:load` | [commands/load.md](commands/load.md) | [../commands/load.md](../commands/load.md) | 项目认知载入 | 否 |
-| `/aide:docs` | [commands/docs.md](commands/docs.md) | [../commands/docs.md](../commands/docs.md) | 项目文档管理 | 是 |
-| `/aide:run` | [commands/run.md](commands/run.md) | [../commands/run.md](../commands/run.md) | 任务执行（核心） | 否 |
+| Command | 设计文档 | 执行文件 | 职责 |
+|---------|----------|----------|------|
+| `/aide:make-memory` | [commands/make-memory.md](commands/make-memory.md) | [../commands/make-memory.md](../commands/make-memory.md) | 生成或更新项目 memory |
+| `/aide:load-memory` | [commands/load-memory.md](commands/load-memory.md) | [../commands/load-memory.md](../commands/load-memory.md) | 按需载入项目 memory |
+| `/aide:hi` | [commands/hi.md](commands/hi.md) | [../commands/hi.md](../commands/hi.md) | 查看当前状态并给出建议 |
+| `/aide:go` | [commands/go.md](commands/go.md) | [../commands/go.md](../commands/go.md) | 进入任务分支并接续当前阶段 |
+| `/aide:bye` | [commands/bye.md](commands/bye.md) | [../commands/bye.md](../commands/bye.md) | 收尾并离场 |
 
-> 注：原 `/aide:init`、`/aide:prep`、`/aide:exec` 已重组为上述命令
+> 说明：仓库中旧版 command 文档目前仍保留作迁移参考，但新入口以本表为准。
 
-### 2.1 Commands 设计原则
+## 四、入口设计原则
 
-**聚焦思考方法论，不涉及工具细节**
+### 4.1 command 保持精简
 
-Commands 只告诉 LLM：
-- 怎么思考（分析方法、优化方向）
-- 流程是什么（阶段划分、执行顺序）
-- 决策边界（哪些自主完成，哪些需确认）
+command 只负责：
+- 判断当前属于哪类情境
+- 指出需要先读哪些总览文档
+- 指出需要学习哪个 skill
+- 指出需要调用哪些 `aide` 子命令
+- 指出预期行为和汇报方式
 
-具体工具调用由 Skill 负责说明。
+command 不负责完整展开所有方法细节。
 
-### 2.2 工作流程
+### 4.2 先总览，后技能，最后执行
 
-```
-/aide:setup         /aide:docs          /aide:run
-(独立运行)          (独立运行)          (核心命令)
-    │                   │                   │
-    ▼                   ▼                   ▼
-┌────────┐        ┌──────────┐        ┌──────────────────┐
-│环境配置│        │ 项目文档 │        │ task-optimize    │
-│依赖分析│        │ 区块划分 │        │ ├─ 任务分析      │
-│模块检测│        │ 文档生成 │        │ ├─ 复杂度评估    │
-│问题修复│        │ 增量更新 │        │ ├─ 待定项处理    │
-└────────┘        └──────────┘        │ └─ 生成细则      │
-                                      │ flow-design      │
-                                      │ └─ 创建流程图    │
-                                      │ impl (迭代实现)  │
-                                      │ verify (验证)    │
-                                      │ docs (文档更新)  │
-                                      │ finish (收尾)    │
-                                      └──────────────────┘
-```
+在新体系中，进入任何 command 前都默认优先理解：
+- `aide-memory/aide-process-overview.md`
+- `aide-memory/AGENT.md`
 
-> `/aide:load` 由 `/aide:run` 自动调用，用于按需载入项目文档。
+之后再进入具体 skill 和执行动作。
 
----
+### 4.3 真实状态由程序给出
 
-## 三、Skill 索引
+涉及任务状态、当前分支、阶段进度、待确认或待归档状态时，以 `aide` 程序输出为准，不依赖对话记忆猜测。
 
-| Skill | 执行文件 | 职责 | 触发时机 |
-|-------|----------|------|----------|
-| aide | [../skills/aide/SKILL.md](../skills/aide/SKILL.md) | aide 基础命令指南 | `/aide:run` 强制触发 |
-| env-config | [../skills/env-config/SKILL.md](../skills/env-config/SKILL.md) | 环境配置详细指南 | `/aide:setup` 强制触发 |
+## 五、典型路径
 
-### 3.1 Skill 设计原则
+### 5.1 初次进入项目
 
-**按需触发，避免信息过载**
-
-- `aide` skill：由 `/aide:run` 强制触发，提供基础命令用法
-- `env-config` skill：由 `/aide:setup` 强制触发，提供详细环境配置指导
-
-**纯工具说明，便于快速查阅**
-
-Skill 只包含：
-- 命令语法和参数
-- 输入输出格式
-- 典型使用示例
-
-不包含流程指导和业务逻辑。
-
-### 3.2 Skill 触发逻辑
-
-```
-/aide:setup                          /aide:run
-    │                                    │
-    ▼                                    ▼
-触发 env-config skill              触发 aide skill
-    │                                    │
-    ▼                                    ▼
-aide env ensure                    aide flow status
-    │                                    │
-    ├─ 全部 ✓ → 完成                     ├─ 无活跃任务 → 新任务流程
-    │                                    │
-    └─ 有 ✗ → 分析项目类型               └─ 有活跃任务 → 续接流程
-              │
-              ├─ aide env set 配置
-              └─ 重试 aide env ensure
+```text
+/aide:hi
+  -> 若缺少 memory，则 /aide:make-memory
+  -> 若已有 memory，则 /aide:load-memory
 ```
 
----
+### 5.2 接续任务
 
-## 四、职责边界
+```text
+/aide:hi
+  -> /aide:load-memory
+  -> /aide:go
+  -> 当前阶段对应的 skill
+```
 
-### 4.1 需要程序约束的场景
+### 5.3 结束本轮工作
 
-| 场景 | 处理方式 |
-|------|----------|
-| 环境检测与修复 | `aide env ensure` |
-| 待定项呈现与确认 | `aide decide` |
-| 状态记录与 git 提交 | `aide flow` |
-| 配置读写 | `aide config` |
-| 流程图校验与构建 | `aide flow` + PlantUML |
+```text
+/aide:hi
+  -> 必要时 verify / confirm / archive
+  -> /aide:bye
+```
 
-### 4.2 不需要程序约束的场景
+完整阶段说明见：
+- [aide-memory/aide-process-overview.md](../../aide-memory/aide-process-overview.md)
+- [aide-memory/AGENT.md](../../aide-memory/AGENT.md)
 
-| 场景 | 说明 |
-|------|------|
-| 任务分析思考 | LLM 自由发挥 |
-| 任务优化思考 | LLM 自由发挥 |
-| 复杂度评估 | LLM 根据指导原则判断 |
-| 业务决策判断 | LLM 自由发挥 |
-| 任务细则编写 | LLM 自由发挥，产出 task-spec.md |
-| 业务代码编写 | LLM 自由发挥 |
-| 流程图设计 | LLM 自由发挥，产出 .puml 文件 |
+## 六、Skills 视角
 
----
+当前 command 体系依赖以下 skill 分类：
 
-## 五、修改指南
+- 基础：`make-memory`、`load-memory`
+- 固定阶段：`build-task`、`impl-verify`、`confirm`、`finish`
+- 可选阶段：`make-graphics`、`integration`、`review`、`docs-update`、`rework`
+- 参考：`aide`、`plantuml`
 
-### 5.1 修改 Command
+其中 `aide` 与 `plantuml` 属于可被多个流程复用的参考技能。
 
-1. 阅读对应的设计文档（如 `commands/setup.md`）
-2. 理解职责和流程
-3. 修改执行文件（如 `../commands/setup.md`）
-4. 更新设计文档（如有重大变更）
-5. 更新本导览（如有新增/删除 Command）
+## 七、修改指南
 
-### 5.2 修改 Skill
+### 7.1 修改 command
 
-1. 确定要修改的 skill（aide 或 env-config）
-2. 修改对应执行文件 `../skills/<skill>/SKILL.md`
-3. 如涉及 aide-program 变更，同步更新 [aide-program 文档](../../../aide-program/docs/README.md)
+1. 先读对应设计文档
+2. 再改执行文件
+3. 如职责或入口发生变化，同步更新本 README
+4. 如影响全局流程，同步更新 `aide-memory/aide-process-overview.md`
 
-**注意**：
-- `aide` skill 保持精简，仅包含基础命令用法
-- 详细配置指导放在 `env-config` skill
+### 7.2 修改全局规则
 
-### 5.3 新增 Command
+涉及角色边界或协作方式变化时：
 
-1. 在 `commands/` 下创建设计文档
-2. 在 `../commands/` 下创建执行文件
-3. 更新本导览的索引表
-4. 更新 [总导览](../../../docs/aide-overview.md)
+1. 更新 `aide-memory/AGENT.md`
+2. 更新 `aide-memory/aide-process-overview.md`
+3. 再回查各 command 是否仍然成立
 
----
+## 八、相关文档
 
-## 六、相关文档
+- [流程总览](../../aide-memory/aide-process-overview.md)
+- [Agent 说明](../../aide-memory/AGENT.md)
+- [aide skill](../skills/aide/SKILL.md)
+- [plantuml skill](../skills/plantuml/SKILL.md)
 
-- [总导览](../../../docs/aide-overview.md)
-- [aide-program 导览](../../../aide-program/docs/README.md)
-- [aide flow 子命令](../../../aide-program/docs/commands/flow.md)
-- [aide flow 详细设计](../../../aide-program/docs/commands/flow/README.md)
-- [Claude Code 插件指南](../../../docs/03-插件指南.md)
+## 九、版本信息
 
----
-
-## 七、版本信息
-
-- 当前版本：2.0.0
-- 更新日期：2025-12-15
-- 主要变更：Commands 体系重组（setup/load/docs/run 替代 init/prep/exec）
+- 当前版本：3.0.0
+- 更新日期：2026-03-23
+- 主要变更：将 commands 重写为入口导航，围绕 `aide-memory/`、`hi/go/bye` 和阶段 skills 组织新流程
