@@ -3,3 +3,4 @@ pub mod core_commands;
 pub mod decide;
 pub mod flow;
 pub mod init;
+pub mod task_management;

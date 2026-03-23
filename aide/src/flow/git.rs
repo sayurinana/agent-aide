@@ -32,7 +32,31 @@ impl GitIntegration {
         self.ensure_repo()?;
         self.run_checked(&["add", "-A", "--", ".", ":!*.lock"])
             .map_err(|e| format!("git add 失败: {e}"))?;
+        self.add_managed_aide_paths()?;
         Ok(())
+    }
+
+    pub fn add_force_all(&self, paths: &[&str]) -> Result<(), String> {
+        self.ensure_repo()?;
+
+        let mut cmd = Command::new("git");
+        cmd.arg("add").arg("-A").arg("-f").arg("--");
+        for path in paths {
+            cmd.arg(path);
+        }
+
+        let output = cmd
+            .current_dir(&self.root)
+            .output()
+            .map_err(|e| format!("执行 git 命令失败: {e}"))?;
+
+        if output.status.success() {
+            Ok(())
+        } else {
+            let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+            let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
+            Err(if stderr.is_empty() { stdout } else { stderr })
+        }
     }
 
     pub fn commit(&self, message: &str) -> Result<Option<String>, String> {
@@ -125,6 +149,22 @@ impl GitIntegration {
         Ok(())
     }
 
+    pub fn create_branch(&self, name: &str, start_point: Option<&str>) -> Result<(), String> {
+        let mut args = vec!["branch", name];
+        if let Some(sp) = start_point {
+            args.push(sp);
+        }
+        self.run_checked(&args)
+            .map_err(|e| format!("创建分支 {name} 失败: {e}"))?;
+        Ok(())
+    }
+
+    pub fn merge_base(&self, left: &str, right: &str) -> Result<String, String> {
+        self.run(&["merge-base", left, right])
+            .map(|s| s.trim().to_string())
+            .map_err(|e| format!("计算分支公共祖先失败: {e}"))
+    }
+
     pub fn has_commits_since(&self, commit: &str, branch: &str) -> Result<bool, String> {
         let output = self
             .run(&["rev-list", &format!("{commit}..{branch}"), "--count"])
@@ -200,6 +240,45 @@ impl GitIntegration {
             .output()
             .map(|o| o.status.code().unwrap_or(-1))
             .unwrap_or(-1)
+    }
+
+    fn add_managed_aide_paths(&self) -> Result<(), String> {
+        let managed_paths = [
+            "aide-memory/tasks",
+            "aide-memory/archived-tasks",
+            "aide-memory/branches.json",
+            "aide-memory/branches.md",
+        ];
+
+        let mut existing = Vec::new();
+        for path in managed_paths {
+            if self.root.join(path).exists() {
+                existing.push(path);
+            }
+        }
+
+        if existing.is_empty() {
+            return Ok(());
+        }
+
+        let mut cmd = Command::new("git");
+        cmd.arg("add").arg("-A").arg("-f").arg("--");
+        for path in existing {
+            cmd.arg(path);
+        }
+
+        let output = cmd
+            .current_dir(&self.root)
+            .output()
+            .map_err(|e| format!("执行 git 命令失败: {e}"))?;
+
+        if output.status.success() {
+            Ok(())
+        } else {
+            let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+            let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
+            Err(if stderr.is_empty() { stdout } else { stderr })
+        }
     }
 }
 

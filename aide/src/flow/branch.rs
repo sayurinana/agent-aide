@@ -45,6 +45,65 @@ impl Default for BranchesData {
     }
 }
 
+pub fn load_branches_data(path: &Path) -> Result<BranchesData, String> {
+    if !path.exists() {
+        return Ok(BranchesData::default());
+    }
+
+    let content = fs::read_to_string(path).map_err(|e| format!("读取分支概况失败: {e}"))?;
+    serde_json::from_str(&content).map_err(|e| format!("读取分支概况失败: {e}"))
+}
+
+pub fn render_branches_markdown(data: &BranchesData) -> String {
+    let mut lines = vec!["# Git 分支概况\n".to_string()];
+
+    if data.branches.is_empty() {
+        lines.push("暂无分支记录。\n".to_string());
+        return lines.join("\n");
+    }
+
+    for branch in data.branches.iter().rev() {
+        lines.push(format!("## {}\n", branch.branch_name));
+        lines.push(format!("- **任务**: {}", branch.task_summary));
+        lines.push(format!("- **任务ID**: {}", branch.task_id));
+        lines.push(format!("- **源分支**: {}", branch.source_branch));
+        lines.push(format!(
+            "- **起始提交**: {}",
+            &branch.start_commit[..7.min(branch.start_commit.len())]
+        ));
+        if let Some(ec) = &branch.end_commit {
+            lines.push(format!("- **结束提交**: {}", &ec[..7.min(ec.len())]));
+        }
+        lines.push(format!("- **状态**: {}", branch.status));
+        let start_time = &branch.started_at[..16.min(branch.started_at.len())];
+        lines.push(format!("- **起始时间**: {}", start_time.replace('T', " ")));
+        if let Some(ft) = &branch.finished_at {
+            let end_time = &ft[..16.min(ft.len())];
+            lines.push(format!("- **结束时间**: {}", end_time.replace('T', " ")));
+        }
+        if let Some(tb) = &branch.temp_branch {
+            lines.push(format!("- **临时分支**: {tb}"));
+        }
+        lines.push(String::new());
+    }
+
+    lines.join("\n")
+}
+
+pub fn save_branches_data(
+    branches_json: &Path,
+    branches_md: &Path,
+    data: &BranchesData,
+) -> Result<(), String> {
+    let json_content =
+        serde_json::to_string_pretty(data).map_err(|e| format!("序列化分支概况失败: {e}"))?;
+    fs::write(branches_json, format!("{json_content}\n"))
+        .map_err(|e| format!("保存分支概况失败: {e}"))?;
+    fs::write(branches_md, render_branches_markdown(data))
+        .map_err(|e| format!("保存分支概况失败: {e}"))?;
+    Ok(())
+}
+
 fn clean_task_summary(task_summary: &str) -> &str {
     let prefixes = [
         "开始任务准备: ",
@@ -186,16 +245,7 @@ impl BranchManager {
             return Ok(self.data.as_ref().unwrap());
         }
 
-        if !self.branches_json.exists() {
-            self.data = Some(BranchesData::default());
-            return Ok(self.data.as_ref().unwrap());
-        }
-
-        let content = fs::read_to_string(&self.branches_json)
-            .map_err(|e| format!("读取分支概况失败: {e}"))?;
-        let data: BranchesData =
-            serde_json::from_str(&content).map_err(|e| format!("读取分支概况失败: {e}"))?;
-        self.data = Some(data);
+        self.data = Some(load_branches_data(&self.branches_json)?);
         Ok(self.data.as_ref().unwrap())
     }
 
@@ -206,52 +256,7 @@ impl BranchManager {
         };
 
         let _ = fs::create_dir_all(&self.aide_dir);
-
-        let json_content =
-            serde_json::to_string_pretty(data).map_err(|e| format!("序列化分支概况失败: {e}"))?;
-        fs::write(&self.branches_json, format!("{json_content}\n"))
-            .map_err(|e| format!("保存分支概况失败: {e}"))?;
-
-        let md_content = self.generate_markdown(data);
-        let _ = fs::write(&self.branches_md, md_content);
-
-        Ok(())
-    }
-
-    fn generate_markdown(&self, data: &BranchesData) -> String {
-        let mut lines = vec!["# Git 分支概况\n".to_string()];
-
-        if data.branches.is_empty() {
-            lines.push("暂无分支记录。\n".to_string());
-            return lines.join("\n");
-        }
-
-        for branch in data.branches.iter().rev() {
-            lines.push(format!("## {}\n", branch.branch_name));
-            lines.push(format!("- **任务**: {}", branch.task_summary));
-            lines.push(format!("- **任务ID**: {}", branch.task_id));
-            lines.push(format!("- **源分支**: {}", branch.source_branch));
-            lines.push(format!(
-                "- **起始提交**: {}",
-                &branch.start_commit[..7.min(branch.start_commit.len())]
-            ));
-            if let Some(ec) = &branch.end_commit {
-                lines.push(format!("- **结束提交**: {}", &ec[..7.min(ec.len())]));
-            }
-            lines.push(format!("- **状态**: {}", branch.status));
-            let start_time = &branch.started_at[..16.min(branch.started_at.len())];
-            lines.push(format!("- **起始时间**: {}", start_time.replace('T', " ")));
-            if let Some(ft) = &branch.finished_at {
-                let end_time = &ft[..16.min(ft.len())];
-                lines.push(format!("- **结束时间**: {}", end_time.replace('T', " ")));
-            }
-            if let Some(tb) = &branch.temp_branch {
-                lines.push(format!("- **临时分支**: {tb}"));
-            }
-            lines.push(String::new());
-        }
-
-        lines.join("\n")
+        save_branches_data(&self.branches_json, &self.branches_md, data)
     }
 
     pub fn create_task_branch(
@@ -339,11 +344,18 @@ impl BranchManager {
             None => return Ok((true, "未找到活跃的任务分支，跳过合并".into())),
         };
 
-        let start_commit = &branch_info.start_commit;
+        let start_commit = self.resolve_branch_base(&branch_info);
         let source_branch = &branch_info.source_branch;
 
-        if self.git.has_commits_since(start_commit, source_branch)? {
-            self.merge_with_temp_branch(&branch_info, task_summary, false, end_commit, finished_at)
+        if self.git.has_commits_since(&start_commit, source_branch)? {
+            self.merge_with_temp_branch(
+                &branch_info,
+                &start_commit,
+                task_summary,
+                false,
+                end_commit,
+                finished_at,
+            )
         } else {
             self.merge_normal(&branch_info, task_summary, false, end_commit, finished_at)
         }
@@ -360,11 +372,11 @@ impl BranchManager {
             None => return Err("未找到活跃的任务分支".into()),
         };
 
-        let start_commit = &branch_info.start_commit;
+        let start_commit = self.resolve_branch_base(&branch_info);
         let source_branch = &branch_info.source_branch;
 
-        if self.git.has_commits_since(start_commit, source_branch)? {
-            self.merge_with_temp_branch(&branch_info, "强制清理", true, None, None)
+        if self.git.has_commits_since(&start_commit, source_branch)? {
+            self.merge_with_temp_branch(&branch_info, &start_commit, "强制清理", true, None, None)
         } else {
             self.merge_normal(&branch_info, "强制清理", true, None, None)
         }
@@ -450,12 +462,12 @@ impl BranchManager {
     fn merge_with_temp_branch(
         &mut self,
         branch_info: &BranchInfo,
+        branch_base_commit: &str,
         task_summary: &str,
         is_force_clean: bool,
         end_commit: Option<&str>,
         finished_at: Option<&str>,
     ) -> Result<(bool, String), String> {
-        let start_commit = branch_info.start_commit.clone();
         let task_branch = branch_info.branch_name.clone();
         let task_id = branch_info.task_id.clone();
         let branch_number = branch_info.number;
@@ -507,7 +519,7 @@ impl BranchManager {
 
         // 从起始提交检出临时分支
         self.git
-            .checkout_new_branch(&temp_branch, Some(&start_commit))?;
+            .checkout_new_branch(&temp_branch, Some(branch_base_commit))?;
         self.cleanup_lock_file();
 
         // squash 合并
@@ -549,5 +561,11 @@ impl BranchManager {
                 }
             }
         }
+    }
+
+    fn resolve_branch_base(&self, branch_info: &BranchInfo) -> String {
+        self.git
+            .merge_base(&branch_info.branch_name, &branch_info.source_branch)
+            .unwrap_or_else(|_| branch_info.start_commit.clone())
     }
 }

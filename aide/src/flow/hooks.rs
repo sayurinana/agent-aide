@@ -1,5 +1,5 @@
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use crate::core::output;
@@ -90,6 +90,19 @@ pub fn process_plantuml_files(
         return Ok(PlantUmlProcessResult::NoFiles);
     }
 
+    process_specific_plantuml_files(root, config, &candidates, emit_output)
+}
+
+pub fn process_specific_plantuml_files(
+    root: &Path,
+    config: &toml::Value,
+    candidates: &[PathBuf],
+    emit_output: bool,
+) -> Result<PlantUmlProcessResult, String> {
+    if candidates.is_empty() {
+        return Ok(PlantUmlProcessResult::NoFiles);
+    }
+
     let plantuml_cmd = match get_plantuml_command(config) {
         Some(cmd) => cmd,
         None => {
@@ -102,7 +115,7 @@ pub fn process_plantuml_files(
 
     // 语法检查
     let mut errors = Vec::new();
-    for file_path in &candidates {
+    for file_path in candidates {
         let mut cmd = Command::new(&plantuml_cmd[0]);
         for arg in &plantuml_cmd[1..] {
             cmd.arg(arg);
@@ -131,7 +144,7 @@ pub fn process_plantuml_files(
     }
 
     // 生成 PNG
-    for file_path in &candidates {
+    for file_path in candidates {
         let mut cmd = Command::new(&plantuml_cmd[0]);
         for arg in &plantuml_cmd[1..] {
             cmd.arg(arg);

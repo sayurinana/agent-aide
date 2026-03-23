@@ -26,6 +26,18 @@ enum Commands {
         global: bool,
     },
 
+    /// 审验任务草案目录
+    Verify,
+
+    /// 敲定任务草案并创建任务分支
+    Confirm,
+
+    /// 归档任务
+    Archive {
+        /// 任务编号；省略时尝试自动推断
+        n: Option<i64>,
+    },
+
     /// 查看当前项目与任务状态
     Hi {
         /// 显示详细状态
@@ -210,6 +222,9 @@ async fn main() {
             true
         }
         Some(Commands::Init { global }) => cli::init::handle_init(global),
+        Some(Commands::Verify) => cli::task_management::handle_verify(),
+        Some(Commands::Confirm) => cli::task_management::handle_confirm(),
+        Some(Commands::Archive { n }) => cli::task_management::handle_archive(n),
         Some(Commands::Hi { verbose }) => cli::core_commands::handle_hi(verbose),
         Some(Commands::Go { n, verbose }) => cli::core_commands::handle_go(n, verbose),
         Some(Commands::Bye) => cli::core_commands::handle_bye(),

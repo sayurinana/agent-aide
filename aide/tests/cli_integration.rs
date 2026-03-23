@@ -73,6 +73,34 @@ fn create_task_branch(root: &Path, branch: &str, number: i64, summary: &str, tod
     run_git(root, &["checkout", "dev"]);
 }
 
+fn write_task_draft(root: &Path, summary_title: &str, design_marker: &str) {
+    let task_now = root.join("aide-memory").join("tasks").join("task-now");
+    let flow_graphics = task_now.join("flow-graphics");
+    fs::create_dir_all(&flow_graphics).unwrap();
+
+    fs::write(
+        task_now.join("information.md"),
+        "# 任务信息\n\n## 目标\n实现一项新能力。\n",
+    )
+    .unwrap();
+    fs::write(
+        task_now.join("design.md"),
+        format!("# 设计方案\n\n{design_marker}\n\n## 方案\n按既定结构实现。\n"),
+    )
+    .unwrap();
+    fs::write(
+        task_now.join("todo.md"),
+        "# 待办列表\n\n<!-- PHASES: build-task, impl-verify, confirm, finish -->\n- [ ] 完成实现\n",
+    )
+    .unwrap();
+    fs::write(
+        task_now.join("task-summary.md"),
+        format!("# {summary_title}\n\n首个可交付版本。\n"),
+    )
+    .unwrap();
+    fs::write(root.join("task-now.md"), "用户草拟的任务描述\n").unwrap();
+}
+
 // === aide (无参数) ===
 
 #[test]
@@ -405,12 +433,138 @@ fn test_aide_help() {
         .assert()
         .success()
         .stdout(predicate::str::contains("init"))
+        .stdout(predicate::str::contains("verify"))
+        .stdout(predicate::str::contains("confirm"))
+        .stdout(predicate::str::contains("archive"))
         .stdout(predicate::str::contains("hi"))
         .stdout(predicate::str::contains("go"))
         .stdout(predicate::str::contains("bye"))
         .stdout(predicate::str::contains("config"))
         .stdout(predicate::str::contains("flow"))
         .stdout(predicate::str::contains("decide"));
+}
+
+// === aide verify/confirm/archive ===
+
+#[test]
+fn test_aide_verify_passes_for_valid_task_draft() {
+    let tmp = TempDir::new().unwrap();
+    aide_cmd_in(tmp.path()).arg("init").assert().success();
+    write_task_draft(
+        tmp.path(),
+        "实现用户认证功能",
+        "<!-- GRAPHICS: skip: 当前任务简单，无需图解 -->",
+    );
+
+    aide_cmd_in(tmp.path())
+        .arg("verify")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("审验通过，可以执行 aide confirm"));
+}
+
+#[test]
+fn test_aide_verify_fails_when_design_missing_graphics_marker() {
+    let tmp = TempDir::new().unwrap();
+    aide_cmd_in(tmp.path()).arg("init").assert().success();
+    write_task_draft(tmp.path(), "实现用户认证功能", "## 未声明图解策略");
+
+    aide_cmd_in(tmp.path())
+        .arg("verify")
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("design.md 缺少图解标记"));
+}
+
+#[test]
+fn test_aide_confirm_finalizes_task_and_creates_branch() {
+    let tmp = TempDir::new().unwrap();
+    init_git_repo(tmp.path());
+
+    aide_cmd_in(tmp.path()).arg("init").assert().success();
+    commit_all(tmp.path(), "init aide");
+    write_task_draft(
+        tmp.path(),
+        "实现用户认证功能",
+        "<!-- GRAPHICS: skip: 当前任务简单，无需图解 -->",
+    );
+
+    aide_cmd_in(tmp.path())
+        .arg("confirm")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("任务已敲定"));
+
+    assert_eq!(
+        git_output(tmp.path(), &["rev-parse", "--abbrev-ref", "HEAD"]),
+        "dev"
+    );
+    assert_eq!(
+        git_output(tmp.path(), &["rev-parse", "--verify", "task-1"]),
+        git_output(tmp.path(), &["rev-parse", "HEAD"])
+    );
+    assert!(tmp.path().join("aide-memory/tasks/task-1").exists());
+    assert!(!tmp.path().join("aide-memory/tasks/task-now").exists());
+
+    let reset_content = fs::read_to_string(tmp.path().join("task-now.md")).unwrap();
+    assert!(reset_content.contains("# 任务口述模板"));
+
+    let branches = fs::read_to_string(tmp.path().join("aide-memory/branches.json")).unwrap();
+    assert!(branches.contains(r#""number": 1"#));
+    assert!(branches.contains(r#""branch_name": "task-1""#));
+}
+
+#[test]
+fn test_aide_confirm_requires_resident_branch() {
+    let tmp = TempDir::new().unwrap();
+    init_git_repo(tmp.path());
+
+    aide_cmd_in(tmp.path()).arg("init").assert().success();
+    commit_all(tmp.path(), "init aide");
+    write_task_draft(
+        tmp.path(),
+        "实现用户认证功能",
+        "<!-- GRAPHICS: skip: 当前任务简单，无需图解 -->",
+    );
+    run_git(tmp.path(), &["checkout", "-b", "feature/demo"]);
+
+    aide_cmd_in(tmp.path())
+        .arg("confirm")
+        .assert()
+        .failure()
+        .stderr(predicate::str::contains("请先切换到常驻分支 dev"));
+}
+
+#[test]
+fn test_aide_archive_moves_task_and_updates_status() {
+    let tmp = TempDir::new().unwrap();
+    init_git_repo(tmp.path());
+
+    aide_cmd_in(tmp.path()).arg("init").assert().success();
+    commit_all(tmp.path(), "init aide");
+    write_task_draft(
+        tmp.path(),
+        "实现用户认证功能",
+        "<!-- GRAPHICS: skip: 当前任务简单，无需图解 -->",
+    );
+
+    aide_cmd_in(tmp.path()).arg("confirm").assert().success();
+    aide_cmd_in(tmp.path())
+        .args(["archive", "1"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("任务 #1 已归档"));
+
+    assert!(!tmp.path().join("aide-memory/tasks/task-1").exists());
+    assert!(
+        tmp.path()
+            .join("aide-memory/archived-tasks/task-1")
+            .exists()
+    );
+
+    let branches = fs::read_to_string(tmp.path().join("aide-memory/branches.json")).unwrap();
+    assert!(branches.contains(r#""status": "archived""#));
+    assert!(git_output(tmp.path(), &["status", "--porcelain"]).is_empty());
 }
 
 // === aide hi/go/bye ===
