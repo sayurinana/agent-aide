@@ -1,45 +1,26 @@
-# 提案：核心子过程 Skills
+# Change: 核心子过程 Skills
 
-## 概述
+## Why
 
-实现 4 个核心子过程 skills：build-task、impl-verify、confirm、finish。
+当前插件体系已经把正式任务流程收敛为固定阶段，但仓库里仍缺少这些固定阶段对应的 skill 实现，导致命令文档与实际技能目录不一致，任务方法论也无法真正落地。
 
-## 动机
+需要补齐所有正式任务都必须经过的 4 个核心阶段 skill，并把旧的 `task-parser` 迁移为新的 `build-task` 阶段能力。
 
-这 4 个 skills 对应固定阶段，每个任务都必须经过。
+## What Changes
 
-## 目标
+- 将 `task-parser` 重命名并重写为 `build-task` skill
+- 新增 `impl-verify` skill，定义逐项实施与即时审验方法
+- 新增 `confirm` skill，定义成果展示与反馈收集流程
+- 新增 `finish` skill，定义任务收尾、归档与长期信息同步流程
+- 修正活跃命令文档中仍指向旧 skill 名称的引用
 
-1. 实现 build-task skill（重命名自 task-parser）
-2. 实现 impl-verify skill
-3. 实现 confirm skill
-4. 实现 finish skill
+## Impact
 
-## 设计
-
-### build-task skill
-
-- 指导如何构建符合 aide 体系规范的任务
-- 解析风格由用户指定的解析指导文档决定
-- 输出 information.md、design.md、todo.md、task-summary.md
-
-### impl-verify skill
-
-- 按 todo.md 中的任务点逐一实施
-- 每完成一个任务点立即进行审验
-- 支持循环模式
-
-### confirm skill
-
-- 向用户展示成果和变更摘要
-- 收集用户反馈
-
-### finish skill
-
-- 使用 aide 程序完成任务归档
-- 合并任务分支回常驻分支
-
-## 影响范围
-
-- 新增：4 个 skills
-- 依赖：提案 1-6
+- Affected specs: `core-phase-skills`
+- Affected code:
+  - `aide-plugin/skills/build-task/SKILL.md`
+  - `aide-plugin/skills/impl-verify/SKILL.md`
+  - `aide-plugin/skills/confirm/SKILL.md`
+  - `aide-plugin/skills/finish/SKILL.md`
+  - `aide-plugin/commands/run.md`
+- Dependency context: 依赖前序提案中已引入的任务文档格式、阶段流程与任务管理命令
