@@ -7,6 +7,7 @@ use crate::core::project::find_project_root;
 use crate::flow::branch::{BranchInfo, BranchesData, load_branches_data, save_branches_data};
 use crate::flow::git::GitIntegration;
 use crate::flow::hooks::{PlantUmlProcessResult, process_specific_plantuml_files};
+use crate::flow::stage::{FlowPhase, parse_phase_specs_from_todo};
 use crate::utils::now_iso;
 
 const TASK_NOW_DIR_NAME: &str = "task-now";
@@ -527,17 +528,15 @@ fn validate_design(content: &str, report: &mut VerifyReport) -> Option<GraphicsD
 fn validate_todo(content: &str, report: &mut VerifyReport) {
     let mut errors = validate_markdown_document(content, false);
 
-    match extract_phases(content) {
-        Some(phases) if phases.is_empty() => errors.push("阶段流程定义为空".into()),
-        Some(phases) => {
-            if !phases.iter().any(|phase| phase == "confirm") {
-                errors.push("阶段流程缺少 confirm".into());
-            }
-            if phases.last().map(|phase| phase.as_str()) != Some("finish") {
-                errors.push("阶段流程必须以 finish 结束".into());
+    match parse_phase_specs_from_todo(content) {
+        Ok(phases) => {
+            if phases.first().map(|spec| spec.phase) != Some(FlowPhase::BuildTask) {
+                errors.push("阶段流程必须以 build-task 开始".into());
             }
         }
-        None => errors.push("缺少阶段流程定义".into()),
+        Err(err) => {
+            errors.push(err);
+        }
     }
 
     if !content.lines().any(is_checkbox_line) {

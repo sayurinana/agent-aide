@@ -115,60 +115,15 @@ enum ConfigCommands {
 
 #[derive(Subcommand)]
 enum FlowCommands {
-    /// 开始新任务
-    Start {
-        /// 环节名（来自 flow.phases）
-        phase: String,
-        /// 本次操作的简要说明
-        summary: String,
-    },
-    /// 记录步骤前进
-    #[command(name = "next-step")]
-    NextStep {
-        /// 本次操作的简要说明
-        summary: String,
-    },
-    /// 记录步骤回退
-    #[command(name = "back-step")]
-    BackStep {
-        /// 回退原因
-        reason: String,
-    },
-    /// 进入下一环节
-    #[command(name = "next-part")]
-    NextPart {
-        /// 目标环节名（相邻下一环节）
-        phase: String,
-        /// 本次操作的简要说明
-        summary: String,
-    },
-    /// 回退到之前环节
-    #[command(name = "back-part")]
-    BackPart {
-        /// 目标环节名（任意之前环节）
-        phase: String,
-        /// 回退原因
-        reason: String,
-    },
-    /// 确认返工请求
-    #[command(name = "back-confirm")]
-    BackConfirm {
-        /// 确认 key
-        #[arg(long)]
-        key: String,
-    },
-    /// 记录一般问题（不阻塞继续）
-    Issue {
-        /// 问题描述
-        description: String,
-    },
-    /// 记录严重错误（需要用户关注）
-    Error {
-        /// 错误描述
-        description: String,
-    },
     /// 查看当前任务状态
     Status,
+    /// 进入下一阶段
+    Next,
+    /// 返工到指定阶段
+    Back {
+        /// 目标阶段名
+        phase: String,
+    },
     /// 列出所有任务
     List,
     /// 查看指定任务的详细状态
@@ -176,8 +131,6 @@ enum FlowCommands {
         /// 任务 ID
         task_id: String,
     },
-    /// 强制清理当前任务
-    Clean,
 }
 
 #[derive(Subcommand)]
@@ -240,29 +193,14 @@ async fn main() {
         },
         Some(Commands::Flow { command }) => match command {
             None => {
-                crate::core::output::info(
-                    "用法: aide flow <start|next-step|back-step|next-part|back-part|issue|error> ...",
-                );
+                crate::core::output::info("用法: aide flow <status|next|back|list|show> ...");
                 true
             }
-            Some(FlowCommands::Start { phase, summary }) => {
-                cli::flow::handle_flow_start(&phase, &summary)
-            }
-            Some(FlowCommands::NextStep { summary }) => cli::flow::handle_flow_next_step(&summary),
-            Some(FlowCommands::BackStep { reason }) => cli::flow::handle_flow_back_step(&reason),
-            Some(FlowCommands::NextPart { phase, summary }) => {
-                cli::flow::handle_flow_next_part(&phase, &summary)
-            }
-            Some(FlowCommands::BackPart { phase, reason }) => {
-                cli::flow::handle_flow_back_part(&phase, &reason)
-            }
-            Some(FlowCommands::BackConfirm { key }) => cli::flow::handle_flow_back_confirm(&key),
-            Some(FlowCommands::Issue { description }) => cli::flow::handle_flow_issue(&description),
-            Some(FlowCommands::Error { description }) => cli::flow::handle_flow_error(&description),
             Some(FlowCommands::Status) => cli::flow::handle_flow_status(),
+            Some(FlowCommands::Next) => cli::flow::handle_flow_next(),
+            Some(FlowCommands::Back { phase }) => cli::flow::handle_flow_back(&phase),
             Some(FlowCommands::List) => cli::flow::handle_flow_list(),
             Some(FlowCommands::Show { task_id }) => cli::flow::handle_flow_show(&task_id),
-            Some(FlowCommands::Clean) => cli::flow::handle_flow_clean(),
         },
         Some(Commands::Decide { command }) => match command {
             None => {

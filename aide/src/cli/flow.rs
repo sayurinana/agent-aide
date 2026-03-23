@@ -1,172 +1,153 @@
-use crate::core::config::ConfigManager;
 use crate::core::output;
 use crate::core::project::find_project_root;
-use crate::flow::storage::FlowStorage;
-use crate::flow::tracker::FlowTracker;
-
-pub fn handle_flow_start(phase: &str, summary: &str) -> bool {
-    let root = find_project_root(None);
-    let cfg = ConfigManager::new(&root);
-    let mut tracker = FlowTracker::new(&root, &cfg);
-    tracker.start(phase, summary)
-}
-
-pub fn handle_flow_next_step(summary: &str) -> bool {
-    let root = find_project_root(None);
-    let cfg = ConfigManager::new(&root);
-    let mut tracker = FlowTracker::new(&root, &cfg);
-    tracker.next_step(summary)
-}
-
-pub fn handle_flow_back_step(reason: &str) -> bool {
-    let root = find_project_root(None);
-    let cfg = ConfigManager::new(&root);
-    let mut tracker = FlowTracker::new(&root, &cfg);
-    tracker.back_step(reason)
-}
-
-pub fn handle_flow_next_part(phase: &str, summary: &str) -> bool {
-    let root = find_project_root(None);
-    let cfg = ConfigManager::new(&root);
-    let mut tracker = FlowTracker::new(&root, &cfg);
-    tracker.next_part(phase, summary)
-}
-
-pub fn handle_flow_back_part(phase: &str, reason: &str) -> bool {
-    let root = find_project_root(None);
-    let cfg = ConfigManager::new(&root);
-    let mut tracker = FlowTracker::new(&root, &cfg);
-    tracker.back_part(phase, reason)
-}
-
-pub fn handle_flow_back_confirm(key: &str) -> bool {
-    let root = find_project_root(None);
-    let cfg = ConfigManager::new(&root);
-    let mut tracker = FlowTracker::new(&root, &cfg);
-    tracker.back_confirm(key)
-}
-
-pub fn handle_flow_issue(description: &str) -> bool {
-    let root = find_project_root(None);
-    let cfg = ConfigManager::new(&root);
-    let mut tracker = FlowTracker::new(&root, &cfg);
-    tracker.issue(description)
-}
-
-pub fn handle_flow_error(description: &str) -> bool {
-    let root = find_project_root(None);
-    let cfg = ConfigManager::new(&root);
-    let mut tracker = FlowTracker::new(&root, &cfg);
-    tracker.error(description)
-}
+use crate::flow::stage::{StageFlowManager, StageFlowStatus};
 
 pub fn handle_flow_status() -> bool {
     let root = find_project_root(None);
-    let storage = FlowStorage::new(&root);
+    let manager = StageFlowManager::new(&root);
 
-    let status = match storage.load_status() {
-        Ok(Some(s)) => s,
+    match manager.resolve_status() {
+        Ok(Some(resolution)) => {
+            render_status(&resolution.status);
+            true
+        }
         Ok(None) => {
             output::info("当前无活跃任务");
-            return true;
+            true
         }
-        Err(e) => {
-            output::err(&format!("读取状态失败: {e}"));
-            return false;
-        }
-    };
-
-    let latest = status.history.last();
-
-    output::info(&format!("任务 ID: {}", status.task_id));
-    output::info(&format!("环节: {}", status.current_phase));
-    output::info(&format!("步骤: {}", status.current_step));
-    output::info(&format!("开始时间: {}", status.started_at));
-    if let Some(entry) = latest {
-        output::info(&format!("最新操作: {}", entry.summary));
-        output::info(&format!("操作时间: {}", entry.timestamp));
-        if let Some(ref commit) = entry.git_commit {
-            let short = &commit[..7.min(commit.len())];
-            output::info(&format!("Git 提交: {short}"));
+        Err(err) => {
+            output::err(&err);
+            false
         }
     }
-    true
+}
+
+pub fn handle_flow_next() -> bool {
+    let root = find_project_root(None);
+    let manager = StageFlowManager::new(&root);
+
+    match manager.next() {
+        Ok(resolution) => {
+            let status = resolution.status;
+            let previous_index = status.current_phase_index.saturating_sub(1);
+            let completed = status.phases[previous_index].display_name();
+            output::ok(&format!("完成阶段：{completed}"));
+            output::info(&format!("进入阶段：{}", status.current_phase_name()));
+            true
+        }
+        Err(err) => {
+            output::err(&err);
+            false
+        }
+    }
+}
+
+pub fn handle_flow_back(phase: &str) -> bool {
+    let root = find_project_root(None);
+    let manager = StageFlowManager::new(&root);
+
+    match manager.back(phase) {
+        Ok((resolution, downstream)) => {
+            output::warn(&format!(
+                "返工到阶段：{}",
+                resolution.status.current_phase_name()
+            ));
+            if !downstream.is_empty() {
+                output::info(&format!("后续需重新经过：{}", downstream.join(", ")));
+            }
+            true
+        }
+        Err(err) => {
+            output::err(&err);
+            false
+        }
+    }
 }
 
 pub fn handle_flow_list() -> bool {
     let root = find_project_root(None);
-    let storage = FlowStorage::new(&root);
+    let manager = StageFlowManager::new(&root);
 
-    let tasks = match storage.list_all_tasks() {
-        Ok(t) => t,
-        Err(e) => {
-            output::err(&format!("读取任务列表失败: {e}"));
-            return false;
+    match manager.list() {
+        Ok(items) if items.is_empty() => {
+            output::info("暂无任务记录");
+            true
         }
-    };
-
-    if tasks.is_empty() {
-        output::info("暂无任务记录");
-        return true;
+        Ok(items) => {
+            output::info("任务列表:");
+            for status in items {
+                println!(
+                    "  [#{}] {} ({})",
+                    status.task_number,
+                    status.task_summary,
+                    status.current_phase_name()
+                );
+            }
+            true
+        }
+        Err(err) => {
+            output::err(&err);
+            false
+        }
     }
-
-    output::info("任务列表:");
-    for (i, task) in tasks.iter().enumerate() {
-        let marker = if task.is_current { "*" } else { " " };
-        let summary = if task.summary.len() > 30 {
-            format!("{}...", &task.summary[..30])
-        } else {
-            task.summary.clone()
-        };
-        println!(
-            "  {marker}[{}] {} ({}) {summary}",
-            i + 1,
-            task.task_id,
-            task.phase
-        );
-    }
-    output::info("提示: 使用 aide flow show <task_id> 查看详细状态");
-    true
 }
 
 pub fn handle_flow_show(task_id: &str) -> bool {
     let root = find_project_root(None);
-    let storage = FlowStorage::new(&root);
+    let manager = StageFlowManager::new(&root);
 
-    let status = match storage.load_task_by_id(task_id) {
-        Ok(Some(s)) => s,
+    match manager.show(task_id) {
+        Ok(Some(resolution)) => {
+            render_status(&resolution.status);
+            if !resolution.status.transitions.is_empty() {
+                println!();
+                println!("阶段变更:");
+                for item in resolution.status.transitions {
+                    match item.from_phase {
+                        Some(from_phase) => println!(
+                            "  [{}] {} -> {} ({})",
+                            item.action, from_phase, item.to_phase, item.timestamp
+                        ),
+                        None => {
+                            println!("  [{}] {} ({})", item.action, item.to_phase, item.timestamp)
+                        }
+                    }
+                }
+            }
+            true
+        }
         Ok(None) => {
-            output::err(&format!("未找到任务: {task_id}"));
-            return false;
+            output::err(&format!("未找到任务：{task_id}"));
+            false
         }
-        Err(e) => {
-            output::err(&format!("读取任务失败: {e}"));
-            return false;
+        Err(err) => {
+            output::err(&err);
+            false
         }
-    };
-
-    output::info(&format!("任务 ID: {}", status.task_id));
-    output::info(&format!("当前环节: {}", status.current_phase));
-    output::info(&format!("当前步骤: {}", status.current_step));
-    output::info(&format!("开始时间: {}", status.started_at));
-    output::info("");
-    output::info("历史记录:");
-
-    for entry in &status.history {
-        let commit_str = match &entry.git_commit {
-            Some(c) => format!(" [{}]", &c[..7.min(c.len())]),
-            None => String::new(),
-        };
-        println!("  [{}] {}{commit_str}", entry.phase, entry.summary);
-        println!("         {} ({})", entry.timestamp, entry.action);
     }
-
-    true
 }
 
-pub fn handle_flow_clean() -> bool {
-    let root = find_project_root(None);
-    let cfg = ConfigManager::new(&root);
-    let mut tracker = FlowTracker::new(&root, &cfg);
-    tracker.clean()
+fn render_status(status: &StageFlowStatus) {
+    output::info(&format!(
+        "任务 #{}：{}",
+        status.task_number, status.task_summary
+    ));
+    println!();
+    println!("阶段流程：");
+
+    for (index, spec) in status.phases.iter().enumerate() {
+        let marker = if index < status.current_phase_index {
+            "✓"
+        } else if index == status.current_phase_index {
+            "→"
+        } else {
+            "-"
+        };
+
+        if index == status.current_phase_index {
+            println!("  {marker} {} (当前)", spec.display_name());
+        } else {
+            println!("  {marker} {}", spec.display_name());
+        }
+    }
 }

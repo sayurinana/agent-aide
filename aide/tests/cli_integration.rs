@@ -351,6 +351,174 @@ fn test_aide_flow_list_empty() {
         .success();
 }
 
+#[test]
+fn test_aide_flow_status_initializes_task_stage_from_todo() {
+    let tmp = TempDir::new().unwrap();
+    init_git_repo(tmp.path());
+
+    aide_cmd_in(tmp.path()).arg("init").assert().success();
+    commit_all(tmp.path(), "init aide");
+
+    write_branches_json(
+        tmp.path(),
+        r#"{
+  "next_number": 4,
+  "branches": [
+    {
+      "number": 3,
+      "branch_name": "task-3",
+      "source_branch": "dev",
+      "start_commit": "aaa111",
+      "task_id": "task-3",
+      "task_summary": "实现用户认证功能",
+      "started_at": "2026-03-20T15:30:45+08:00",
+      "status": "active"
+    }
+  ]
+}
+"#,
+    );
+    commit_all(tmp.path(), "record branches");
+
+    create_task_branch(
+        tmp.path(),
+        "task-3",
+        3,
+        "# 实现用户认证功能\n",
+        "# 待办列表\n\n<!-- PHASES: build-task, make-graphics, impl-verify:loop, integration, review, docs-update, confirm, finish -->\n- [ ] 完成登录\n",
+    );
+    run_git(tmp.path(), &["checkout", "task-3"]);
+
+    aide_cmd_in(tmp.path())
+        .args(["flow", "status"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("任务 #3：实现用户认证功能"))
+        .stdout(predicate::str::contains("→ build-task (当前)"))
+        .stdout(predicate::str::contains("- make-graphics"))
+        .stdout(predicate::str::contains("- impl-verify"));
+
+    let task_status =
+        fs::read_to_string(tmp.path().join("aide-memory/tasks/task-3/flow-status.json")).unwrap();
+    assert!(task_status.contains(r#""preset": "full""#));
+    assert!(task_status.contains(r#""loop_enabled": true"#));
+}
+
+#[test]
+fn test_aide_flow_next_advances_to_next_stage() {
+    let tmp = TempDir::new().unwrap();
+    init_git_repo(tmp.path());
+
+    aide_cmd_in(tmp.path()).arg("init").assert().success();
+    commit_all(tmp.path(), "init aide");
+
+    write_branches_json(
+        tmp.path(),
+        r#"{
+  "next_number": 4,
+  "branches": [
+    {
+      "number": 3,
+      "branch_name": "task-3",
+      "source_branch": "dev",
+      "start_commit": "aaa111",
+      "task_id": "task-3",
+      "task_summary": "实现用户认证功能",
+      "started_at": "2026-03-20T15:30:45+08:00",
+      "status": "active"
+    }
+  ]
+}
+"#,
+    );
+    commit_all(tmp.path(), "record branches");
+
+    create_task_branch(
+        tmp.path(),
+        "task-3",
+        3,
+        "# 实现用户认证功能\n",
+        "# 待办列表\n\n<!-- PHASES: build-task, impl-verify:loop, confirm, finish -->\n- [ ] 完成登录\n",
+    );
+    run_git(tmp.path(), &["checkout", "task-3"]);
+
+    aide_cmd_in(tmp.path())
+        .args(["flow", "next"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("完成阶段：build-task"))
+        .stdout(predicate::str::contains("进入阶段：impl-verify"));
+
+    aide_cmd_in(tmp.path())
+        .args(["flow", "status"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("→ impl-verify (当前)"));
+}
+
+#[test]
+fn test_aide_flow_back_returns_to_earlier_stage() {
+    let tmp = TempDir::new().unwrap();
+    init_git_repo(tmp.path());
+
+    aide_cmd_in(tmp.path()).arg("init").assert().success();
+    commit_all(tmp.path(), "init aide");
+
+    write_branches_json(
+        tmp.path(),
+        r#"{
+  "next_number": 4,
+  "branches": [
+    {
+      "number": 3,
+      "branch_name": "task-3",
+      "source_branch": "dev",
+      "start_commit": "aaa111",
+      "task_id": "task-3",
+      "task_summary": "实现用户认证功能",
+      "started_at": "2026-03-20T15:30:45+08:00",
+      "status": "active"
+    }
+  ]
+}
+"#,
+    );
+    commit_all(tmp.path(), "record branches");
+
+    create_task_branch(
+        tmp.path(),
+        "task-3",
+        3,
+        "# 实现用户认证功能\n",
+        "# 待办列表\n\n<!-- PHASES: build-task, make-graphics, impl-verify:loop, integration, review, docs-update, confirm, finish -->\n- [ ] 完成登录\n",
+    );
+    run_git(tmp.path(), &["checkout", "task-3"]);
+
+    aide_cmd_in(tmp.path())
+        .args(["flow", "next"])
+        .assert()
+        .success();
+    aide_cmd_in(tmp.path())
+        .args(["flow", "next"])
+        .assert()
+        .success();
+
+    aide_cmd_in(tmp.path())
+        .args(["flow", "back", "build-task"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("返工到阶段：build-task"))
+        .stdout(predicate::str::contains(
+            "后续需重新经过：impl-verify, integration, review, docs-update, confirm",
+        ));
+
+    aide_cmd_in(tmp.path())
+        .args(["flow", "status"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("→ build-task (当前)"));
+}
+
 // === aide decide ===
 
 #[test]
