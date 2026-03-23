@@ -108,7 +108,11 @@ impl BranchManager {
         }
 
         // 2. 删除任务细则文件
-        if let Some(spec) = self.cfg.get_value("task.spec").and_then(|v| v.as_str().map(String::from)) {
+        if let Some(spec) = self
+            .cfg
+            .get_value("task.spec")
+            .and_then(|v| v.as_str().map(String::from))
+        {
             let spec_path = self.root.join(&spec);
             if spec_path.exists() {
                 let _ = fs::remove_file(&spec_path);
@@ -116,7 +120,11 @@ impl BranchManager {
         }
 
         // 3. 清空任务原文件
-        if let Some(source) = self.cfg.get_value("task.source").and_then(|v| v.as_str().map(String::from)) {
+        if let Some(source) = self
+            .cfg
+            .get_value("task.source")
+            .and_then(|v| v.as_str().map(String::from))
+        {
             let source_path = self.root.join(&source);
             if source_path.exists() {
                 let _ = fs::write(&source_path, "");
@@ -199,8 +207,8 @@ impl BranchManager {
 
         let _ = fs::create_dir_all(&self.aide_dir);
 
-        let json_content = serde_json::to_string_pretty(data)
-            .map_err(|e| format!("序列化分支概况失败: {e}"))?;
+        let json_content =
+            serde_json::to_string_pretty(data).map_err(|e| format!("序列化分支概况失败: {e}"))?;
         fs::write(&self.branches_json, format!("{json_content}\n"))
             .map_err(|e| format!("保存分支概况失败: {e}"))?;
 
@@ -385,9 +393,7 @@ impl BranchManager {
                 end_commit
                     .map(String::from)
                     .unwrap_or_else(|| self.git.rev_parse_head().unwrap_or_default()),
-                finished_at
-                    .map(String::from)
-                    .unwrap_or_else(now_iso),
+                finished_at.map(String::from).unwrap_or_else(now_iso),
             )
         };
 
@@ -465,9 +471,7 @@ impl BranchManager {
                 end_commit
                     .map(String::from)
                     .unwrap_or_else(|| self.git.rev_parse_head().unwrap_or_default()),
-                finished_at
-                    .map(String::from)
-                    .unwrap_or_else(now_iso),
+                finished_at.map(String::from).unwrap_or_else(now_iso),
             )
         };
 
@@ -519,7 +523,11 @@ impl BranchManager {
         };
         self.git.commit(&commit_msg)?;
 
-        let action_name = if is_force_clean { "强制清理" } else { "任务完成" };
+        let action_name = if is_force_clean {
+            "强制清理"
+        } else {
+            "任务完成"
+        };
         Ok((
             false,
             format!(

@@ -67,10 +67,7 @@ pub fn download_plantuml(global_config: &toml::Value) -> Result<PathBuf, String>
     fs::create_dir_all(&cache_dir).map_err(|e| format!("创建缓存目录失败: {e}"))?;
 
     // 从 URL 提取文件名
-    let file_name = download_url
-        .rsplit('/')
-        .next()
-        .unwrap_or("plantuml.tar.gz");
+    let file_name = download_url.rsplit('/').next().unwrap_or("plantuml.tar.gz");
     let dest_path = cache_dir.join(file_name);
 
     output::info(&format!("正在下载 PlantUML: {download_url}"));
@@ -88,8 +85,7 @@ pub fn download_plantuml(global_config: &toml::Value) -> Result<PathBuf, String>
     }
 
     let total_size = response.content_length();
-    let mut file =
-        fs::File::create(&dest_path).map_err(|e| format!("创建文件失败: {e}"))?;
+    let mut file = fs::File::create(&dest_path).map_err(|e| format!("创建文件失败: {e}"))?;
 
     let mut downloaded: u64 = 0;
     let mut reader = response;
@@ -275,19 +271,13 @@ mod tests {
     #[test]
     fn test_parse_plantuml_version_standard() {
         let output = "PlantUML version 1.2025.4 (Sat Jun 28 19:09:25 CST 2025)\n(GPL source distribution)\nJava Runtime: OpenJDK Runtime Environment";
-        assert_eq!(
-            parse_plantuml_version(output),
-            Some("1.2025.4".to_string())
-        );
+        assert_eq!(parse_plantuml_version(output), Some("1.2025.4".to_string()));
     }
 
     #[test]
     fn test_parse_plantuml_version_no_extra() {
         let output = "PlantUML version 1.2025.4\n";
-        assert_eq!(
-            parse_plantuml_version(output),
-            Some("1.2025.4".to_string())
-        );
+        assert_eq!(parse_plantuml_version(output), Some("1.2025.4".to_string()));
     }
 
     #[test]
@@ -312,7 +302,10 @@ mod tests {
         .unwrap();
 
         if let Some(path) = get_plantuml_path(&config) {
-            assert!(path.to_string_lossy().contains("tools/plantuml/bin/plantuml"));
+            assert!(
+                path.to_string_lossy()
+                    .contains("tools/plantuml/bin/plantuml")
+            );
         }
     }
 
@@ -320,7 +313,10 @@ mod tests {
     fn test_get_plantuml_path_default_config() {
         let config: toml::Value = toml::from_str("[plantuml]").unwrap();
         if let Some(path) = get_plantuml_path(&config) {
-            assert!(path.to_string_lossy().contains("utils/plantuml/bin/plantuml"));
+            assert!(
+                path.to_string_lossy()
+                    .contains("utils/plantuml/bin/plantuml")
+            );
         }
     }
 

@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use axum::body::Body;
 use axum::extract::State;
-use axum::http::{header, Request, Response, StatusCode};
+use axum::http::{Request, Response, StatusCode, header};
 use axum::response::IntoResponse;
 use tokio::sync::Mutex;
 
@@ -49,13 +49,9 @@ pub async fn handle_get_items(State(state): State<SharedState>) -> impl IntoResp
         for item in items {
             if let Some(location) = item.get("location") {
                 if let Some(file) = location.get("file").and_then(|f| f.as_str()) {
-                    let start = location
-                        .get("start")
-                        .and_then(|s| s.as_i64())
-                        .unwrap_or(1);
+                    let start = location.get("start").and_then(|s| s.as_i64()).unwrap_or(1);
                     let end = location.get("end").and_then(|e| e.as_i64()).unwrap_or(1);
-                    if let Some(content) =
-                        read_source_lines(&state.project_root, file, start, end)
+                    if let Some(content) = read_source_lines(&state.project_root, file, start, end)
                     {
                         item.as_object_mut()
                             .unwrap()
@@ -86,18 +82,20 @@ pub async fn handle_submit(
 
     let pending = match state.storage.load_pending() {
         Ok(Some(p)) => p,
-        Ok(None) => return json_error_response(StatusCode::INTERNAL_SERVER_ERROR, "保存失败", "未找到待定项数据"),
+        Ok(None) => {
+            return json_error_response(
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "保存失败",
+                "未找到待定项数据",
+            );
+        }
         Err(e) => return json_error_response(StatusCode::INTERNAL_SERVER_ERROR, "保存失败", &e),
     };
 
     let payload: DecideOutput = match serde_json::from_slice(&body) {
         Ok(p) => p,
         Err(e) => {
-            return json_error_response(
-                StatusCode::BAD_REQUEST,
-                "决策数据无效",
-                &e.to_string(),
-            );
+            return json_error_response(StatusCode::BAD_REQUEST, "决策数据无效", &e.to_string());
         }
     };
 

@@ -334,17 +334,32 @@ fn migrate_v2_to_v3(doc: &mut toml_edit::DocumentMut) {
     if doc.get("branch").is_none() {
         let mut branch = toml_edit::Table::new();
         branch.insert("prefix", toml_edit::Item::Value(toml_edit::Value::from("")));
-        branch.insert("format", toml_edit::Item::Value(toml_edit::Value::from("task-{n}")));
-        branch.insert("resident", toml_edit::Item::Value(toml_edit::Value::from("dev")));
+        branch.insert(
+            "format",
+            toml_edit::Item::Value(toml_edit::Value::from("task-{n}")),
+        );
+        branch.insert(
+            "resident",
+            toml_edit::Item::Value(toml_edit::Value::from("dev")),
+        );
         doc.insert("branch", toml_edit::Item::Table(branch));
     }
 
     // 添加 [git] 节
     if doc.get("git").is_none() {
         let mut git = toml_edit::Table::new();
-        git.insert("auto_commit_on_switch", toml_edit::Item::Value(toml_edit::Value::from(true)));
-        git.insert("auto_commit_message", toml_edit::Item::Value(toml_edit::Value::from("暂存：清理仓库状态以切换分支")));
-        git.insert("bye_commit_message", toml_edit::Item::Value(toml_edit::Value::from("暂存：清理仓库状态")));
+        git.insert(
+            "auto_commit_on_switch",
+            toml_edit::Item::Value(toml_edit::Value::from(true)),
+        );
+        git.insert(
+            "auto_commit_message",
+            toml_edit::Item::Value(toml_edit::Value::from("暂存：清理仓库状态以切换分支")),
+        );
+        git.insert(
+            "bye_commit_message",
+            toml_edit::Item::Value(toml_edit::Value::from("暂存：清理仓库状态")),
+        );
         doc.insert("git", toml_edit::Item::Table(git));
     }
 

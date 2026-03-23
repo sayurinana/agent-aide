@@ -283,8 +283,16 @@ mod tests {
     #[test]
     fn test_validate_input_duplicate_id() {
         let input = make_input(vec![
-            make_item(1, "选择1", vec![make_option("a", "A"), make_option("b", "B")]),
-            make_item(1, "选择2", vec![make_option("c", "C"), make_option("d", "D")]),
+            make_item(
+                1,
+                "选择1",
+                vec![make_option("a", "A"), make_option("b", "B")],
+            ),
+            make_item(
+                1,
+                "选择2",
+                vec![make_option("c", "C"), make_option("d", "D")],
+            ),
         ]);
         let err = validate_input(&input).unwrap_err();
         assert!(err.contains("重复"));
@@ -360,7 +368,11 @@ mod tests {
 
     #[test]
     fn test_validate_input_valid_recommend() {
-        let mut item = make_item(1, "选择", vec![make_option("a", "A"), make_option("b", "B")]);
+        let mut item = make_item(
+            1,
+            "选择",
+            vec![make_option("a", "A"), make_option("b", "B")],
+        );
         item.recommend = Some("a".into());
         let input = make_input(vec![item]);
         assert!(validate_input(&input).is_ok());
@@ -368,7 +380,11 @@ mod tests {
 
     #[test]
     fn test_validate_input_invalid_recommend() {
-        let mut item = make_item(1, "选择", vec![make_option("a", "A"), make_option("b", "B")]);
+        let mut item = make_item(
+            1,
+            "选择",
+            vec![make_option("a", "A"), make_option("b", "B")],
+        );
         item.recommend = Some("nonexistent".into());
         let input = make_input(vec![item]);
         let err = validate_input(&input).unwrap_err();
@@ -377,7 +393,11 @@ mod tests {
 
     #[test]
     fn test_validate_input_location_empty_file() {
-        let mut item = make_item(1, "选择", vec![make_option("a", "A"), make_option("b", "B")]);
+        let mut item = make_item(
+            1,
+            "选择",
+            vec![make_option("a", "A"), make_option("b", "B")],
+        );
         item.location = Some(Location {
             file: "  ".into(),
             start: 1,
@@ -413,13 +433,29 @@ mod tests {
     #[test]
     fn test_validate_output_valid() {
         let input = make_input(vec![
-            make_item(1, "选择1", vec![make_option("a", "A"), make_option("b", "B")]),
-            make_item(2, "选择2", vec![make_option("x", "X"), make_option("y", "Y")]),
+            make_item(
+                1,
+                "选择1",
+                vec![make_option("a", "A"), make_option("b", "B")],
+            ),
+            make_item(
+                2,
+                "选择2",
+                vec![make_option("x", "X"), make_option("y", "Y")],
+            ),
         ]);
         let output = DecideOutput {
             decisions: vec![
-                Decision { id: 1, chosen: "a".into(), note: None },
-                Decision { id: 2, chosen: "y".into(), note: None },
+                Decision {
+                    id: 1,
+                    chosen: "a".into(),
+                    note: None,
+                },
+                Decision {
+                    id: 2,
+                    chosen: "y".into(),
+                    note: None,
+                },
             ],
         };
         assert!(validate_output(&output, &input).is_ok());
@@ -432,9 +468,7 @@ mod tests {
             "选择",
             vec![make_option("a", "A"), make_option("b", "B")],
         )]);
-        let output = DecideOutput {
-            decisions: vec![],
-        };
+        let output = DecideOutput { decisions: vec![] };
         let err = validate_output(&output, &input).unwrap_err();
         assert!(err.contains("不一致"));
     }
@@ -478,13 +512,29 @@ mod tests {
     #[test]
     fn test_validate_output_duplicate_decision() {
         let input = make_input(vec![
-            make_item(1, "选择1", vec![make_option("a", "A"), make_option("b", "B")]),
-            make_item(2, "选择2", vec![make_option("x", "X"), make_option("y", "Y")]),
+            make_item(
+                1,
+                "选择1",
+                vec![make_option("a", "A"), make_option("b", "B")],
+            ),
+            make_item(
+                2,
+                "选择2",
+                vec![make_option("x", "X"), make_option("y", "Y")],
+            ),
         ]);
         let output = DecideOutput {
             decisions: vec![
-                Decision { id: 1, chosen: "a".into(), note: None },
-                Decision { id: 1, chosen: "b".into(), note: None },
+                Decision {
+                    id: 1,
+                    chosen: "a".into(),
+                    note: None,
+                },
+                Decision {
+                    id: 1,
+                    chosen: "b".into(),
+                    note: None,
+                },
             ],
         };
         let err = validate_output(&output, &input).unwrap_err();

@@ -26,6 +26,25 @@ enum Commands {
         global: bool,
     },
 
+    /// 查看当前项目与任务状态
+    Hi {
+        /// 显示详细状态
+        #[arg(short, long)]
+        verbose: bool,
+    },
+
+    /// 进入任务工作分支
+    Go {
+        /// 任务编号
+        n: Option<i64>,
+        /// 切换后显示详细状态
+        #[arg(short, long)]
+        verbose: bool,
+    },
+
+    /// 清理工作区并回到常驻分支
+    Bye,
+
     /// 配置管理
     Config {
         #[command(subcommand)]
@@ -191,10 +210,17 @@ async fn main() {
             true
         }
         Some(Commands::Init { global }) => cli::init::handle_init(global),
+        Some(Commands::Hi { verbose }) => cli::core_commands::handle_hi(verbose),
+        Some(Commands::Go { n, verbose }) => cli::core_commands::handle_go(n, verbose),
+        Some(Commands::Bye) => cli::core_commands::handle_bye(),
         Some(Commands::Config { command }) => match command {
             ConfigCommands::Get { key, global } => cli::config::handle_config_get(&key, global),
-            ConfigCommands::Set { key, value, global } => cli::config::handle_config_set(&key, &value, global),
-            ConfigCommands::Reset { force, global } => cli::config::handle_config_reset(force, global),
+            ConfigCommands::Set { key, value, global } => {
+                cli::config::handle_config_set(&key, &value, global)
+            }
+            ConfigCommands::Reset { force, global } => {
+                cli::config::handle_config_reset(force, global)
+            }
             ConfigCommands::Update { global } => cli::config::handle_config_update(global),
         },
         Some(Commands::Flow { command }) => match command {
@@ -207,32 +233,20 @@ async fn main() {
             Some(FlowCommands::Start { phase, summary }) => {
                 cli::flow::handle_flow_start(&phase, &summary)
             }
-            Some(FlowCommands::NextStep { summary }) => {
-                cli::flow::handle_flow_next_step(&summary)
-            }
-            Some(FlowCommands::BackStep { reason }) => {
-                cli::flow::handle_flow_back_step(&reason)
-            }
+            Some(FlowCommands::NextStep { summary }) => cli::flow::handle_flow_next_step(&summary),
+            Some(FlowCommands::BackStep { reason }) => cli::flow::handle_flow_back_step(&reason),
             Some(FlowCommands::NextPart { phase, summary }) => {
                 cli::flow::handle_flow_next_part(&phase, &summary)
             }
             Some(FlowCommands::BackPart { phase, reason }) => {
                 cli::flow::handle_flow_back_part(&phase, &reason)
             }
-            Some(FlowCommands::BackConfirm { key }) => {
-                cli::flow::handle_flow_back_confirm(&key)
-            }
-            Some(FlowCommands::Issue { description }) => {
-                cli::flow::handle_flow_issue(&description)
-            }
-            Some(FlowCommands::Error { description }) => {
-                cli::flow::handle_flow_error(&description)
-            }
+            Some(FlowCommands::BackConfirm { key }) => cli::flow::handle_flow_back_confirm(&key),
+            Some(FlowCommands::Issue { description }) => cli::flow::handle_flow_issue(&description),
+            Some(FlowCommands::Error { description }) => cli::flow::handle_flow_error(&description),
             Some(FlowCommands::Status) => cli::flow::handle_flow_status(),
             Some(FlowCommands::List) => cli::flow::handle_flow_list(),
-            Some(FlowCommands::Show { task_id }) => {
-                cli::flow::handle_flow_show(&task_id)
-            }
+            Some(FlowCommands::Show { task_id }) => cli::flow::handle_flow_show(&task_id),
             Some(FlowCommands::Clean) => cli::flow::handle_flow_clean(),
         },
         Some(Commands::Decide { command }) => match command {

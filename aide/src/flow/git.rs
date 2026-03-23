@@ -60,18 +60,42 @@ impl GitIntegration {
             .map_err(|e| format!("git status 失败: {e}"))
     }
 
+    pub fn status_porcelain_all(&self) -> Result<String, String> {
+        self.run(&["status", "--porcelain"])
+            .map_err(|e| format!("git status 失败: {e}"))
+    }
+
     pub fn commit_touches_path(&self, commit_hash: &str, path: &str) -> Result<bool, String> {
         let output = self
             .run(&["show", "--name-only", "--pretty=format:", commit_hash])
             .map_err(|e| format!("读取提交内容失败: {commit_hash}: {e}"))?;
-        let files: Vec<&str> = output.lines().map(|l| l.trim()).filter(|l| !l.is_empty()).collect();
+        let files: Vec<&str> = output
+            .lines()
+            .map(|l| l.trim())
+            .filter(|l| !l.is_empty())
+            .collect();
         Ok(files.contains(&path))
+    }
+
+    pub fn show_file_at_ref(&self, git_ref: &str, path: &str) -> Result<String, String> {
+        self.run(&["show", &format!("{git_ref}:{path}")])
+            .map_err(|e| format!("读取文件失败: {git_ref}:{path}: {e}"))
     }
 
     pub fn get_current_branch(&self) -> Result<String, String> {
         self.run(&["rev-parse", "--abbrev-ref", "HEAD"])
             .map(|s| s.trim().to_string())
             .map_err(|e| format!("获取当前分支失败: {e}"))
+    }
+
+    pub fn branch_exists(&self, branch: &str) -> Result<bool, String> {
+        self.ensure_repo()?;
+        Ok(self.run_exit_code(&[
+            "show-ref",
+            "--verify",
+            "--quiet",
+            &format!("refs/heads/{branch}"),
+        ]) == 0)
     }
 
     pub fn is_clean(&self) -> Result<bool, String> {
@@ -113,6 +137,28 @@ impl GitIntegration {
         self.run_checked(&["merge", "--squash", branch])
             .map_err(|e| format!("squash 合并分支 {branch} 失败: {e}"))?;
         Ok(())
+    }
+
+    pub fn get_last_commit_time(&self, git_ref: &str) -> Result<String, String> {
+        let output = self
+            .run(&["log", "-1", "--format=%cI", git_ref])
+            .map_err(|e| format!("读取分支 {git_ref} 最后提交时间失败: {e}"))?;
+        let value = output.trim().to_string();
+        if value.is_empty() {
+            return Err(format!("分支 {git_ref} 没有提交记录"));
+        }
+        Ok(value)
+    }
+
+    pub fn get_last_commit_time_for_path(&self, path: &str) -> Result<String, String> {
+        let output = self
+            .run(&["log", "-1", "--format=%cI", "--", path])
+            .map_err(|e| format!("读取路径 {path} 最后提交时间失败: {e}"))?;
+        let value = output.trim().to_string();
+        if value.is_empty() {
+            return Err(format!("路径 {path} 没有提交记录"));
+        }
+        Ok(value)
     }
 
     fn run(&self, args: &[&str]) -> Result<String, String> {

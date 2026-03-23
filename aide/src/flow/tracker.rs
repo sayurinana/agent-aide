@@ -166,12 +166,7 @@ impl FlowTracker {
         }
     }
 
-    fn do_run(
-        &mut self,
-        action: &str,
-        to_phase: Option<&str>,
-        text: &str,
-    ) -> Result<(), String> {
+    fn do_run(&mut self, action: &str, to_phase: Option<&str>, text: &str) -> Result<(), String> {
         self.storage.ensure_ready()?;
         let config = self.cfg.load_config();
         let phases = get_phases(&config);
@@ -263,10 +258,7 @@ impl FlowTracker {
                 .history
                 .last()
                 .and_then(|e| e.git_commit.clone());
-            let finish_timestamp = final_status
-                .history
-                .last()
-                .map(|e| e.timestamp.clone());
+            let finish_timestamp = final_status.history.last().map(|e| e.timestamp.clone());
 
             let mut branch_mgr = BranchManager::new(&self.root, &self.cfg);
             let (success, merge_msg) = branch_mgr.finish_branch_merge(
@@ -340,11 +332,7 @@ impl FlowTracker {
         Ok((updated, message))
     }
 
-    fn do_git_commit(
-        &self,
-        status: &FlowStatus,
-        message: &str,
-    ) -> Result<FlowStatus, String> {
+    fn do_git_commit(&self, status: &FlowStatus, message: &str) -> Result<FlowStatus, String> {
         self.git.add_all()?;
         let commit_hash = self.git.commit(message)?;
 

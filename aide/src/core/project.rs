@@ -25,12 +25,16 @@ pub fn find_project_root(start_path: Option<&Path>) -> PathBuf {
     }
 
     // 第一遍：优先查找有活跃任务的目录
-    if let Some(p) = search_upward(&start, |dir| dir.join(AIDE_MEMORY_DIR).join("flow-status.json").exists()) {
+    if let Some(p) = search_upward(&start, |dir| {
+        dir.join(AIDE_MEMORY_DIR).join("flow-status.json").exists()
+    }) {
         return p;
     }
 
     // 第二遍：查找有配置文件的目录
-    if let Some(p) = search_upward(&start, |dir| dir.join(AIDE_MEMORY_DIR).join("config.toml").exists()) {
+    if let Some(p) = search_upward(&start, |dir| {
+        dir.join(AIDE_MEMORY_DIR).join("config.toml").exists()
+    }) {
         return p;
     }
 

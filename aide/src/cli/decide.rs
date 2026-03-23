@@ -123,7 +123,10 @@ pub fn handle_decide_result() -> bool {
     let pending = match storage.load_pending() {
         Ok(Some(p)) => p,
         Ok(None) => {
-            print_error("未找到待定项数据", Some("请先执行 aide decide submit <file>"));
+            print_error(
+                "未找到待定项数据",
+                Some("请先执行 aide decide submit <file>"),
+            );
             return false;
         }
         Err(e) => {
@@ -177,10 +180,7 @@ pub async fn handle_decide_serve(root: &str, web_dir: Option<&str>) -> bool {
     }
 
     let web_dir_path = web_dir.map(PathBuf::from);
-    let mut server = crate::decide::server::DecideServer::new(
-        &root,
-        web_dir_path.as_deref(),
-    );
+    let mut server = crate::decide::server::DecideServer::new(&root, web_dir_path.as_deref());
     let pid = std::process::id();
     server.start_daemon(pid).await
 }

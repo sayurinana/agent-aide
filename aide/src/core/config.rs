@@ -12,7 +12,9 @@ pub const AIDE_MEMORY_DIR: &str = "aide-memory";
 /// 获取全局配置目录路径 `$HOME/.aide`
 /// 当 `$HOME` 环境变量不可用时返回 None
 pub fn global_aide_dir() -> Option<PathBuf> {
-    std::env::var("HOME").ok().map(|home| PathBuf::from(home).join(".aide"))
+    std::env::var("HOME")
+        .ok()
+        .map(|home| PathBuf::from(home).join(".aide"))
 }
 
 pub const DEFAULT_CONFIG: &str = r#"# Aide 配置文件
@@ -382,7 +384,9 @@ pub fn walk_get<'a>(data: &'a toml::Value, dotted_key: &str) -> Option<&'a toml:
 }
 
 pub fn get_config_string(config: &toml::Value, key: &str) -> Option<String> {
-    walk_get(config, key).and_then(|v| v.as_str()).map(|s| s.to_string())
+    walk_get(config, key)
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string())
 }
 
 pub fn get_config_int(config: &toml::Value, key: &str) -> Option<i64> {
@@ -528,7 +532,10 @@ mod tests {
         let cm = ConfigManager::new(tmp.path());
         assert_eq!(cm.root, tmp.path());
         assert_eq!(cm.aide_dir, tmp.path().join("aide-memory"));
-        assert_eq!(cm.config_path, tmp.path().join("aide-memory").join("config.toml"));
+        assert_eq!(
+            cm.config_path,
+            tmp.path().join("aide-memory").join("config.toml")
+        );
     }
 
     #[test]
@@ -632,8 +639,12 @@ mod tests {
     #[test]
     fn test_get_config_string() {
         let config: toml::Value =
-            toml::from_str(r#"[task]\ndescription_file = "foo.md""#.replace("\\n", "\n").as_str()).unwrap();
-        assert_eq!(get_config_string(&config, "task.description_file").unwrap(), "foo.md");
+            toml::from_str(r#"[task]\ndescription_file = "foo.md""#.replace("\\n", "\n").as_str())
+                .unwrap();
+        assert_eq!(
+            get_config_string(&config, "task.description_file").unwrap(),
+            "foo.md"
+        );
     }
 
     #[test]

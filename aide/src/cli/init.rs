@@ -1,4 +1,4 @@
-use crate::core::config::{self, ConfigManager, AIDE_MEMORY_DIR};
+use crate::core::config::{self, AIDE_MEMORY_DIR, ConfigManager};
 use crate::core::output;
 use crate::core::plantuml;
 use std::fs;
@@ -169,7 +169,9 @@ pub fn handle_init(global: bool) -> bool {
         }
     }
 
-    output::ok(&format!("初始化完成，{AIDE_MEMORY_DIR}/ 目录与默认配置已准备就绪"));
+    output::ok(&format!(
+        "初始化完成，{AIDE_MEMORY_DIR}/ 目录与默认配置已准备就绪"
+    ));
     true
 }
 

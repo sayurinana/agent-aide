@@ -72,8 +72,8 @@ impl FlowStorage {
         if !self.status_path.exists() {
             return Ok(None);
         }
-        let raw = fs::read_to_string(&self.status_path)
-            .map_err(|e| format!("状态文件读取失败: {e}"))?;
+        let raw =
+            fs::read_to_string(&self.status_path).map_err(|e| format!("状态文件读取失败: {e}"))?;
         let status: FlowStatus =
             serde_json::from_str(&raw).map_err(|e| format!("状态文件解析失败: {e}"))?;
         Ok(Some(status))
@@ -98,8 +98,7 @@ impl FlowStorage {
             _ => now_task_id(),
         };
         let target = self.logs_dir.join(format!("flow-status.{suffix}.json"));
-        fs::rename(&self.status_path, &target)
-            .map_err(|e| format!("归档旧状态失败: {e}"))?;
+        fs::rename(&self.status_path, &target).map_err(|e| format!("归档旧状态失败: {e}"))?;
         Ok(())
     }
 
@@ -166,8 +165,8 @@ impl FlowStorage {
         // 检查归档
         let archive_path = self.logs_dir.join(format!("flow-status.{task_id}.json"));
         if archive_path.exists() {
-            let raw = fs::read_to_string(&archive_path)
-                .map_err(|e| format!("读取归档任务失败: {e}"))?;
+            let raw =
+                fs::read_to_string(&archive_path).map_err(|e| format!("读取归档任务失败: {e}"))?;
             let status: FlowStatus =
                 serde_json::from_str(&raw).map_err(|e| format!("读取归档任务失败: {e}"))?;
             return Ok(Some(status));
@@ -268,7 +267,12 @@ mod tests {
 
     fn setup_storage() -> (TempDir, FlowStorage) {
         let tmp = TempDir::new().unwrap();
-        std::fs::create_dir_all(tmp.path().join(crate::core::config::AIDE_MEMORY_DIR).join("logs")).unwrap();
+        std::fs::create_dir_all(
+            tmp.path()
+                .join(crate::core::config::AIDE_MEMORY_DIR)
+                .join("logs"),
+        )
+        .unwrap();
         let storage = FlowStorage::new(tmp.path());
         (tmp, storage)
     }
@@ -325,9 +329,7 @@ mod tests {
         assert!(storage.status_path.exists());
         storage.archive_existing_status().unwrap();
         assert!(!storage.status_path.exists());
-        let archived = storage
-            .logs_dir
-            .join("flow-status.20240101T00-00-00.json");
+        let archived = storage.logs_dir.join("flow-status.20240101T00-00-00.json");
         assert!(archived.exists());
     }
 
@@ -352,9 +354,7 @@ mod tests {
         let archived_status = make_status("20240101T00-00-00", "finish");
         let archived_json = serde_json::to_string_pretty(&archived_status).unwrap();
         std::fs::write(
-            storage
-                .logs_dir
-                .join("flow-status.20240101T00-00-00.json"),
+            storage.logs_dir.join("flow-status.20240101T00-00-00.json"),
             archived_json,
         )
         .unwrap();
@@ -384,9 +384,7 @@ mod tests {
         let status = make_status("20240101T00-00-00", "finish");
         let json = serde_json::to_string_pretty(&status).unwrap();
         std::fs::write(
-            storage
-                .logs_dir
-                .join("flow-status.20240101T00-00-00.json"),
+            storage.logs_dir.join("flow-status.20240101T00-00-00.json"),
             json,
         )
         .unwrap();

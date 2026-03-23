@@ -12,9 +12,7 @@ impl FlowValidator {
 
     pub fn validate_phase_exists(&self, phase: &str) -> Result<(), String> {
         if !self.phases.contains(&phase.to_string()) {
-            return Err(format!(
-                "未知环节: {phase}（请检查 flow.phases 配置）"
-            ));
+            return Err(format!("未知环节: {phase}（请检查 flow.phases 配置）"));
         }
         Ok(())
     }

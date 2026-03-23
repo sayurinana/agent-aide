@@ -2,8 +2,8 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use crate::decide::types::*;
-use crate::utils::now_task_id;
 use crate::utils::now_iso;
+use crate::utils::now_task_id;
 
 pub struct DecideStorage {
     #[allow(dead_code)]
@@ -141,21 +141,18 @@ impl DecideStorage {
     }
 
     fn save_atomic<T: serde::Serialize>(&self, path: &Path, data: &T) -> Result<(), String> {
-        let payload = serde_json::to_string_pretty(data)
-            .map_err(|e| format!("序列化失败: {e}"))?;
+        let payload = serde_json::to_string_pretty(data).map_err(|e| format!("序列化失败: {e}"))?;
         let tmp_path = path.with_extension("json.tmp");
         fs::write(&tmp_path, format!("{payload}\n"))
             .map_err(|e| format!("写入 {} 失败: {e}", path.display()))?;
-        fs::rename(&tmp_path, path)
-            .map_err(|e| format!("重命名 {} 失败: {e}", path.display()))?;
+        fs::rename(&tmp_path, path).map_err(|e| format!("重命名 {} 失败: {e}", path.display()))?;
         Ok(())
     }
 
     fn load_json<T: serde::de::DeserializeOwned>(&self, path: &Path) -> Result<T, String> {
-        let raw = fs::read_to_string(path)
-            .map_err(|e| format!("无法读取 {}: {e}", path.display()))?;
-        serde_json::from_str(&raw)
-            .map_err(|e| format!("无法解析 {}: {e}", path.display()))
+        let raw =
+            fs::read_to_string(path).map_err(|e| format!("无法读取 {}: {e}", path.display()))?;
+        serde_json::from_str(&raw).map_err(|e| format!("无法解析 {}: {e}", path.display()))
     }
 }
 
@@ -206,7 +203,12 @@ mod tests {
 
     fn setup_storage() -> (TempDir, DecideStorage) {
         let tmp = TempDir::new().unwrap();
-        std::fs::create_dir_all(tmp.path().join(crate::core::config::AIDE_MEMORY_DIR).join("decisions")).unwrap();
+        std::fs::create_dir_all(
+            tmp.path()
+                .join(crate::core::config::AIDE_MEMORY_DIR)
+                .join("decisions"),
+        )
+        .unwrap();
         let storage = DecideStorage::new(tmp.path());
         (tmp, storage)
     }

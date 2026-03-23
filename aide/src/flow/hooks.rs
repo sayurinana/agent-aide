@@ -6,6 +6,13 @@ use crate::core::output;
 use crate::flow::git::GitIntegration;
 use crate::flow::types::FlowStatus;
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum PlantUmlProcessResult {
+    NoFiles,
+    ToolUnavailable,
+    Compiled { files: usize },
+}
+
 pub fn run_pre_commit_hooks(
     root: &Path,
     git: &GitIntegration,
@@ -54,6 +61,14 @@ fn get_plantuml_command(config: &toml::Value) -> Option<Vec<String>> {
 }
 
 fn hook_plantuml(root: &Path, config: &toml::Value) -> Result<(), String> {
+    process_plantuml_files(root, config, true).map(|_| ())
+}
+
+pub fn process_plantuml_files(
+    root: &Path,
+    config: &toml::Value,
+    emit_output: bool,
+) -> Result<PlantUmlProcessResult, String> {
     let diagram_path = config
         .get("flow")
         .and_then(|f| f.get("diagram_path"))
@@ -72,14 +87,16 @@ fn hook_plantuml(root: &Path, config: &toml::Value) -> Result<(), String> {
     }
 
     if candidates.is_empty() {
-        return Ok(());
+        return Ok(PlantUmlProcessResult::NoFiles);
     }
 
     let plantuml_cmd = match get_plantuml_command(config) {
         Some(cmd) => cmd,
         None => {
-            output::warn("未找到 PlantUML（jar 或系统命令），已跳过校验/PNG 生成");
-            return Ok(());
+            if emit_output {
+                output::warn("未找到 PlantUML（jar 或系统命令），已跳过校验/PNG 生成");
+            }
+            return Ok(PlantUmlProcessResult::ToolUnavailable);
         }
     };
 
@@ -133,8 +150,13 @@ fn hook_plantuml(root: &Path, config: &toml::Value) -> Result<(), String> {
         }
     }
 
-    output::ok(&format!("PlantUML 处理完成: {} 个文件", candidates.len()));
-    Ok(())
+    if emit_output {
+        output::ok(&format!("PlantUML 处理完成: {} 个文件", candidates.len()));
+    }
+
+    Ok(PlantUmlProcessResult::Compiled {
+        files: candidates.len(),
+    })
 }
 
 fn collect_puml_files(dir: &Path, candidates: &mut Vec<std::path::PathBuf>) {
