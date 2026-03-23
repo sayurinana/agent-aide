@@ -14,3 +14,12 @@
 阶段五：技术参考 Skills
 ✓ 提案 9：技术参考 Skills 更新（2个）
 
+aide-core-commands
+aide-flow-management
+aide-memory-structure
+aide-task-management
+basic-skills
+commands-rewrite
+core-phase-skills
+optional-phase-skills
+reference-skills-update

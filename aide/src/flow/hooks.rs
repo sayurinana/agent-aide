@@ -58,7 +58,7 @@ fn hook_plantuml(root: &Path, config: &toml::Value) -> Result<(), String> {
         .get("flow")
         .and_then(|f| f.get("diagram_path"))
         .and_then(|v| v.as_str())
-        .unwrap_or(".aide/diagrams");
+        .unwrap_or("aide-memory/memory/diagram");
 
     let diagram_dir = root.join(diagram_path);
 
@@ -199,7 +199,7 @@ fn hook_clean_task_plans(root: &Path, config: &toml::Value) {
         .get("task")
         .and_then(|t| t.get("plans_path"))
         .and_then(|v| v.as_str())
-        .unwrap_or(".aide/task-plans")
+        .unwrap_or("aide-memory/task-plans")
         .trim_end_matches('/');
 
     let plans_dir = root.join(plans_path);

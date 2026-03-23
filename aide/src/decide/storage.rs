@@ -15,7 +15,7 @@ pub struct DecideStorage {
 
 impl DecideStorage {
     pub fn new(root: &Path) -> Self {
-        let aide_dir = root.join(".aide");
+        let aide_dir = root.join(crate::core::config::AIDE_MEMORY_DIR);
         let decisions_dir = aide_dir.join("decisions");
         let pending_path = decisions_dir.join("pending.json");
         Self {
@@ -28,7 +28,7 @@ impl DecideStorage {
 
     pub fn ensure_ready(&self) -> Result<(), String> {
         if !self.aide_dir.exists() {
-            return Err(".aide 目录不存在，请先执行 aide init".into());
+            return Err("aide-memory 目录不存在，请先执行 aide init".into());
         }
         fs::create_dir_all(&self.decisions_dir)
             .map_err(|e| format!("创建 decisions 目录失败: {e}"))?;
@@ -206,7 +206,7 @@ mod tests {
 
     fn setup_storage() -> (TempDir, DecideStorage) {
         let tmp = TempDir::new().unwrap();
-        std::fs::create_dir_all(tmp.path().join(".aide").join("decisions")).unwrap();
+        std::fs::create_dir_all(tmp.path().join(crate::core::config::AIDE_MEMORY_DIR).join("decisions")).unwrap();
         let storage = DecideStorage::new(tmp.path());
         (tmp, storage)
     }

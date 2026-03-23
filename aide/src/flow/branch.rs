@@ -75,7 +75,7 @@ pub struct BranchManager {
 
 impl BranchManager {
     pub fn new(root: &Path, _cfg: &ConfigManager) -> Self {
-        let aide_dir = root.join(".aide");
+        let aide_dir = root.join(crate::core::config::AIDE_MEMORY_DIR);
         Self {
             root: root.to_path_buf(),
             git: GitIntegration::new(root),
@@ -154,7 +154,7 @@ impl BranchManager {
             .cfg
             .get_value("flow.diagram_path")
             .and_then(|v| v.as_str().map(String::from))
-            .unwrap_or_else(|| ".aide/diagrams".into());
+            .unwrap_or_else(|| "aide-memory/memory/diagram".into());
         let diagram_dir = self.root.join(&diagram_path);
         if diagram_dir.is_dir() {
             if let Ok(entries) = fs::read_dir(&diagram_dir) {

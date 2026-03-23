@@ -4,7 +4,10 @@ use std::path::{Path, PathBuf};
 use crate::core::output;
 
 pub const CURRENT_AIDE_VERSION: &str = env!("CARGO_PKG_VERSION");
-pub const CURRENT_SCHEMA_VERSION: i64 = 2;
+pub const CURRENT_SCHEMA_VERSION: i64 = 3;
+
+/// aide-memory 目录名常量
+pub const AIDE_MEMORY_DIR: &str = "aide-memory";
 
 /// 获取全局配置目录路径 `$HOME/.aide`
 /// 当 `$HOME` 环境变量不可用时返回 None
@@ -12,24 +15,30 @@ pub fn global_aide_dir() -> Option<PathBuf> {
     std::env::var("HOME").ok().map(|home| PathBuf::from(home).join(".aide"))
 }
 
-pub const DEFAULT_CONFIG: &str = r#"[meta]
-aide_version = "0.1.0"
-schema_version = 2
+pub const DEFAULT_CONFIG: &str = r#"# Aide 配置文件
 
-[general]
-gitignore_aide = false
+[meta]
+aide_version = "0.1.0"
+schema_version = 3
 
 [task]
-source = "task-now.md"
-spec = "task-spec.md"
-plans_path = ".aide/task-plans/"
+description_file = "task-now.md"
+template = "任务口述模板.md"
+parse_guide = "任务解析指导.md"
 
-[docs]
-path = ".aide/project-docs"
+[branch]
+prefix = ""
+format = "task-{n}"
+resident = "dev"
+
+[git]
+auto_commit_on_switch = true
+auto_commit_message = "暂存：清理仓库状态以切换分支"
+bye_commit_message = "暂存：清理仓库状态"
 
 [flow]
 phases = ["task-optimize", "flow-design", "impl", "verify", "docs", "confirm", "finish"]
-diagram_path = ".aide/diagrams"
+diagram_path = "aide-memory/memory/diagram"
 
 [plantuml]
 download_cache_path = "download-buffer"
@@ -49,16 +58,16 @@ timeout = 0
 
 pub const DEFAULT_CONFIG_MD: &str = r#"# Aide 配置说明
 
-本文档详细说明 `.aide/config.toml` 中的所有配置项。
+本文档详细说明 `aide-memory/config.toml` 中的所有配置项。
 
 ## 配置操作
 
 - **读取配置**：`aide config get <key>`（如 `aide config get flow.phases`）
-- **设置配置**：`aide config set <key> <value>`（如 `aide config set task.source "my-task.md"`）
+- **设置配置**：`aide config set <key> <value>`（如 `aide config set task.description_file "my-task.md"`）
 - **重置配置**：`aide config reset`（重置为默认值，自动备份）
 - **更新配置**：`aide config update`（版本升级时更新配置）
 
-支持点号分隔的嵌套键，如 `task.source`、`flow.phases`。
+支持点号分隔的嵌套键，如 `task.description_file`、`flow.phases`。
 
 ## [meta] - 元数据
 
@@ -67,25 +76,56 @@ pub const DEFAULT_CONFIG_MD: &str = r#"# Aide 配置说明
 - **aide_version**（字符串）：生成此配置的 aide 版本号
 - **schema_version**（整数）：配置结构的 schema 版本
 
-## [general] - 通用配置
+## [task] - 任务配置
 
-控制 Aide 的全局行为。
+### description_file
+- 类型：String
+- 默认值：task-now.md
+- 说明：任务描述文档路径（相对于项目根目录）
 
-- **gitignore_aide**（布尔值，默认 `false`）
-  - `true`：自动添加 `.aide/` 到 `.gitignore`，不跟踪 aide 状态
-  - `false`：不修改 `.gitignore`，允许 git 跟踪 `.aide` 目录（推荐，便于多设备同步）
+### template
+- 类型：String
+- 默认值：任务口述模板.md
+- 说明：任务模板路径（相对于 templates/）
 
-## [task] - 任务文档配置
+### parse_guide
+- 类型：String
+- 默认值：任务解析指导.md
+- 说明：任务解析指导文档路径（相对于 templates/）
 
-定义任务相关文档的路径。
+## [branch] - 分支配置
 
-- **source**（字符串，默认 `"task-now.md"`）：用户提供的原始任务描述文档
-- **spec**（字符串，默认 `"task-spec.md"`）：aide 生成的可执行任务细则文档
-- **plans_path**（字符串，默认 `".aide/task-plans/"`）：复杂任务计划文档目录
+### prefix
+- 类型：String
+- 默认值：空
+- 说明：任务分支名前缀
 
-## [docs] - 项目文档配置
+### format
+- 类型：String
+- 默认值：task-{n}
+- 说明：分支名格式，{n} 为任务编号
 
-- **path**（字符串，默认 `".aide/project-docs"`）：项目文档目录路径
+### resident
+- 类型：String
+- 默认值：dev
+- 说明：常驻工作分支名（不建议使用 master/main）
+
+## [git] - Git 配置
+
+### auto_commit_on_switch
+- 类型：Boolean
+- 默认值：true
+- 说明：切换分支时自动暂存并提交
+
+### auto_commit_message
+- 类型：String
+- 默认值：暂存：清理仓库状态以切换分支
+- 说明：自动提交的默认消息
+
+### bye_commit_message
+- 类型：String
+- 默认值：暂存：清理仓库状态
+- 说明：bye 操作的默认提交消息
 
 ## [flow] - 流程追踪配置
 
@@ -94,7 +134,7 @@ pub const DEFAULT_CONFIG_MD: &str = r#"# Aide 配置说明
 - **phases**（数组，默认 `["task-optimize", "flow-design", "impl", "verify", "docs", "confirm", "finish"]`）
   - 任务流程的环节名称列表（有序）
   - 可自定义环节名称和顺序
-- **diagram_path**（字符串，默认 `".aide/diagrams"`）：流程图输出目录
+- **diagram_path**（字符串，默认 `"aide-memory/memory/diagram"`）：流程图输出目录
 
 ## [plantuml] - PlantUML 配置
 
@@ -130,11 +170,15 @@ pub struct ConfigManager {
     pub decisions_dir: PathBuf,
     pub logs_dir: PathBuf,
     pub backups_dir: PathBuf,
+    pub tasks_dir: PathBuf,
+    pub archived_tasks_dir: PathBuf,
+    pub templates_dir: PathBuf,
+    pub memory_dir: PathBuf,
 }
 
 impl ConfigManager {
     pub fn new(root: &Path) -> Self {
-        let aide_dir = root.join(".aide");
+        let aide_dir = root.join(AIDE_MEMORY_DIR);
         Self {
             root: root.to_path_buf(),
             config_path: aide_dir.join("config.toml"),
@@ -142,6 +186,10 @@ impl ConfigManager {
             decisions_dir: aide_dir.join("decisions"),
             logs_dir: aide_dir.join("logs"),
             backups_dir: aide_dir.join("backups"),
+            tasks_dir: aide_dir.join("tasks"),
+            archived_tasks_dir: aide_dir.join("archived-tasks"),
+            templates_dir: aide_dir.join("templates"),
+            memory_dir: aide_dir.join("memory"),
             aide_dir,
         }
     }
@@ -158,6 +206,10 @@ impl ConfigManager {
                 decisions_dir: aide_dir.join("decisions"),
                 logs_dir: aide_dir.join("logs"),
                 backups_dir: aide_dir.join("backups"),
+                tasks_dir: aide_dir.join("tasks"),
+                archived_tasks_dir: aide_dir.join("archived-tasks"),
+                templates_dir: aide_dir.join("templates"),
+                memory_dir: aide_dir.join("memory"),
                 aide_dir,
             }
         })
@@ -168,21 +220,18 @@ impl ConfigManager {
         fs::create_dir_all(&self.decisions_dir)?;
         fs::create_dir_all(&self.logs_dir)?;
         fs::create_dir_all(&self.backups_dir)?;
+        fs::create_dir_all(&self.tasks_dir)?;
+        fs::create_dir_all(&self.archived_tasks_dir)?;
+        fs::create_dir_all(&self.templates_dir)?;
+        fs::create_dir_all(&self.memory_dir.join("structure"))?;
+        fs::create_dir_all(&self.memory_dir.join("concepts"))?;
+        fs::create_dir_all(&self.memory_dir.join("diagram"))?;
         Ok(())
     }
 
     pub fn ensure_gitignore(&self) {
-        let config = self.load_config();
-        let gitignore_aide = walk_get(&config, "general.gitignore_aide")
-            .and_then(|v| v.as_bool())
-            .unwrap_or(false);
-
-        if !gitignore_aide {
-            return;
-        }
-
         let gitignore_path = self.root.join(".gitignore");
-        let marker = ".aide/";
+        let marker = "aide-memory/";
 
         if gitignore_path.exists() {
             let content = fs::read_to_string(&gitignore_path).unwrap_or_default();
@@ -208,13 +257,13 @@ impl ConfigManager {
 
         if !self.config_path.exists() {
             let _ = fs::write(&self.config_path, DEFAULT_CONFIG);
-            output::ok("已创建默认配置 .aide/config.toml");
+            output::ok("已创建默认配置 aide-memory/config.toml");
             created_config = true;
         }
 
         if !self.config_md_path.exists() {
             let _ = fs::write(&self.config_md_path, DEFAULT_CONFIG_MD);
-            output::ok("已创建配置说明 .aide/config.md");
+            output::ok("已创建配置说明 aide-memory/config.md");
             created_md = true;
         }
 
@@ -478,8 +527,8 @@ mod tests {
         let tmp = TempDir::new().unwrap();
         let cm = ConfigManager::new(tmp.path());
         assert_eq!(cm.root, tmp.path());
-        assert_eq!(cm.aide_dir, tmp.path().join(".aide"));
-        assert_eq!(cm.config_path, tmp.path().join(".aide").join("config.toml"));
+        assert_eq!(cm.aide_dir, tmp.path().join("aide-memory"));
+        assert_eq!(cm.config_path, tmp.path().join("aide-memory").join("config.toml"));
     }
 
     #[test]
@@ -499,8 +548,7 @@ mod tests {
         let config = cm.ensure_config();
         assert!(cm.config_path.exists());
         // 验证默认配置包含预期字段
-        assert!(walk_get(&config, "general.gitignore_aide").is_some());
-        assert!(walk_get(&config, "task.source").is_some());
+        assert!(walk_get(&config, "task.description_file").is_some());
         assert!(walk_get(&config, "flow.phases").is_some());
     }
 
@@ -517,7 +565,7 @@ mod tests {
         let tmp = TempDir::new().unwrap();
         let cm = ConfigManager::new(tmp.path());
         cm.ensure_config();
-        let val = cm.get_value("task.source");
+        let val = cm.get_value("task.description_file");
         assert_eq!(val.unwrap().as_str().unwrap(), "task-now.md");
     }
 
@@ -526,8 +574,8 @@ mod tests {
         let tmp = TempDir::new().unwrap();
         let cm = ConfigManager::new(tmp.path());
         cm.ensure_config();
-        cm.set_value("task.source", "new-task.md");
-        let val = cm.get_value("task.source");
+        cm.set_value("task.description_file", "new-task.md");
+        let val = cm.get_value("task.description_file");
         assert_eq!(val.unwrap().as_str().unwrap(), "new-task.md");
     }
 
@@ -549,8 +597,8 @@ mod tests {
         let original = std::fs::read_to_string(&cm.config_path).unwrap();
         assert!(original.contains("[flow]"));
         assert!(original.contains("[meta]"));
-        // 修改 task.source 不应影响其他配置节
-        cm.set_value("task.source", "changed.md");
+        // 修改 task.description_file 不应影响其他配置节
+        cm.set_value("task.description_file", "changed.md");
         let updated = std::fs::read_to_string(&cm.config_path).unwrap();
         assert!(updated.contains("[flow]"));
         assert!(updated.contains("[meta]"));
@@ -559,24 +607,13 @@ mod tests {
     // === ensure_gitignore 测试 ===
 
     #[test]
-    fn test_ensure_gitignore_when_disabled() {
+    fn test_ensure_gitignore_creates_entry() {
         let tmp = TempDir::new().unwrap();
         let cm = ConfigManager::new(tmp.path());
         cm.ensure_config();
-        // 默认 gitignore_aide = false，不应创建 .gitignore
-        cm.ensure_gitignore();
-        assert!(!tmp.path().join(".gitignore").exists());
-    }
-
-    #[test]
-    fn test_ensure_gitignore_when_enabled() {
-        let tmp = TempDir::new().unwrap();
-        let cm = ConfigManager::new(tmp.path());
-        cm.ensure_config();
-        cm.set_value("general.gitignore_aide", "true");
         cm.ensure_gitignore();
         let content = std::fs::read_to_string(tmp.path().join(".gitignore")).unwrap();
-        assert!(content.contains(".aide/"));
+        assert!(content.contains("aide-memory/"));
     }
 
     #[test]
@@ -584,11 +621,10 @@ mod tests {
         let tmp = TempDir::new().unwrap();
         let cm = ConfigManager::new(tmp.path());
         cm.ensure_config();
-        cm.set_value("general.gitignore_aide", "true");
-        std::fs::write(tmp.path().join(".gitignore"), ".aide/\n").unwrap();
+        std::fs::write(tmp.path().join(".gitignore"), "aide-memory/\n").unwrap();
         cm.ensure_gitignore();
         let content = std::fs::read_to_string(tmp.path().join(".gitignore")).unwrap();
-        assert_eq!(content.matches(".aide/").count(), 1);
+        assert_eq!(content.matches("aide-memory/").count(), 1);
     }
 
     // === get_config_* 辅助函数测试 ===
@@ -596,8 +632,8 @@ mod tests {
     #[test]
     fn test_get_config_string() {
         let config: toml::Value =
-            toml::from_str(r#"[task]\nsource = "foo.md""#.replace("\\n", "\n").as_str()).unwrap();
-        assert_eq!(get_config_string(&config, "task.source").unwrap(), "foo.md");
+            toml::from_str(r#"[task]\ndescription_file = "foo.md""#.replace("\\n", "\n").as_str()).unwrap();
+        assert_eq!(get_config_string(&config, "task.description_file").unwrap(), "foo.md");
     }
 
     #[test]

@@ -19,7 +19,7 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// 初始化 .aide 目录与默认配置
+    /// 初始化 aide-memory 目录与默认配置
     Init {
         /// 仅初始化全局配置（~/.aide/config.toml）
         #[arg(long)]

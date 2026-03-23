@@ -105,7 +105,7 @@ pub fn handle_config_reset(force: bool, global: bool) -> bool {
         let backup_display = if global {
             format!("~/.aide/backups/config.toml.{}", timestamp)
         } else {
-            format!(".aide/backups/config.toml.{}", timestamp)
+            format!("aide-memory/backups/config.toml.{}", timestamp)
         };
         output::ok(&format!("已备份配置到 {}", backup_display));
     }
@@ -192,6 +192,7 @@ pub fn handle_config_update(global: bool) -> bool {
     while schema < crate::core::config::CURRENT_SCHEMA_VERSION {
         match schema {
             0 | 1 => migrate_v1_to_v2(&mut doc),
+            2 => migrate_v2_to_v3(&mut doc),
             _ => {}
         }
         schema += 1;
@@ -239,7 +240,7 @@ pub fn handle_config_update(global: bool) -> bool {
     let md_display = if global {
         "~/.aide/config.md"
     } else {
-        ".aide/config.md"
+        "aide-memory/config.md"
     };
     output::ok(&format!("已更新配置说明 {}", md_display));
     true
@@ -283,5 +284,75 @@ fn migrate_v1_to_v2(doc: &mut toml_edit::DocumentMut) {
                 )),
             );
         }
+    }
+}
+
+/// Schema v2 → v3 迁移：重构配置结构以适应 aide-memory
+fn migrate_v2_to_v3(doc: &mut toml_edit::DocumentMut) {
+    // 移除 [general] 节
+    doc.remove("general");
+
+    // 移除 [docs] 节
+    doc.remove("docs");
+
+    // 重构 [task] 节
+    if doc.get("task").is_none() {
+        doc.insert("task", toml_edit::Item::Table(toml_edit::Table::new()));
+    }
+
+    if let Some(task) = doc.get_mut("task").and_then(|v| v.as_table_mut()) {
+        // 移除旧字段
+        task.remove("spec");
+        task.remove("plans_path");
+
+        // 重命名 source → description_file
+        if let Some(source) = task.remove("source") {
+            task.insert("description_file", source);
+        } else if task.get("description_file").is_none() {
+            task.insert(
+                "description_file",
+                toml_edit::Item::Value(toml_edit::Value::from("task-now.md")),
+            );
+        }
+
+        // 添加新字段
+        if task.get("template").is_none() {
+            task.insert(
+                "template",
+                toml_edit::Item::Value(toml_edit::Value::from("任务口述模板.md")),
+            );
+        }
+        if task.get("parse_guide").is_none() {
+            task.insert(
+                "parse_guide",
+                toml_edit::Item::Value(toml_edit::Value::from("任务解析指导.md")),
+            );
+        }
+    }
+
+    // 添加 [branch] 节
+    if doc.get("branch").is_none() {
+        let mut branch = toml_edit::Table::new();
+        branch.insert("prefix", toml_edit::Item::Value(toml_edit::Value::from("")));
+        branch.insert("format", toml_edit::Item::Value(toml_edit::Value::from("task-{n}")));
+        branch.insert("resident", toml_edit::Item::Value(toml_edit::Value::from("dev")));
+        doc.insert("branch", toml_edit::Item::Table(branch));
+    }
+
+    // 添加 [git] 节
+    if doc.get("git").is_none() {
+        let mut git = toml_edit::Table::new();
+        git.insert("auto_commit_on_switch", toml_edit::Item::Value(toml_edit::Value::from(true)));
+        git.insert("auto_commit_message", toml_edit::Item::Value(toml_edit::Value::from("暂存：清理仓库状态以切换分支")));
+        git.insert("bye_commit_message", toml_edit::Item::Value(toml_edit::Value::from("暂存：清理仓库状态")));
+        doc.insert("git", toml_edit::Item::Table(git));
+    }
+
+    // 更新 [flow] 节的 diagram_path
+    if let Some(flow) = doc.get_mut("flow").and_then(|v| v.as_table_mut()) {
+        flow.insert(
+            "diagram_path",
+            toml_edit::Item::Value(toml_edit::Value::from("aide-memory/memory/diagram")),
+        );
     }
 }

@@ -1,9 +1,11 @@
 use std::path::{Path, PathBuf};
 
-/// 递归向上查找包含有效 .aide 目录的项目根目录。
+use crate::core::config::AIDE_MEMORY_DIR;
+
+/// 递归向上查找包含有效 aide-memory 目录的项目根目录。
 ///
 /// 查找策略（三遍遍历）：
-/// 0. 如果当前目录有 .aide 目录，直接使用
+/// 0. 如果当前目录有 aide-memory 目录，直接使用
 /// 1. 第一遍：优先查找包含 flow-status.json 的目录（活跃任务）
 /// 2. 第二遍：查找包含 config.toml 的目录
 /// 3. 兜底：返回起始路径
@@ -17,18 +19,18 @@ pub fn find_project_root(start_path: Option<&Path>) -> PathBuf {
         Err(_) => start,
     };
 
-    // 步骤 0：如果当前目录有 .aide 目录，直接使用
-    if start.join(".aide").is_dir() {
+    // 步骤 0：如果当前目录有 aide-memory 目录，直接使用
+    if start.join(AIDE_MEMORY_DIR).is_dir() {
         return start;
     }
 
     // 第一遍：优先查找有活跃任务的目录
-    if let Some(p) = search_upward(&start, |dir| dir.join(".aide").join("flow-status.json").exists()) {
+    if let Some(p) = search_upward(&start, |dir| dir.join(AIDE_MEMORY_DIR).join("flow-status.json").exists()) {
         return p;
     }
 
     // 第二遍：查找有配置文件的目录
-    if let Some(p) = search_upward(&start, |dir| dir.join(".aide").join("config.toml").exists()) {
+    if let Some(p) = search_upward(&start, |dir| dir.join(AIDE_MEMORY_DIR).join("config.toml").exists()) {
         return p;
     }
 
@@ -63,7 +65,7 @@ mod tests {
     #[test]
     fn test_find_project_root_with_aide_dir() {
         let tmp = TempDir::new().unwrap();
-        std::fs::create_dir_all(tmp.path().join(".aide")).unwrap();
+        std::fs::create_dir_all(tmp.path().join(AIDE_MEMORY_DIR)).unwrap();
         let root = find_project_root(Some(tmp.path()));
         assert_eq!(root, tmp.path().canonicalize().unwrap());
     }
@@ -73,8 +75,8 @@ mod tests {
         let tmp = TempDir::new().unwrap();
         let sub = tmp.path().join("a").join("b");
         std::fs::create_dir_all(&sub).unwrap();
-        // 在上层创建 .aide/flow-status.json
-        let aide_dir = tmp.path().join("a").join(".aide");
+        // 在上层创建 aide-memory/flow-status.json
+        let aide_dir = tmp.path().join("a").join(AIDE_MEMORY_DIR);
         std::fs::create_dir_all(&aide_dir).unwrap();
         std::fs::write(aide_dir.join("flow-status.json"), "{}").unwrap();
         let root = find_project_root(Some(&sub));
@@ -86,7 +88,7 @@ mod tests {
         let tmp = TempDir::new().unwrap();
         let sub = tmp.path().join("x").join("y");
         std::fs::create_dir_all(&sub).unwrap();
-        let aide_dir = tmp.path().join("x").join(".aide");
+        let aide_dir = tmp.path().join("x").join(AIDE_MEMORY_DIR);
         std::fs::create_dir_all(&aide_dir).unwrap();
         std::fs::write(aide_dir.join("config.toml"), "[general]").unwrap();
         let root = find_project_root(Some(&sub));
@@ -100,12 +102,12 @@ mod tests {
         std::fs::create_dir_all(&sub).unwrap();
 
         // 在 deep/ 放 config.toml
-        let aide_config = tmp.path().join("deep").join(".aide");
+        let aide_config = tmp.path().join("deep").join(AIDE_MEMORY_DIR);
         std::fs::create_dir_all(&aide_config).unwrap();
         std::fs::write(aide_config.join("config.toml"), "[general]").unwrap();
 
         // 在 tmp/ 放 flow-status.json
-        let aide_flow = tmp.path().join(".aide");
+        let aide_flow = tmp.path().join(AIDE_MEMORY_DIR);
         std::fs::create_dir_all(&aide_flow).unwrap();
         std::fs::write(aide_flow.join("flow-status.json"), "{}").unwrap();
 
@@ -129,16 +131,16 @@ mod tests {
         let sub = tmp.path().join("inner");
         std::fs::create_dir_all(&sub).unwrap();
 
-        // 在 sub 放 .aide 目录
-        std::fs::create_dir_all(sub.join(".aide")).unwrap();
+        // 在 sub 放 aide-memory 目录
+        std::fs::create_dir_all(sub.join(AIDE_MEMORY_DIR)).unwrap();
 
-        // 在 tmp 放 .aide/flow-status.json
-        let aide_parent = tmp.path().join(".aide");
+        // 在 tmp 放 aide-memory/flow-status.json
+        let aide_parent = tmp.path().join(AIDE_MEMORY_DIR);
         std::fs::create_dir_all(&aide_parent).unwrap();
         std::fs::write(aide_parent.join("flow-status.json"), "{}").unwrap();
 
         let root = find_project_root(Some(&sub));
-        // 步骤 0：当前目录有 .aide 就直接用
+        // 步骤 0：当前目录有 aide-memory 就直接用
         assert_eq!(root, sub.canonicalize().unwrap());
     }
 

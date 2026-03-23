@@ -19,7 +19,7 @@ pub struct FlowStorage {
 
 impl FlowStorage {
     pub fn new(root: &Path) -> Self {
-        let aide_dir = root.join(".aide");
+        let aide_dir = root.join(crate::core::config::AIDE_MEMORY_DIR);
         Self {
             root: root.to_path_buf(),
             status_path: aide_dir.join("flow-status.json"),
@@ -33,7 +33,7 @@ impl FlowStorage {
 
     pub fn ensure_ready(&self) -> Result<(), String> {
         if !self.aide_dir.exists() {
-            return Err("未找到 .aide 目录，请先运行：aide init".into());
+            return Err("未找到 aide-memory 目录，请先运行：aide init".into());
         }
         let _ = fs::create_dir_all(&self.logs_dir);
         Ok(())
@@ -59,7 +59,7 @@ impl FlowStorage {
                 Err(_) => {
                     if start.elapsed() >= timeout {
                         return Err(
-                            "状态文件被占用，请稍后重试或删除 .aide/flow-status.lock".into(),
+                            "状态文件被占用，请稍后重试或删除 aide-memory/flow-status.lock".into(),
                         );
                     }
                     thread::sleep(poll);
@@ -268,7 +268,7 @@ mod tests {
 
     fn setup_storage() -> (TempDir, FlowStorage) {
         let tmp = TempDir::new().unwrap();
-        std::fs::create_dir_all(tmp.path().join(".aide").join("logs")).unwrap();
+        std::fs::create_dir_all(tmp.path().join(crate::core::config::AIDE_MEMORY_DIR).join("logs")).unwrap();
         let storage = FlowStorage::new(tmp.path());
         (tmp, storage)
     }

@@ -28,10 +28,21 @@ fn test_aide_init_creates_config() {
         .assert()
         .success();
 
-    assert!(tmp.path().join(".aide").exists());
-    assert!(tmp.path().join(".aide").join("config.toml").exists());
-    assert!(tmp.path().join(".aide").join("decisions").exists());
-    assert!(tmp.path().join(".aide").join("logs").exists());
+    assert!(tmp.path().join("aide-memory").exists());
+    assert!(tmp.path().join("aide-memory").join("config.toml").exists());
+    assert!(tmp.path().join("aide-memory").join("decisions").exists());
+    assert!(tmp.path().join("aide-memory").join("logs").exists());
+    assert!(tmp.path().join("aide-memory").join("tasks").exists());
+    assert!(tmp.path().join("aide-memory").join("archived-tasks").exists());
+    assert!(tmp.path().join("aide-memory").join("templates").exists());
+    assert!(tmp.path().join("aide-memory").join("memory").exists());
+    assert!(tmp.path().join("aide-memory").join("memory").join("structure").exists());
+    assert!(tmp.path().join("aide-memory").join("memory").join("concepts").exists());
+    assert!(tmp.path().join("aide-memory").join("memory").join("diagram").exists());
+    assert!(tmp.path().join("aide-memory").join("branches.json").exists());
+    assert!(tmp.path().join("aide-memory").join("AGENT.md").exists());
+    assert!(tmp.path().join("aide-memory").join("templates").join("任务口述模板.md").exists());
+    assert!(tmp.path().join("aide-memory").join("templates").join("任务解析指导.md").exists());
 }
 
 #[test]
@@ -64,7 +75,7 @@ fn test_aide_config_get() {
 
     aide_cmd()
         .current_dir(tmp.path())
-        .args(["config", "get", "task.source"])
+        .args(["config", "get", "task.description_file"])
         .assert()
         .success()
         .stdout(predicate::str::contains("task-now.md"));
@@ -97,13 +108,13 @@ fn test_aide_config_set_and_get() {
 
     aide_cmd()
         .current_dir(tmp.path())
-        .args(["config", "set", "task.source", "new-task.md"])
+        .args(["config", "set", "task.description_file", "new-task.md"])
         .assert()
         .success();
 
     aide_cmd()
         .current_dir(tmp.path())
-        .args(["config", "get", "task.source"])
+        .args(["config", "get", "task.description_file"])
         .assert()
         .success()
         .stdout(predicate::str::contains("new-task.md"));
@@ -120,16 +131,16 @@ fn test_aide_config_set_bool() {
 
     aide_cmd()
         .current_dir(tmp.path())
-        .args(["config", "set", "general.gitignore_aide", "true"])
+        .args(["config", "set", "git.auto_commit_on_switch", "false"])
         .assert()
         .success();
 
     aide_cmd()
         .current_dir(tmp.path())
-        .args(["config", "get", "general.gitignore_aide"])
+        .args(["config", "get", "git.auto_commit_on_switch"])
         .assert()
         .success()
-        .stdout(predicate::str::contains("true"));
+        .stdout(predicate::str::contains("false"));
 }
 
 #[test]
