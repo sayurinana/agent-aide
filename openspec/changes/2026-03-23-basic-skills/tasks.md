@@ -3,19 +3,19 @@
 ## 实现任务
 
 ### 1. make-memory skill
-- [ ] 从 commands/docs.md 提取内容
-- [ ] 调整目录路径为 aide-memory 结构
-- [ ] 更新配置引用
-- [ ] 编写 SKILL.md
+- [x] 从 commands/docs.md 提取内容
+- [x] 调整目录路径为 aide-memory 结构
+- [x] 更新配置引用
+- [x] 编写 SKILL.md
 
 ### 2. load-memory skill
-- [ ] 从 commands/load.md 提取内容
-- [ ] 调整目录路径为 aide-memory 结构
-- [ ] 更新配置引用
-- [ ] 编写 SKILL.md
+- [x] 从 commands/load.md 提取内容
+- [x] 调整目录路径为 aide-memory 结构
+- [x] 更新配置引用
+- [x] 编写 SKILL.md
 
 ### 3. 测试
-- [ ] 验证 skills 可用性
+- [x] 验证 skills 可用性
 
 ## 依赖
 

@@ -112,6 +112,13 @@ command 不负责完整展开所有方法细节。
 
 其中 `aide` 与 `plantuml` 属于可被多个流程复用的参考技能。
 
+### 6.1 基础 Skills 索引
+
+| Skill | 执行文件 | 作用 |
+|-------|----------|------|
+| `make-memory` | [../skills/make-memory/SKILL.md](../skills/make-memory/SKILL.md) | 生成或更新 `aide-memory/memory/` 文档集 |
+| `load-memory` | [../skills/load-memory/SKILL.md](../skills/load-memory/SKILL.md) | 按需载入 `aide-memory/memory/` 并建立项目认知 |
+
 ## 七、修改指南
 
 ### 7.1 修改 command

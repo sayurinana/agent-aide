@@ -37,5 +37,6 @@
 ## 五、相关文档
 
 - [执行文件](../../commands/load-memory.md)
+- [load-memory skill](../../skills/load-memory/SKILL.md)
 - [流程总览](../../../aide-memory/aide-process-overview.md)
 - [Agent 说明](../../../aide-memory/AGENT.md)
