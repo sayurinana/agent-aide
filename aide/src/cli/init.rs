@@ -2,6 +2,7 @@ use crate::core::config::{self, AIDE_MEMORY_DIR, ConfigManager, DEFAULT_PLUGIN_R
 use crate::core::git;
 use crate::core::output;
 use crate::core::plantuml;
+use crate::flow::git::GitIntegration;
 use std::fs;
 
 /// 默认的 branches.json 内容
@@ -165,14 +166,29 @@ pub fn handle_init(global: bool) -> bool {
             // 步骤 6：同步模板到项目
             sync_templates_to_project(&project_cfg);
 
-            project_cfg.ensure_gitignore();
+            // 步骤 7：Git 仓库初始化
+            let git_available = ensure_git_repo(&root);
+
+            // 步骤 8：创建并切换到常驻分支
+            if git_available {
+                ensure_resident_branch(&project_cfg);
+            }
+
+            // 步骤 9：创建任务描述文档
+            create_task_description_file(&project_cfg);
         }
         None => {
             output::warn("无法获取用户主目录，跳过全局配置初始化");
             let cfg = ConfigManager::new(&root);
             let _ = cfg.ensure_config();
             create_aide_memory_files(&cfg);
-            cfg.ensure_gitignore();
+
+            // 尝试 Git 初始化和分支创建
+            let git_available = ensure_git_repo(&root);
+            if git_available {
+                ensure_resident_branch(&cfg);
+            }
+            create_task_description_file(&cfg);
         }
     }
 
@@ -530,4 +546,167 @@ fn apply_sync_strategy(
         }
     }
     Ok(())
+}
+
+/// 确保 Git 仓库已初始化
+/// 返回 true 表示 Git 可用，false 表示 Git 不可用
+fn ensure_git_repo(root: &std::path::Path) -> bool {
+    // 检测 Git 可用性
+    if !git::is_git_available() {
+        output::warn("Git 未安装，跳过仓库初始化");
+        return false;
+    }
+
+    let git_ctx = GitIntegration::new(root);
+
+    // 检测是否已在 Git 仓库中
+    if git_ctx.ensure_repo().is_ok() {
+        // 已在 Git 仓库中
+        return true;
+    }
+
+    // 执行 git init
+    output::info("正在初始化 Git 仓库...");
+    let result = std::process::Command::new("git")
+        .args(["init"])
+        .current_dir(root)
+        .output();
+
+    match result {
+        Ok(output) if output.status.success() => {
+            output::ok("已初始化 Git 仓库");
+
+            // 执行 git add .
+            if let Err(e) = git_ctx.add_all() {
+                output::warn(&format!("暂存文件失败：{}", e));
+                return true;
+            }
+
+            // 创建初始提交
+            match git_ctx.commit("初始提交：项目初始化") {
+                Ok(Some(_)) => {
+                    output::ok("已创建初始提交");
+                }
+                Ok(None) => {
+                    // 没有文件需要提交
+                }
+                Err(e) => {
+                    output::warn(&format!("创建初始提交失败：{}", e));
+                }
+            }
+
+            true
+        }
+        Ok(output) => {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            output::warn(&format!("Git 初始化失败：{}", stderr.trim()));
+            false
+        }
+        Err(e) => {
+            output::warn(&format!("执行 git init 失败：{}", e));
+            false
+        }
+    }
+}
+
+/// 确保常驻分支存在并切换到该分支
+fn ensure_resident_branch(cfg: &ConfigManager) {
+    // 读取常驻分支配置
+    let config = cfg.load_config();
+    let resident_branch = config::get_config_string_or(&config, "branch.resident", "dev");
+
+    let git_ctx = GitIntegration::new(&cfg.root);
+
+    // 确保在 Git 仓库中
+    if git_ctx.ensure_repo().is_err() {
+        return;
+    }
+
+    // 检查是否有提交历史（空仓库无法创建分支）
+    if !git_ctx.has_commits() {
+        // 空仓库，尝试直接重命名当前分支
+        let result = std::process::Command::new("git")
+            .args(["branch", "-m", &resident_branch])
+            .current_dir(&cfg.root)
+            .output();
+
+        match result {
+            Ok(output) if output.status.success() => {
+                // 重命名成功
+            }
+            _ => {
+                // 重命名失败，可能是因为没有配置 user.name/user.email
+            }
+        }
+        return;
+    }
+
+    // 获取当前分支
+    let current_branch = match git_ctx.get_current_branch() {
+        Ok(branch) => branch,
+        Err(_) => {
+            // 无法获取当前分支，跳过
+            return;
+        }
+    };
+
+    // 如果已在常驻分支，无需操作
+    if current_branch == resident_branch {
+        return;
+    }
+
+    // 检测常驻分支是否已存在
+    match git_ctx.branch_exists(&resident_branch) {
+        Ok(true) => {
+            // 分支已存在，切换到该分支
+            if let Err(e) = git_ctx.checkout(&resident_branch) {
+                output::warn(&format!("切换到常驻分支失败：{}", e));
+            }
+        }
+        Ok(false) => {
+            // 分支不存在，创建并切换
+            if let Err(e) = git_ctx.checkout_new_branch(&resident_branch, None) {
+                output::warn(&format!("创建常驻分支失败：{}", e));
+            }
+        }
+        Err(e) => {
+            output::warn(&format!("检测分支失败：{}", e));
+        }
+    }
+}
+
+/// 创建任务描述文档
+fn create_task_description_file(cfg: &ConfigManager) {
+    // 读取配置
+    let config = cfg.load_config();
+    let description_file = config::get_config_string_or(&config, "task.description_file", "task-now.md");
+    let template_name = config::get_config_string_or(&config, "task.template", "任务口述模板.md");
+
+    let description_path = cfg.root.join(&description_file);
+
+    // 如果描述文件已存在，跳过
+    if description_path.exists() {
+        return;
+    }
+
+    // 读取模板文件
+    let template_path = cfg.templates_dir.join(&template_name);
+    if !template_path.exists() {
+        // 模板不存在，使用默认模板
+        let _ = fs::write(&description_path, DEFAULT_TASK_TEMPLATE);
+        return;
+    }
+
+    match fs::read_to_string(&template_path) {
+        Ok(content) => {
+            if let Err(e) = fs::write(&description_path, &content) {
+                output::warn(&format!("创建任务描述文档失败：{}", e));
+            }
+        }
+        Err(e) => {
+            output::warn(&format!("读取模板文件失败：{}", e));
+            // 使用默认模板
+            let _ = fs::write(&description_path, DEFAULT_TASK_TEMPLATE);
+        }
+    }
 }
