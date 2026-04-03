@@ -162,6 +162,9 @@ pub fn handle_init(global: bool) -> bool {
             // 步骤 5：同步插件到项目
             sync_plugins_to_project(&project_cfg);
 
+            // 步骤 6：同步模板到项目
+            sync_templates_to_project(&project_cfg);
+
             project_cfg.ensure_gitignore();
         }
         None => {
@@ -230,29 +233,47 @@ fn create_aide_memory_files(cfg: &ConfigManager) {
         let _ = fs::write(&overview, DEFAULT_MEMORY_OVERVIEW);
     }
 
-    // aide-process-overview.md
+    // 获取全局仓库路径
+    let global_aide_memory = config::global_aide_dir()
+        .map(|dir| dir.join("agent-aide").join("aide-memory"));
+
+    // aide-process-overview.md - 优先从全局仓库复制
     let process_overview = aide_dir.join("aide-process-overview.md");
     if !process_overview.exists() {
-        let _ = fs::write(&process_overview, DEFAULT_PROCESS_OVERVIEW);
+        let copied = if let Some(ref global_dir) = global_aide_memory {
+            let src = global_dir.join("aide-process-overview.md");
+            if src.exists() {
+                fs::copy(&src, &process_overview).is_ok()
+            } else {
+                false
+            }
+        } else {
+            false
+        };
+        if !copied {
+            let _ = fs::write(&process_overview, DEFAULT_PROCESS_OVERVIEW);
+        }
     }
 
-    // AGENT.md
+    // AGENT.md - 优先从全局仓库复制
     let agent_md = aide_dir.join("AGENT.md");
     if !agent_md.exists() {
-        let _ = fs::write(&agent_md, DEFAULT_AGENT_MD);
+        let copied = if let Some(ref global_dir) = global_aide_memory {
+            let src = global_dir.join("AGENT.md");
+            if src.exists() {
+                fs::copy(&src, &agent_md).is_ok()
+            } else {
+                false
+            }
+        } else {
+            false
+        };
+        if !copied {
+            let _ = fs::write(&agent_md, DEFAULT_AGENT_MD);
+        }
     }
 
-    // templates/任务口述模板.md
-    let task_template = cfg.templates_dir.join("任务口述模板.md");
-    if !task_template.exists() {
-        let _ = fs::write(&task_template, DEFAULT_TASK_TEMPLATE);
-    }
-
-    // templates/任务解析指导.md
-    let parse_guide = cfg.templates_dir.join("任务解析指导.md");
-    if !parse_guide.exists() {
-        let _ = fs::write(&parse_guide, DEFAULT_PARSE_GUIDE);
-    }
+    // 模板文件由 sync_templates_to_project 函数处理，这里不再创建默认值
 
     output::ok("已创建 aide-memory 目录结构和默认文件");
 }
@@ -369,5 +390,144 @@ fn copy_dir_all(src: &std::path::Path, dst: &std::path::Path) -> std::io::Result
         }
     }
 
+    Ok(())
+}
+
+/// 模板同步策略
+#[derive(Debug, Clone, Copy, PartialEq)]
+enum TemplateSyncStrategy {
+    Backup,
+    Skip,
+    Overwrite,
+    BackupAndReplace,
+}
+
+impl Default for TemplateSyncStrategy {
+    fn default() -> Self {
+        TemplateSyncStrategy::Backup
+    }
+}
+
+impl TemplateSyncStrategy {
+    fn from_config(value: &str) -> Self {
+        match value {
+            "skip" => TemplateSyncStrategy::Skip,
+            "overwrite" => TemplateSyncStrategy::Overwrite,
+            "backup-and-replace" => TemplateSyncStrategy::BackupAndReplace,
+            _ => TemplateSyncStrategy::Backup,
+        }
+    }
+}
+
+/// 同步模板文件到项目目录
+fn sync_templates_to_project(project_cfg: &ConfigManager) {
+    // 确保目标目录存在
+    if let Err(e) = fs::create_dir_all(&project_cfg.templates_dir) {
+        output::warn(&format!("创建模板目录失败：{}", e));
+        return;
+    }
+
+    // 检查全局仓库是否存在
+    let global_templates_dir = config::global_aide_dir()
+        .map(|dir| dir.join("agent-aide").join("templates"));
+
+    match &global_templates_dir {
+        Some(dir) if dir.exists() => {
+            // 全局仓库存在，执行同步
+            let config = project_cfg.load_config();
+            let strategy_value = config::walk_get(&config, "template.sync_strategy")
+                .and_then(|v| v.as_str())
+                .unwrap_or("backup");
+            let strategy = TemplateSyncStrategy::from_config(strategy_value);
+
+            let mut synced_count = 0;
+            if let Err(e) = sync_template_files(dir, &project_cfg.templates_dir, strategy, &mut synced_count) {
+                output::warn(&format!("模板同步出错：{}", e));
+            }
+
+            if synced_count > 0 {
+                output::ok(&format!("已同步 {} 个模板文件", synced_count));
+            }
+        }
+        _ => {
+            // 全局仓库不存在，创建默认模板文件
+            let task_template = project_cfg.templates_dir.join("任务口述模板.md");
+            if !task_template.exists() {
+                let _ = fs::write(&task_template, DEFAULT_TASK_TEMPLATE);
+            }
+
+            let parse_guide = project_cfg.templates_dir.join("任务解析指导.md");
+            if !parse_guide.exists() {
+                let _ = fs::write(&parse_guide, DEFAULT_PARSE_GUIDE);
+            }
+        }
+    }
+}
+
+/// 同步单个模板文件，根据策略处理已存在文件
+fn sync_template_files(
+    src_dir: &std::path::Path,
+    dst_dir: &std::path::Path,
+    strategy: TemplateSyncStrategy,
+    synced_count: &mut usize,
+) -> std::io::Result<()> {
+    for entry in fs::read_dir(src_dir)? {
+        let entry = entry?;
+        let ty = entry.file_type()?;
+        let src_path = entry.path();
+        let dst_path = dst_dir.join(entry.file_name());
+
+        if ty.is_dir() {
+            // 递归处理子目录
+            if !dst_path.exists() {
+                fs::create_dir_all(&dst_path)?;
+            }
+            sync_template_files(&src_path, &dst_path, strategy, synced_count)?;
+        } else {
+            // 处理文件
+            if dst_path.exists() {
+                apply_sync_strategy(&src_path, &dst_path, strategy)?;
+            } else {
+                // 文件不存在，直接复制
+                fs::copy(&src_path, &dst_path)?;
+            }
+            *synced_count += 1;
+        }
+    }
+    Ok(())
+}
+
+/// 根据策略处理已存在的文件
+fn apply_sync_strategy(
+    src_path: &std::path::Path,
+    dst_path: &std::path::Path,
+    strategy: TemplateSyncStrategy,
+) -> std::io::Result<()> {
+    match strategy {
+        TemplateSyncStrategy::Backup => {
+            // 下载为 .bak 文件，保留原文件
+            let bak_path = dst_path.with_extension(format!(
+                "{}.bak",
+                dst_path.extension().map(|e| e.to_string_lossy()).unwrap_or_default()
+            ));
+            fs::copy(src_path, &bak_path)?;
+        }
+        TemplateSyncStrategy::Skip => {
+            // 跳过，不做任何操作
+        }
+        TemplateSyncStrategy::Overwrite => {
+            // 直接覆盖
+            fs::copy(src_path, dst_path)?;
+        }
+        TemplateSyncStrategy::BackupAndReplace => {
+            // 备份原文件后替换
+            let bak_path = dst_path.with_extension(format!(
+                "{}.bak",
+                dst_path.extension().map(|e| e.to_string_lossy()).unwrap_or_default()
+            ));
+            fs::copy(dst_path, &bak_path)?; // 备份原文件
+            fs::copy(src_path, dst_path)?;  // 用新文件替换
+        }
+    }
     Ok(())
 }

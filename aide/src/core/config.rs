@@ -4,10 +4,10 @@ use std::path::{Path, PathBuf};
 use crate::core::output;
 
 pub const CURRENT_AIDE_VERSION: &str = env!("CARGO_PKG_VERSION");
-pub const CURRENT_SCHEMA_VERSION: i64 = 4;
+pub const CURRENT_SCHEMA_VERSION: i64 = 5;
 
-/// 默认插件仓库地址
-pub const DEFAULT_PLUGIN_REPO_URL: &str = "git@github.com:sayurinana/agent-aide.git";
+/// 默认插件仓库地址（HTTPS 协议）
+pub const DEFAULT_PLUGIN_REPO_URL: &str = "https://github.com/sayurinana/agent-aide.git";
 
 /// aide-memory 目录名常量
 pub const AIDE_MEMORY_DIR: &str = "aide-memory";
@@ -24,7 +24,7 @@ pub const DEFAULT_CONFIG: &str = r#"# Aide 配置文件
 
 [meta]
 aide_version = "0.1.0"
-schema_version = 4
+schema_version = 5
 
 [task]
 description_file = "task-now.md"
@@ -46,8 +46,11 @@ phases = ["task-optimize", "flow-design", "impl", "verify", "docs", "confirm", "
 diagram_path = "aide-memory/memory/diagram"
 
 [plugin]
-repo_url = "git@github.com:sayurinana/agent-aide.git"
+repo_url = "https://github.com/sayurinana/agent-aide.git"
 sync_on_init = true
+
+[template]
+sync_strategy = "backup"
 
 [plantuml]
 download_cache_path = "download-buffer"
@@ -174,11 +177,21 @@ PlantUML 图表生成及工具管理相关配置。路径配置均为相对于 `
 
 插件仓库同步相关配置，用于自动同步 agent-aide 的 commands 和 skills。
 
-- **repo_url**（字符串，默认 `git@github.com:sayurinana/agent-aide.git`）：agent-aide 仓库 Git 地址
+- **repo_url**（字符串，默认 `https://github.com/sayurinana/agent-aide.git`）：agent-aide 仓库 Git 地址
   - 支持 SSH 和 HTTPS 格式
   - 可通过 `aide config set plugin.repo_url <url>` 修改
 - **sync_on_init**（布尔值，默认 `true`）：项目初始化时是否同步插件
   - 设为 `false` 可禁用自动同步
+
+## [template] - 模板配置
+
+模板文件同步相关配置，控制 aide init 时模板文件的处理方式。
+
+- **sync_strategy**（字符串，默认 `backup`）：模板同步策略
+  - `backup`（默认）：下载新模板为 `.bak` 文件，保留原文件不变
+  - `skip`：跳过已存在的文件，仅复制新文件
+  - `overwrite`：直接覆盖已存在的文件
+  - `backup-and-replace`：将原文件备份为 `.bak` 文件后，用新模板替换
 "#;
 
 pub struct ConfigManager {

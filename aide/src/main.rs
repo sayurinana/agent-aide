@@ -26,6 +26,9 @@ enum Commands {
         global: bool,
     },
 
+    /// 同步全局仓库（~/.aide/agent-aide/）
+    Sync,
+
     /// 审验任务草案目录
     Verify,
 
@@ -175,6 +178,7 @@ async fn main() {
             true
         }
         Some(Commands::Init { global }) => cli::init::handle_init(global),
+        Some(Commands::Sync) => cli::sync::handle_sync(),
         Some(Commands::Verify) => cli::task_management::handle_verify(),
         Some(Commands::Confirm) => cli::task_management::handle_confirm(),
         Some(Commands::Archive { n }) => cli::task_management::handle_archive(n),

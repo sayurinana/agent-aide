@@ -108,6 +108,36 @@
 - **THEN** 输出警告信息
 - **AND** 跳过模板同步
 
+### Requirement: aide init 核心文件同步
+
+系统 SHALL 在 `aide init` 时从全局仓库同步核心文件到项目目录。
+
+同步文件：
+- `AGENT.md`：Agent 角色说明文档
+- `aide-process-overview.md`：Aide 工作流程总览
+
+同步行为：
+- 来源：`~/.aide/agent-aide/aide-memory/`
+- 目标：项目 `aide-memory/`
+- 文件不存在时才复制（不覆盖已有文件）
+- 全局仓库不存在时使用内置默认内容
+
+#### Scenario: 核心文件同步（全局仓库存在）
+- **WHEN** 用户执行 `aide init`
+- **AND** 项目 `aide-memory/AGENT.md` 不存在
+- **AND** 全局仓库 `~/.aide/agent-aide/aide-memory/AGENT.md` 存在
+- **THEN** 复制该文件到项目目录
+
+#### Scenario: 核心文件同步（全局仓库不存在）
+- **WHEN** 用户执行 `aide init`
+- **AND** 全局仓库不存在
+- **THEN** 使用内置默认内容创建文件
+
+#### Scenario: 核心文件已存在
+- **WHEN** 用户执行 `aide init`
+- **AND** 项目 `aide-memory/AGENT.md` 已存在
+- **THEN** 保留现有文件，不覆盖
+
 ### Requirement: 默认仓库地址更新
 
 系统 SHALL 使用 HTTPS 协议作为默认仓库地址。

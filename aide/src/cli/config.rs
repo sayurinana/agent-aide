@@ -193,6 +193,8 @@ pub fn handle_config_update(global: bool) -> bool {
         match schema {
             0 | 1 => migrate_v1_to_v2(&mut doc),
             2 => migrate_v2_to_v3(&mut doc),
+            3 => migrate_v3_to_v4(&mut doc),
+            4 => migrate_v4_to_v5(&mut doc),
             _ => {}
         }
         schema += 1;
@@ -369,5 +371,66 @@ fn migrate_v2_to_v3(doc: &mut toml_edit::DocumentMut) {
             "diagram_path",
             toml_edit::Item::Value(toml_edit::Value::from("aide-memory/memory/diagram")),
         );
+    }
+}
+
+/// Schema v3 → v4 迁移：无结构变化，占位
+fn migrate_v3_to_v4(_doc: &mut toml_edit::DocumentMut) {
+    // 此版本无结构变化，仅为版本号对齐
+}
+
+/// Schema v4 → v5 迁移：添加 [plugin] 和 [template] 配置节
+fn migrate_v4_to_v5(doc: &mut toml_edit::DocumentMut) {
+    // 添加 [plugin] 节
+    if doc.get("plugin").is_none() {
+        let mut plugin = toml_edit::Table::new();
+        plugin.insert(
+            "repo_url",
+            toml_edit::Item::Value(toml_edit::Value::from(
+                "https://github.com/sayurinana/agent-aide.git",
+            )),
+        );
+        plugin.insert(
+            "sync_on_init",
+            toml_edit::Item::Value(toml_edit::Value::from(true)),
+        );
+        doc.insert("plugin", toml_edit::Item::Table(plugin));
+    } else {
+        // 确保 repo_url 使用 HTTPS 地址
+        if let Some(plugin) = doc.get_mut("plugin").and_then(|v| v.as_table_mut()) {
+            if plugin.get("repo_url").is_none() {
+                plugin.insert(
+                    "repo_url",
+                    toml_edit::Item::Value(toml_edit::Value::from(
+                        "https://github.com/sayurinana/agent-aide.git",
+                    )),
+                );
+            }
+            if plugin.get("sync_on_init").is_none() {
+                plugin.insert(
+                    "sync_on_init",
+                    toml_edit::Item::Value(toml_edit::Value::from(true)),
+                );
+            }
+        }
+    }
+
+    // 添加 [template] 节
+    if doc.get("template").is_none() {
+        let mut template = toml_edit::Table::new();
+        template.insert(
+            "sync_strategy",
+            toml_edit::Item::Value(toml_edit::Value::from("backup")),
+        );
+        doc.insert("template", toml_edit::Item::Table(template));
+    } else {
+        if let Some(template) = doc.get_mut("template").and_then(|v| v.as_table_mut()) {
+            if template.get("sync_strategy").is_none() {
+                template.insert(
+                    "sync_strategy",
+                    toml_edit::Item::Value(toml_edit::Value::from("backup")),
+                );
+            }
+        }
     }
 }
