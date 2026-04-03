@@ -31,7 +31,7 @@ PlantUML:
 
 ## aide init
 
-初始化 `.aide` 目录和默认配置文件。
+初始化 `aide-memory` 目录和默认配置文件。
 
 ```bash
 aide init
@@ -40,18 +40,27 @@ aide init --global
 
 **行为（无 --global）：**
 - 确保全局配置 `~/.aide/config.toml` 存在
-- 在当前目录创建 `.aide/` 目录
-- 从全局配置复制到项目 `.aide/config.toml`
+- 在当前目录创建 `aide-memory/` 目录
+- 从全局配置复制到项目 `aide-memory/config.toml`
 - 生成详细的 `config.md` 配置说明文档
-- 创建 `decisions/`、`logs/` 和 `backups/` 子目录
-- 根据 `general.gitignore_aide` 配置管理 `.gitignore`
+- 创建 `tasks/`、`archived-tasks/`、`templates/`、`memory/` 等子目录
+- 同步 commands 和 skills 到项目 `.claude/` 目录（需要先执行 `aide init --global`）
+- 更新 `.gitignore` 添加 `aide-memory/` 条目
 - 幂等操作，重复执行不会覆盖已有配置
 
 **行为（--global）：**
 - 在 `~/.aide/` 下创建全局配置（如不存在）
+- 检测 Git 可用性，若可用则克隆/更新 agent-aide 仓库到 `~/.aide/agent-aide/`
+  - 仓库地址可通过 `plugin.repo_url` 配置项自定义
+  - 默认地址：`git@github.com:sayurinana/agent-aide.git`
 - 检测 PlantUML 可执行程序是否已安装
   - 已安装：显示版本信息
   - 未安装：提示用户是否自动下载并安装
+
+**插件同步说明：**
+- 全局初始化时，agent-aide 仓库会被克隆到 `~/.aide/agent-aide/`
+- 项目初始化时，`aide-plugin/commands/` 和 `aide-plugin/skills/` 会被复制到项目 `.claude/` 目录
+- 若 Git 未安装或全局仓库不存在，项目初始化时会跳过插件同步并给出提示
 
 ---
 

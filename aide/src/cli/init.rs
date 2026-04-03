@@ -1,4 +1,5 @@
-use crate::core::config::{self, AIDE_MEMORY_DIR, ConfigManager};
+use crate::core::config::{self, AIDE_MEMORY_DIR, ConfigManager, DEFAULT_PLUGIN_REPO_URL};
+use crate::core::git;
 use crate::core::output;
 use crate::core::plantuml;
 use std::fs;
@@ -158,6 +159,9 @@ pub fn handle_init(global: bool) -> bool {
             // 步骤 4：生成 aide-memory 特有文件
             create_aide_memory_files(&project_cfg);
 
+            // 步骤 5：同步插件到项目
+            sync_plugins_to_project(&project_cfg);
+
             project_cfg.ensure_gitignore();
         }
         None => {
@@ -192,6 +196,9 @@ fn handle_init_global() -> bool {
     } else {
         let _ = global_cfg.ensure_config();
     }
+
+    // 同步插件仓库
+    sync_plugin_repo(&global_cfg);
 
     // 检测 PlantUML 可用性
     let global_config = global_cfg.load_config();
@@ -248,4 +255,119 @@ fn create_aide_memory_files(cfg: &ConfigManager) {
     }
 
     output::ok("已创建 aide-memory 目录结构和默认文件");
+}
+
+/// 同步插件仓库到全局目录
+fn sync_plugin_repo(global_cfg: &ConfigManager) {
+    // 检测 Git 可用性
+    if !git::is_git_available() {
+        output::warn("Git 未安装，跳过插件仓库同步");
+        return;
+    }
+
+    // 读取配置中的仓库地址
+    let config = global_cfg.load_config();
+    let repo_url = config::get_config_string(&config, "plugin.repo_url")
+        .unwrap_or_else(|| DEFAULT_PLUGIN_REPO_URL.to_string());
+
+    // 目标目录：~/.aide/agent-aide/
+    let target_dir = global_cfg.aide_dir.join("agent-aide");
+
+    match git::clone_or_update_repo(&repo_url, &target_dir) {
+        Ok(()) => {
+            output::ok(&format!(
+                "插件仓库已同步到 {}/agent-aide/",
+                global_cfg.aide_dir.display()
+            ));
+        }
+        Err(e) => {
+            output::err(&format!("插件仓库同步失败：{}", e));
+        }
+    }
+}
+
+/// 同步插件到项目目录
+fn sync_plugins_to_project(project_cfg: &ConfigManager) {
+    // 检查是否启用同步
+    let config = project_cfg.load_config();
+    let sync_enabled = config::walk_get(&config, "plugin.sync_on_init")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(true);
+
+    if !sync_enabled {
+        return;
+    }
+
+    // 检查全局插件仓库是否存在
+    let global_plugin_dir = match config::global_aide_dir() {
+        Some(dir) => dir.join("agent-aide").join("aide-plugin"),
+        None => {
+            output::warn("无法获取全局目录，跳过插件同步");
+            return;
+        }
+    };
+
+    if !global_plugin_dir.exists() {
+        output::warn("全局插件仓库不存在，跳过插件同步。请先执行 aide init --global");
+        return;
+    }
+
+    // 创建 .claude 目录
+    let claude_dir = project_cfg.root.join(".claude");
+    if let Err(e) = fs::create_dir_all(&claude_dir) {
+        output::err(&format!("创建 .claude 目录失败：{}", e));
+        return;
+    }
+
+    let mut synced = false;
+
+    // 复制 commands
+    let src_commands = global_plugin_dir.join("commands");
+    let dst_commands = claude_dir.join("commands");
+    if src_commands.exists() {
+        if let Err(e) = copy_dir_all(&src_commands, &dst_commands) {
+            output::warn(&format!("复制 commands 失败：{}", e));
+        } else {
+            synced = true;
+        }
+    }
+
+    // 复制 skills
+    let src_skills = global_plugin_dir.join("skills");
+    let dst_skills = claude_dir.join("skills");
+    if src_skills.exists() {
+        if let Err(e) = copy_dir_all(&src_skills, &dst_skills) {
+            output::warn(&format!("复制 skills 失败：{}", e));
+        } else {
+            synced = true;
+        }
+    }
+
+    if synced {
+        output::ok("已同步 commands 和 skills 到 .claude/");
+    }
+}
+
+/// 递归复制目录
+fn copy_dir_all(src: &std::path::Path, dst: &std::path::Path) -> std::io::Result<()> {
+    // 如果目标存在，先删除
+    if dst.exists() {
+        fs::remove_dir_all(dst)?;
+    }
+    fs::create_dir_all(dst)?;
+
+    for entry in fs::read_dir(src)? {
+        let entry = entry?;
+        let ty = entry.file_type()?;
+        let src_path = entry.path();
+        let dst_path = dst.join(entry.file_name());
+
+        if ty.is_dir() {
+            copy_dir_all(&src_path, &dst_path)?;
+        } else {
+            fs::copy(&src_path, &dst_path)?;
+        }
+    }
+
+    Ok(())
 }

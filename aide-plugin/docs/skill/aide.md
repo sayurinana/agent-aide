@@ -154,23 +154,46 @@ aide env ensure [--runtime] [--modules M1,M2] [--all] [-v]
 
 ### 5.3 aide init
 
-**用途**：初始化 .aide 目录和默认配置
+**用途**：初始化 aide-memory 目录和默认配置
 
 **语法**：
 ```
 aide init
+aide init --global
 ```
 
-**行为**：
-1. 创建 `.aide/` 目录
-2. 生成默认 `config.toml`
-3. 检查并更新 `.gitignore`
+**行为（无 --global）：**
+1. 确保全局配置 `~/.aide/config.toml` 存在
+2. 创建项目 `aide-memory/` 目录及子目录
+3. 从全局配置复制到项目 `aide-memory/config.toml`
+4. 生成详细的 `config.md` 配置说明文档
+5. 同步 commands 和 skills 到项目 `.claude/` 目录
+6. 更新 `.gitignore` 添加 `aide-memory/` 条目
+
+**行为（--global）：**
+1. 在 `~/.aide/` 下创建全局配置
+2. 检测 Git 可用性，克隆/更新 agent-aide 仓库到 `~/.aide/agent-aide/`
+3. 检测 PlantUML 并提示安装
 
 **输出**：
 ```
-✓ 已创建默认配置 .aide/config.toml
-✓ 初始化完成，.aide/ 与默认配置已准备就绪
+# aide init --global（首次执行）
+✓ 已创建默认配置 ~/.aide/config.toml
+→ 正在克隆仓库到 ~/.aide/agent-aide/...
+✓ 插件仓库已同步到 ~/.aide/agent-aide/
+✓ 全局配置初始化完成
+
+# aide init（项目初始化）
+✓ 已从全局配置复制到项目 aide-memory/config.toml
+✓ 已创建 aide-memory 目录结构和默认文件
+✓ 已同步 commands 和 skills 到 .claude/
+✓ 初始化完成，aide-memory/ 目录与默认配置已准备就绪
 ```
+
+**插件同步说明**：
+- 全局仓库地址可通过 `plugin.repo_url` 配置项自定义
+- 若 Git 未安装，跳过仓库同步并警告
+- 若全局仓库不存在，项目初始化时跳过插件同步并提示先执行 `aide init --global`
 
 ### 5.4 aide flow
 

@@ -4,7 +4,10 @@ use std::path::{Path, PathBuf};
 use crate::core::output;
 
 pub const CURRENT_AIDE_VERSION: &str = env!("CARGO_PKG_VERSION");
-pub const CURRENT_SCHEMA_VERSION: i64 = 3;
+pub const CURRENT_SCHEMA_VERSION: i64 = 4;
+
+/// 默认插件仓库地址
+pub const DEFAULT_PLUGIN_REPO_URL: &str = "git@github.com:sayurinana/agent-aide.git";
 
 /// aide-memory 目录名常量
 pub const AIDE_MEMORY_DIR: &str = "aide-memory";
@@ -21,7 +24,7 @@ pub const DEFAULT_CONFIG: &str = r#"# Aide 配置文件
 
 [meta]
 aide_version = "0.1.0"
-schema_version = 3
+schema_version = 4
 
 [task]
 description_file = "task-now.md"
@@ -41,6 +44,10 @@ bye_commit_message = "暂存：清理仓库状态"
 [flow]
 phases = ["task-optimize", "flow-design", "impl", "verify", "docs", "confirm", "finish"]
 diagram_path = "aide-memory/memory/diagram"
+
+[plugin]
+repo_url = "git@github.com:sayurinana/agent-aide.git"
+sync_on_init = true
 
 [plantuml]
 download_cache_path = "download-buffer"
@@ -162,6 +169,16 @@ PlantUML 图表生成及工具管理相关配置。路径配置均为相对于 `
 - **bind**（字符串，默认 `"127.0.0.1"`）：监听地址
 - **url**（字符串，默认 `""`）：自定义访问地址（可选）
 - **timeout**（整数，默认 `0`）：超时时间（秒），0 表示不超时
+
+## [plugin] - 插件配置
+
+插件仓库同步相关配置，用于自动同步 agent-aide 的 commands 和 skills。
+
+- **repo_url**（字符串，默认 `git@github.com:sayurinana/agent-aide.git`）：agent-aide 仓库 Git 地址
+  - 支持 SSH 和 HTTPS 格式
+  - 可通过 `aide config set plugin.repo_url <url>` 修改
+- **sync_on_init**（布尔值，默认 `true`）：项目初始化时是否同步插件
+  - 设为 `false` 可禁用自动同步
 "#;
 
 pub struct ConfigManager {
