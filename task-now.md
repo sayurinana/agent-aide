@@ -6,5 +6,4 @@
 
 # 完成下列要求
 
-1. 添加一个功能，用于从远程git仓库中拉取最新的agent-aide仓库数据（我不知道这个功能应该加到哪个命令中，还是说应该单独为此新增一个子命令，这需要你帮我思考一下最优的解决方案）
-2. 在aide init时，从aide-agent的templates目录下复制模板文件到项目中，
+1. 添加一个功能，使用aide init初始化项目下的aide相关文件时，还要添加对codex的支持，包括commands和skills，具体为拷贝命令文件到~/.codex/prompts目录下，拷贝skills文件到项目目录下的.agents/skills目录下
