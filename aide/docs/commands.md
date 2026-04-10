@@ -45,6 +45,8 @@ aide init --global
 - 生成详细的 `config.md` 配置说明文档
 - 创建 `tasks/`、`archived-tasks/`、`templates/`、`memory/` 等子目录
 - 同步 commands 和 skills 到项目 `.claude/` 目录（需要先执行 `aide init --global`）
+- 同步 skills 到项目 `.agents/skills/`，供 Codex 使用
+- 同步 commands 到全局 `~/.codex/prompts/`，供 Codex 使用
 - 更新 `.gitignore` 添加 `aide-memory/` 条目
 - 幂等操作，重复执行不会覆盖已有配置
 
@@ -53,6 +55,7 @@ aide init --global
 - 检测 Git 可用性，若可用则克隆/更新 agent-aide 仓库到 `~/.aide/agent-aide/`
   - 仓库地址可通过 `plugin.repo_url` 配置项自定义
   - 默认地址：`git@github.com:sayurinana/agent-aide.git`
+- 同步 `aide-plugin/commands/` 到 `~/.codex/prompts/`
 - 检测 PlantUML 可执行程序是否已安装
   - 已安装：显示版本信息
   - 未安装：提示用户是否自动下载并安装
@@ -60,7 +63,10 @@ aide init --global
 **插件同步说明：**
 - 全局初始化时，agent-aide 仓库会被克隆到 `~/.aide/agent-aide/`
 - 项目初始化时，`aide-plugin/commands/` 和 `aide-plugin/skills/` 会被复制到项目 `.claude/` 目录
+- 项目初始化时，`aide-plugin/skills/` 还会复制到项目 `.agents/skills/`
+- 项目初始化和全局初始化时，`aide-plugin/commands/` 会复制到 `~/.codex/prompts/`
 - 若 Git 未安装或全局仓库不存在，项目初始化时会跳过插件同步并给出提示
+- 若 Codex 目标目录创建失败或文件复制失败，会给出警告，但不会中断初始化流程
 
 ---
 

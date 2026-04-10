@@ -1,0 +1,46 @@
+# Aide 配置文件
+
+[meta]
+aide_version = "0.1.0"
+schema_version = 5
+
+[task]
+description_file = "task-now.md"
+template = "任务口述模板.md"
+parse_guide = "任务解析指导.md"
+
+[branch]
+prefix = ""
+format = "task-{n}"
+resident = "dev"
+
+[git]
+auto_commit_on_switch = true
+auto_commit_message = "暂存：清理仓库状态以切换分支"
+bye_commit_message = "暂存：清理仓库状态"
+
+[flow]
+phases = ["task-optimize", "flow-design", "impl", "verify", "docs", "confirm", "finish"]
+diagram_path = "aide-memory/memory/diagram"
+
+[plantuml]
+download_cache_path = "download-buffer"
+clean_cache_after_install = true
+install_path = "utils"
+download_url = "https://github.com/sayurinana/agent-aide/releases/download/resource-001/plantuml-1.2025.4-linux-x64.tar.gz"
+font_name = "Maple Mono Normal NL NF CN"
+dpi = 300
+scale = 0.5
+
+[decide]
+port = 3721
+bind = "127.0.0.1"
+url = ""
+timeout = 0
+
+[plugin]
+repo_url = "https://github.com/sayurinana/agent-aide.git"
+sync_on_init = true
+
+[template]
+sync_strategy = "backup"

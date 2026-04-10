@@ -101,6 +101,76 @@ fn write_task_draft(root: &Path, summary_title: &str, design_marker: &str) {
     fs::write(root.join("task-now.md"), "用户草拟的任务描述\n").unwrap();
 }
 
+fn seed_global_plugin_repo(home: &Path) {
+    let plugin_dir = home.join(".aide").join("agent-aide").join("aide-plugin");
+    let commands_dir = plugin_dir.join("commands");
+    let skills_dir = plugin_dir.join("skills").join("aide");
+
+    fs::create_dir_all(&commands_dir).unwrap();
+    fs::create_dir_all(&skills_dir).unwrap();
+
+    fs::write(commands_dir.join("hi.md"), "# hi\n").unwrap();
+    fs::write(skills_dir.join("SKILL.md"), "# aide skill\n").unwrap();
+}
+
+fn create_plugin_source_repo(root: &Path) -> String {
+    let repo = root.join("plugin-source");
+    let commands_dir = repo.join("aide-plugin").join("commands");
+    let skills_dir = repo.join("aide-plugin").join("skills").join("aide");
+
+    fs::create_dir_all(&commands_dir).unwrap();
+    fs::create_dir_all(&skills_dir).unwrap();
+    fs::write(commands_dir.join("hi.md"), "# hi from repo\n").unwrap();
+    fs::write(skills_dir.join("SKILL.md"), "# aide skill from repo\n").unwrap();
+
+    run_git_init_with_branch(&repo, "main");
+    run_git(&repo, &["config", "user.name", "Aide Test"]);
+    run_git(&repo, &["config", "user.email", "aide@example.com"]);
+    run_git(&repo, &["add", "."]);
+    run_git(&repo, &["commit", "-m", "initial plugin repo"]);
+
+    repo.to_string_lossy().to_string()
+}
+
+fn run_git_init_with_branch(root: &Path, branch: &str) {
+    let status = ProcessCommand::new("git")
+        .current_dir(root)
+        .args(["init", "-b", branch])
+        .status()
+        .unwrap();
+    assert!(status.success(), "git init -b {branch} failed");
+}
+
+fn install_fake_plantuml(home: &Path) {
+    let plantuml = home
+        .join(".aide")
+        .join("utils")
+        .join("plantuml")
+        .join("bin")
+        .join("plantuml");
+    fs::create_dir_all(plantuml.parent().unwrap()).unwrap();
+    fs::write(
+        &plantuml,
+        "#!/bin/sh\necho 'PlantUML version 1.2025.4 (test build)'\n",
+    )
+    .unwrap();
+    let status = ProcessCommand::new("chmod")
+        .args(["+x", &plantuml.to_string_lossy()])
+        .status()
+        .unwrap();
+    assert!(status.success(), "chmod +x plantuml failed");
+}
+
+fn set_global_plugin_repo_url(home: &Path, repo_url: &str) {
+    let config_path = home.join(".aide").join("config.toml");
+    let content = fs::read_to_string(&config_path).unwrap();
+    let updated = content.replace(
+        "repo_url = \"https://github.com/sayurinana/agent-aide.git\"",
+        &format!("repo_url = \"{repo_url}\""),
+    );
+    fs::write(config_path, updated).unwrap();
+}
+
 // === aide (无参数) ===
 
 #[test]
@@ -194,6 +264,181 @@ fn test_aide_init_idempotent() {
         .arg("init")
         .assert()
         .success();
+}
+
+#[test]
+fn test_aide_init_syncs_plugins_to_claude_and_codex() {
+    let tmp = TempDir::new().unwrap();
+    let home = tmp.path().join("home");
+    seed_global_plugin_repo(&home);
+
+    aide_cmd_in(tmp.path())
+        .arg("init")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(
+            "已同步 commands 和 skills 到 .claude/",
+        ))
+        .stdout(predicate::str::contains(
+            "已同步 Codex commands 到 ~/.codex/prompts/",
+        ))
+        .stdout(predicate::str::contains(
+            "已同步 Codex skills 到 .agents/skills/",
+        ));
+
+    assert!(
+        tmp.path()
+            .join(".claude")
+            .join("commands")
+            .join("hi.md")
+            .exists()
+    );
+    assert!(
+        tmp.path()
+            .join(".claude")
+            .join("skills")
+            .join("aide")
+            .join("SKILL.md")
+            .exists()
+    );
+    assert!(
+        tmp.path()
+            .join(".agents")
+            .join("skills")
+            .join("aide")
+            .join("SKILL.md")
+            .exists()
+    );
+    assert!(home.join(".codex").join("prompts").join("hi.md").exists());
+}
+
+#[test]
+fn test_aide_init_preserves_existing_claude_and_agents_files() {
+    let tmp = TempDir::new().unwrap();
+    let home = tmp.path().join("home");
+    seed_global_plugin_repo(&home);
+
+    let custom_command = tmp
+        .path()
+        .join(".claude")
+        .join("commands")
+        .join("custom.md");
+    let custom_skill = tmp
+        .path()
+        .join(".agents")
+        .join("skills")
+        .join("custom")
+        .join("SKILL.md");
+    fs::create_dir_all(custom_command.parent().unwrap()).unwrap();
+    fs::create_dir_all(custom_skill.parent().unwrap()).unwrap();
+    fs::write(&custom_command, "# custom command\n").unwrap();
+    fs::write(&custom_skill, "# custom skill\n").unwrap();
+
+    aide_cmd_in(tmp.path()).arg("init").assert().success();
+
+    assert!(custom_command.exists());
+    assert!(custom_skill.exists());
+    assert!(
+        tmp.path()
+            .join(".claude")
+            .join("commands")
+            .join("hi.md")
+            .exists()
+    );
+    assert!(
+        tmp.path()
+            .join(".agents")
+            .join("skills")
+            .join("aide")
+            .join("SKILL.md")
+            .exists()
+    );
+}
+
+#[test]
+fn test_aide_init_preserves_existing_codex_prompts() {
+    let tmp = TempDir::new().unwrap();
+    let home = tmp.path().join("home");
+    seed_global_plugin_repo(&home);
+
+    let custom_prompt = home.join(".codex").join("prompts").join("custom.md");
+    fs::create_dir_all(custom_prompt.parent().unwrap()).unwrap();
+    fs::write(&custom_prompt, "# custom prompt\n").unwrap();
+
+    aide_cmd_in(tmp.path()).arg("init").assert().success();
+
+    assert!(custom_prompt.exists());
+    assert!(home.join(".codex").join("prompts").join("hi.md").exists());
+}
+
+#[test]
+fn test_aide_init_warns_when_global_plugin_repo_missing() {
+    let tmp = TempDir::new().unwrap();
+
+    aide_cmd_in(tmp.path())
+        .arg("init")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains(
+            "全局插件仓库不存在，跳过插件同步。请先执行 aide init --global",
+        ))
+        .stdout(predicate::str::contains(
+            "全局插件仓库不存在，跳过 Codex 插件同步。请先执行 aide init --global",
+        ));
+
+    assert!(tmp.path().join("aide-memory").exists());
+}
+
+#[test]
+fn test_aide_init_continues_when_codex_sync_fails() {
+    let tmp = TempDir::new().unwrap();
+    let home = tmp.path().join("home");
+    seed_global_plugin_repo(&home);
+
+    fs::create_dir_all(home.join(".codex")).unwrap();
+    fs::write(home.join(".codex").join("prompts"), "occupied\n").unwrap();
+    fs::create_dir_all(tmp.path().join(".agents")).unwrap();
+    fs::write(tmp.path().join(".agents").join("skills"), "occupied\n").unwrap();
+
+    aide_cmd_in(tmp.path())
+        .arg("init")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("同步 Codex commands 失败"))
+        .stdout(predicate::str::contains("同步 Codex skills 失败"))
+        .stdout(predicate::str::contains(
+            "已同步 commands 和 skills 到 .claude/",
+        ));
+
+    assert!(
+        tmp.path()
+            .join(".claude")
+            .join("commands")
+            .join("hi.md")
+            .exists()
+    );
+}
+
+#[test]
+fn test_aide_init_global_syncs_codex_prompts() {
+    let tmp = TempDir::new().unwrap();
+    let home = tmp.path().join("home");
+    let repo_url = create_plugin_source_repo(tmp.path());
+
+    aide_cmd_in(tmp.path()).arg("init").assert().success();
+    install_fake_plantuml(&home);
+    set_global_plugin_repo_url(&home, &repo_url);
+
+    aide_cmd_in(tmp.path())
+        .args(["init", "--global"])
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("插件仓库已同步到"))
+        .stdout(predicate::str::contains(
+            "已同步 Codex commands 到 ~/.codex/prompts/",
+        ));
+
+    assert!(home.join(".codex").join("prompts").join("hi.md").exists());
 }
 
 // === aide config ===

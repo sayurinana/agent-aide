@@ -36,7 +36,7 @@ aide decide result
 
 | 命令 | 说明 |
 |------|------|
-| `aide init` | 初始化 .aide 目录与默认配置 |
+| `aide init` | 初始化 aide-memory，并同步 Claude/Codex 插件目录 |
 | `aide config` | 配置管理（get/set/reset/update） |
 | `aide flow` | 进度追踪与 git 集成 |
 | `aide decide` | 待定项确认与决策记录 |

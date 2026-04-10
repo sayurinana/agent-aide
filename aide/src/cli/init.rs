@@ -4,6 +4,7 @@ use crate::core::output;
 use crate::core::plantuml;
 use crate::flow::git::GitIntegration;
 use std::fs;
+use std::path::{Path, PathBuf};
 
 /// 默认的 branches.json 内容
 const DEFAULT_BRANCHES_JSON: &str = r#"{
@@ -163,18 +164,21 @@ pub fn handle_init(global: bool) -> bool {
             // 步骤 5：同步插件到项目
             sync_plugins_to_project(&project_cfg);
 
-            // 步骤 6：同步模板到项目
+            // 步骤 6：同步插件到 Codex 目录
+            sync_plugins_to_codex(&project_cfg);
+
+            // 步骤 7：同步模板到项目
             sync_templates_to_project(&project_cfg);
 
-            // 步骤 7：Git 仓库初始化
+            // 步骤 8：Git 仓库初始化
             let git_available = ensure_git_repo(&root);
 
-            // 步骤 8：创建并切换到常驻分支
+            // 步骤 9：创建并切换到常驻分支
             if git_available {
                 ensure_resident_branch(&project_cfg);
             }
 
-            // 步骤 9：创建任务描述文档
+            // 步骤 10：创建任务描述文档
             create_task_description_file(&project_cfg);
         }
         None => {
@@ -219,6 +223,9 @@ fn handle_init_global() -> bool {
     // 同步插件仓库
     sync_plugin_repo(&global_cfg);
 
+    // 同步插件到 Codex 全局目录
+    sync_global_commands_to_codex();
+
     // 检测 PlantUML 可用性
     let global_config = global_cfg.load_config();
     plantuml::ensure_plantuml(&global_config);
@@ -250,8 +257,8 @@ fn create_aide_memory_files(cfg: &ConfigManager) {
     }
 
     // 获取全局仓库路径
-    let global_aide_memory = config::global_aide_dir()
-        .map(|dir| dir.join("agent-aide").join("aide-memory"));
+    let global_aide_memory =
+        config::global_aide_dir().map(|dir| dir.join("agent-aide").join("aide-memory"));
 
     // aide-process-overview.md - 优先从全局仓库复制
     let process_overview = aide_dir.join("aide-process-overview.md");
@@ -336,8 +343,8 @@ fn sync_plugins_to_project(project_cfg: &ConfigManager) {
     }
 
     // 检查全局插件仓库是否存在
-    let global_plugin_dir = match config::global_aide_dir() {
-        Some(dir) => dir.join("agent-aide").join("aide-plugin"),
+    let global_plugin_dir = match global_plugin_dir() {
+        Some(dir) => dir,
         None => {
             output::warn("无法获取全局目录，跳过插件同步");
             return;
@@ -385,12 +392,100 @@ fn sync_plugins_to_project(project_cfg: &ConfigManager) {
     }
 }
 
-/// 递归复制目录
-fn copy_dir_all(src: &std::path::Path, dst: &std::path::Path) -> std::io::Result<()> {
-    // 如果目标存在，先删除
-    if dst.exists() {
-        fs::remove_dir_all(dst)?;
+/// 同步插件到 Codex 目录
+fn sync_plugins_to_codex(project_cfg: &ConfigManager) {
+    // 复用项目初始化的同步开关
+    let config = project_cfg.load_config();
+    let sync_enabled = config::walk_get(&config, "plugin.sync_on_init")
+        .and_then(|v| v.as_bool())
+        .unwrap_or(true);
+
+    if !sync_enabled {
+        return;
     }
+
+    let global_plugin_dir = match global_plugin_dir() {
+        Some(dir) => dir,
+        None => {
+            output::warn("无法获取全局目录，跳过 Codex 插件同步");
+            return;
+        }
+    };
+
+    if !global_plugin_dir.exists() {
+        output::warn("全局插件仓库不存在，跳过 Codex 插件同步。请先执行 aide init --global");
+        return;
+    }
+
+    sync_codex_commands(&global_plugin_dir);
+    sync_codex_skills(&global_plugin_dir, &project_cfg.root);
+}
+
+/// 同步全局 commands 到 Codex 目录
+fn sync_global_commands_to_codex() {
+    let global_plugin_dir = match global_plugin_dir() {
+        Some(dir) => dir,
+        None => {
+            output::warn("无法获取全局目录，跳过 Codex 插件同步");
+            return;
+        }
+    };
+
+    if !global_plugin_dir.exists() {
+        output::warn("全局插件仓库不存在，跳过 Codex 插件同步。请先执行 aide init --global");
+        return;
+    }
+
+    sync_codex_commands(&global_plugin_dir);
+}
+
+fn sync_codex_commands(global_plugin_dir: &Path) {
+    let src_commands = global_plugin_dir.join("commands");
+    if !src_commands.exists() {
+        return;
+    }
+
+    let dst_commands = match codex_prompts_dir() {
+        Some(path) => path,
+        None => {
+            output::warn("无法获取用户主目录，跳过 Codex commands 同步");
+            return;
+        }
+    };
+
+    if let Err(e) = copy_dir_all(&src_commands, &dst_commands) {
+        output::warn(&format!("同步 Codex commands 失败：{}", e));
+    } else {
+        output::ok("已同步 Codex commands 到 ~/.codex/prompts/");
+    }
+}
+
+fn sync_codex_skills(global_plugin_dir: &Path, project_root: &Path) {
+    let src_skills = global_plugin_dir.join("skills");
+    if !src_skills.exists() {
+        return;
+    }
+
+    let dst_skills = project_root.join(".agents").join("skills");
+    if let Err(e) = copy_dir_all(&src_skills, &dst_skills) {
+        output::warn(&format!("同步 Codex skills 失败：{}", e));
+    } else {
+        output::ok("已同步 Codex skills 到 .agents/skills/");
+    }
+}
+
+fn global_plugin_dir() -> Option<PathBuf> {
+    config::global_aide_dir().map(|dir| dir.join("agent-aide").join("aide-plugin"))
+}
+
+fn codex_prompts_dir() -> Option<PathBuf> {
+    std::env::var("HOME")
+        .ok()
+        .map(|home| PathBuf::from(home).join(".codex").join("prompts"))
+}
+
+/// 递归复制目录，保留目标目录中未冲突的已有文件
+fn copy_dir_all(src: &Path, dst: &Path) -> std::io::Result<()> {
     fs::create_dir_all(dst)?;
 
     for entry in fs::read_dir(src)? {
@@ -444,8 +539,8 @@ fn sync_templates_to_project(project_cfg: &ConfigManager) {
     }
 
     // 检查全局仓库是否存在
-    let global_templates_dir = config::global_aide_dir()
-        .map(|dir| dir.join("agent-aide").join("templates"));
+    let global_templates_dir =
+        config::global_aide_dir().map(|dir| dir.join("agent-aide").join("templates"));
 
     match &global_templates_dir {
         Some(dir) if dir.exists() => {
@@ -457,7 +552,9 @@ fn sync_templates_to_project(project_cfg: &ConfigManager) {
             let strategy = TemplateSyncStrategy::from_config(strategy_value);
 
             let mut synced_count = 0;
-            if let Err(e) = sync_template_files(dir, &project_cfg.templates_dir, strategy, &mut synced_count) {
+            if let Err(e) =
+                sync_template_files(dir, &project_cfg.templates_dir, strategy, &mut synced_count)
+            {
                 output::warn(&format!("模板同步出错：{}", e));
             }
 
@@ -524,7 +621,10 @@ fn apply_sync_strategy(
             // 下载为 .bak 文件，保留原文件
             let bak_path = dst_path.with_extension(format!(
                 "{}.bak",
-                dst_path.extension().map(|e| e.to_string_lossy()).unwrap_or_default()
+                dst_path
+                    .extension()
+                    .map(|e| e.to_string_lossy())
+                    .unwrap_or_default()
             ));
             fs::copy(src_path, &bak_path)?;
         }
@@ -539,10 +639,13 @@ fn apply_sync_strategy(
             // 备份原文件后替换
             let bak_path = dst_path.with_extension(format!(
                 "{}.bak",
-                dst_path.extension().map(|e| e.to_string_lossy()).unwrap_or_default()
+                dst_path
+                    .extension()
+                    .map(|e| e.to_string_lossy())
+                    .unwrap_or_default()
             ));
             fs::copy(dst_path, &bak_path)?; // 备份原文件
-            fs::copy(src_path, dst_path)?;  // 用新文件替换
+            fs::copy(src_path, dst_path)?; // 用新文件替换
         }
     }
     Ok(())
@@ -679,7 +782,8 @@ fn ensure_resident_branch(cfg: &ConfigManager) {
 fn create_task_description_file(cfg: &ConfigManager) {
     // 读取配置
     let config = cfg.load_config();
-    let description_file = config::get_config_string_or(&config, "task.description_file", "task-now.md");
+    let description_file =
+        config::get_config_string_or(&config, "task.description_file", "task-now.md");
     let template_name = config::get_config_string_or(&config, "task.template", "任务口述模板.md");
 
     let description_path = cfg.root.join(&description_file);
