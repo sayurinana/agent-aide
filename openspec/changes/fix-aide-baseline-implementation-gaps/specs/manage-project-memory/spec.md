@@ -2,18 +2,19 @@
 
 ### Requirement: memory 文档集完整性
 
-系统 SHALL 为 `make-memory` / `load-memory` 工作流维护一套可消费的最小可用 memory 文档集，而不是只保留占位文件。
+系统 SHALL 通过 `make-memory` 生成、通过 `load-memory` 消费一套最小可用 memory 文档集，并将这些文档视为项目运行期产物而不是仓库必须预置的固定内容。
 
-#### Scenario: 生成最小可用 memory 文档集
-- **WHEN** 项目执行 memory 生成流程
-- **THEN** 生成 `overview.md`、`structure/index.md`、必要的 `structure/*.md`、`concepts/term.md`、`concepts/arch.md` 与至少一组 `diagram/*`
+#### Scenario: `make-memory` 生成最小可用 memory 文档集
+- **WHEN** 用户执行 memory 生成流程
+- **THEN** 系统生成 `overview.md`、`structure/index.md`、必要的 `structure/*.md`、`concepts/term.md`、`concepts/arch.md` 与至少一组 `diagram/*`
 - **AND** 这些内容足以支持后续按需载入项目认知
 
-#### Scenario: 仅有占位内容时显式提示缺失
+#### Scenario: 项目尚无可用 memory 时显式提示缺失
 - **WHEN** Agent 或用户尝试载入 memory
-- **AND** 当前 memory 只有占位内容或缺少关键文档
+- **AND** 当前项目尚未生成 memory 或只有占位内容
 - **THEN** 系统明确指出缺失项
 - **AND** 指向补齐 memory 的正确入口
+- **AND** 不把仓库当前未内置完整 memory 文档集视为命令实现失败
 
 ### Requirement: 配置与分支数据访问边界
 
@@ -33,10 +34,11 @@
 
 系统 SHALL 维护任务模板、解析指导文档、`AGENT.md` 与 `aide-process-overview.md` 的来源与同步规则，使初始化结果与 current truth 保持一致。
 
-#### Scenario: 初始化使用 current truth 模板来源
+#### Scenario: 初始化使用 current truth 源模板而不是依赖现有运行产物
 - **WHEN** 新项目执行初始化
 - **THEN** 系统写入的模板和核心文档与当前规范一致
 - **AND** 不回退到已过时的旧体系模板或说明内容
+- **AND** 不要求当前仓库先存在一份可直接复用的运行期产物实例
 
 #### Scenario: 程序输出任务解析指导文档绝对路径
 - **WHEN** 系统为项目提供任务解析指导文档
