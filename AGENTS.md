@@ -22,5 +22,3 @@ Keep this managed block so 'openspec update' can refresh the instructions.
 ## 核心原则
 
 - 所有对话、思考、文档与注释必须使用简体中文！
-
-- 复杂或多模块任务必须调用Sequential-Thinking，输出计划后再进入执行。
