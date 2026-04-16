@@ -42,16 +42,24 @@ pub fn handle_flow_next() -> bool {
     }
 }
 
-pub fn handle_flow_back(phase: &str) -> bool {
+pub fn handle_flow_back(phase: &str, reason: Option<&str>) -> bool {
     let root = find_project_root(None);
     let manager = StageFlowManager::new(&root);
 
-    match manager.back(phase) {
+    match manager.back(phase, reason) {
         Ok((resolution, downstream)) => {
             output::warn(&format!(
                 "返工到阶段：{}",
                 resolution.status.current_phase_name()
             ));
+            if let Some(reason) = resolution
+                .status
+                .transitions
+                .last()
+                .and_then(|transition| transition.reason.as_deref())
+            {
+                output::info(&format!("返工原因：{reason}"));
+            }
             if !downstream.is_empty() {
                 output::info(&format!("后续需重新经过：{}", downstream.join(", ")));
             }
@@ -132,6 +140,11 @@ fn render_status(status: &StageFlowStatus) {
         "任务 #{}：{}",
         status.task_number, status.task_summary
     ));
+    println!("预设：{}", status.preset_name());
+    println!(
+        "循环阶段：{}",
+        if status.has_loop_phase() { "有" } else { "无" }
+    );
     println!();
     println!("阶段流程：");
 
@@ -144,10 +157,20 @@ fn render_status(status: &StageFlowStatus) {
             "-"
         };
 
-        if index == status.current_phase_index {
-            println!("  {marker} {} (当前)", spec.display_name());
+        let phase_label = if spec.loop_enabled {
+            format!("{} (loop)", spec.display_name())
         } else {
-            println!("  {marker} {}", spec.display_name());
+            spec.display_name().to_string()
+        };
+
+        if index == status.current_phase_index {
+            if status.is_current_phase_looping() {
+                println!("  {marker} {phase_label} (当前，可循环)");
+            } else {
+                println!("  {marker} {phase_label} (当前)");
+            }
+        } else {
+            println!("  {marker} {phase_label}");
         }
     }
 }

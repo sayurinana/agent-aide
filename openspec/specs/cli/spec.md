@@ -1,310 +1,189 @@
 # cli Specification
 
 ## Purpose
-TBD - created by archiving change enhance-aide-init. Update Purpose after archive.
+定义 aide CLI 面向用户的命令入口、输出规范与配置可见行为，包括初始化、状态查询、任务接续、任务管理、阶段管理与安全离场。
+
 ## Requirements
+
 ### Requirement: aide init Git 仓库初始化
 
 系统 SHALL 在 `aide init` 时自动处理 Git 仓库初始化。
 
-初始化流程：
-1. 检测当前目录是否在 Git 仓库中
-2. 若不在仓库中且 Git 可用：
-   - 执行 `git init`
-   - 执行 `git add .`
-   - 创建初始提交
-3. 若 Git 不可用，输出警告并继续文件初始化
-
 #### Scenario: 非 Git 仓库自动初始化
 - **WHEN** 用户在非 Git 仓库目录执行 `aide init`
 - **AND** Git 可用
-- **THEN** 执行 `git init` 初始化仓库
-- **AND** 执行 `git add .` 暂存所有文件
-- **AND** 创建初始提交
+- **THEN** 系统执行 `git init`
+- **AND** 暂存初始文件并创建初始提交
 
 #### Scenario: 已在 Git 仓库中
 - **WHEN** 用户在 Git 仓库目录执行 `aide init`
-- **THEN** 跳过 Git 初始化步骤
+- **THEN** 系统跳过 Git 初始化步骤
 
 #### Scenario: Git 不可用
 - **WHEN** 用户执行 `aide init`
 - **AND** Git 未安装或不可用
-- **THEN** 输出警告信息
-- **AND** 继续完成文件初始化
+- **THEN** 系统输出警告信息
+- **AND** 继续完成非 Git 依赖的初始化步骤
 
 ### Requirement: aide init 常驻分支创建
 
 系统 SHALL 在 `aide init` 时创建并切换到常驻分支。
 
-分支处理流程：
-1. 读取 `branch.resident` 配置（默认 `dev`）
-2. 检测常驻分支是否已存在
-3. 若不存在，创建并切换到该分支
-4. 若已存在，切换到该分支
-
-前置条件：Git 仓库已初始化且有初始提交。
-
 #### Scenario: 常驻分支不存在
 - **WHEN** 用户执行 `aide init`
 - **AND** Git 仓库已初始化
-- **AND** 常驻分支（如 `dev`）不存在
-- **THEN** 创建常驻分支
-- **AND** 切换到常驻分支
+- **AND** 配置指定的常驻分支不存在
+- **THEN** 系统创建该常驻分支
+- **AND** 切换到该分支
 
 #### Scenario: 常驻分支已存在
 - **WHEN** 用户执行 `aide init`
 - **AND** 常驻分支已存在
-- **THEN** 切换到常驻分支
+- **THEN** 系统切换到常驻分支
 
-#### Scenario: 当前已在常驻分支
-- **WHEN** 用户执行 `aide init`
-- **AND** 当前分支即为常驻分支
-- **THEN** 不执行分支切换
-
-#### Scenario: Git 不可用时跳过
+#### Scenario: Git 不可用时跳过分支处理
 - **WHEN** 用户执行 `aide init`
 - **AND** Git 不可用
-- **THEN** 跳过分支创建
+- **THEN** 系统跳过分支创建与切换
 
 ### Requirement: aide init 任务描述文档创建
 
-系统 SHALL 在 `aide init` 时从模板创建任务描述文档。
-
-文档创建流程：
-1. 读取 `task.description_file` 配置（默认 `task-now.md`）
-2. 读取 `task.template` 配置（默认 `任务口述模板.md`）
-3. 从 `aide-memory/templates/{template}` 读取模板内容
-4. 若描述文件不存在，将模板内容写入描述文件
-5. 若描述文件已存在，跳过（保留已有文件）
+系统 SHALL 在 `aide init` 时准备任务描述入口文档，使用户能够从项目根目录开始新的任务草案。
 
 #### Scenario: 描述文件不存在
 - **WHEN** 用户执行 `aide init`
-- **AND** `task-now.md` 不存在
-- **AND** 模板文件 `aide-memory/templates/任务口述模板.md` 存在
-- **THEN** 从模板复制内容到 `task-now.md`
+- **AND** 配置指定的任务描述文件不存在
+- **THEN** 系统使用当前模板来源生成该文件
 
 #### Scenario: 描述文件已存在
 - **WHEN** 用户执行 `aide init`
-- **AND** `task-now.md` 已存在
-- **THEN** 保留已有文件，不做任何修改
+- **AND** 配置指定的任务描述文件已存在
+- **THEN** 系统保留已有文件
+- **AND** 不覆盖用户现有内容
 
-#### Scenario: 模板文件不存在
-- **WHEN** 用户执行 `aide init`
-- **AND** 模板文件不存在
-- **THEN** 跳过描述文件创建
+### Requirement: 状态查询与任务接续命令
 
-### Requirement: aide sync 命令
+系统 SHALL 提供 `aide hi` 与 `aide go` 命令，使用户和总工程师 Agent 能基于当前 workflow truth 识别项目状态并接续任务。
 
-系统 SHALL 提供 `aide sync` 命令，用于同步全局仓库。
+#### Scenario: `aide hi` 展示常驻分支上的完整状态
+- **WHEN** 用户在常驻分支执行 `aide hi`
+- **THEN** 系统显示项目绝对路径与当前分支
+- **AND** 根据 workflow truth 显示未归档任务、草案残留、仓库干净状态与下一步建议
+- **AND** 如果存在未归档任务，显示各任务摘要与最近活跃信息
 
-命令行为：
-- 克隆或更新 `~/.aide/agent-aide/` 仓库
-- 使用配置中的 `plugin.repo_url` 作为仓库地址
-- 成功时遵循静默成功原则，不产生输出
-- 失败时输出 `✗ ` 前缀错误信息并返回非零退出码
+#### Scenario: `aide hi` 识别草案进行中状态
+- **WHEN** 用户在常驻分支执行 `aide hi`
+- **AND** `task-now.md` 已修改或 `aide-memory/tasks/task-now/` 存在
+- **THEN** 系统将其识别并展示为草案进行中
+- **AND** 不将当前项目错误展示为干净状态
 
-#### Scenario: 首次同步（仓库不存在）
-- **WHEN** 用户执行 `aide sync`
-- **AND** `~/.aide/agent-aide/` 目录不存在
-- **THEN** 克隆仓库到该目录
-- **AND** 不产生成功输出
+#### Scenario: `aide hi` 在其他分支给出可操作提示
+- **WHEN** 用户在既非常驻分支也非任务分支的分支上执行 `aide hi`
+- **THEN** 系统说明当前分支不属于 aide 管理范围
+- **AND** 明确提示常驻分支是否存在以及用户可采取的后续动作
 
-#### Scenario: 更新同步（仓库已存在）
-- **WHEN** 用户执行 `aide sync`
-- **AND** `~/.aide/agent-aide/` 目录已存在
-- **THEN** 执行 `git pull` 更新仓库
-- **AND** 不产生成功输出
+#### Scenario: `aide go` 接续唯一未归档任务
+- **WHEN** 用户执行 `aide go`
+- **AND** 当前仅存在一个未归档任务
+- **THEN** 系统自动切换到该任务分支
+- **AND** 恢复任务摘要、阶段信息与后续建议
 
-#### Scenario: Git 不可用
-- **WHEN** 用户执行 `aide sync`
-- **AND** Git 未安装或不可用
-- **THEN** 输出警告信息
-- **AND** 不执行同步操作
+#### Scenario: `aide go -v` 在无明确目标时补充状态信息
+- **WHEN** 用户执行 `aide go -v`
+- **AND** 命令无法直接确定唯一接续任务
+- **THEN** 系统输出足够详细的状态信息
+- **AND** 帮助用户决定下一步接续目标
 
-#### Scenario: 网络失败
-- **WHEN** 用户执行 `aide sync`
-- **AND** 网络连接失败或仓库地址无效
-- **THEN** 输出 `✗ ` 前缀错误信息
-- **AND** 返回非零退出码
+### Requirement: 工作区清理与离场命令
 
-### Requirement: 模板同步配置
+系统 SHALL 提供 `aide bye` 命令，用于按当前状态完成安全离场，并在需要时引导进入任务收尾闭环。
 
-系统 SHALL 支持模板同步策略配置。
+#### Scenario: 常驻分支安全离场
+- **WHEN** 用户在常驻分支执行 `aide bye`
+- **THEN** 系统检查仓库状态
+- **AND** 在需要时按配置完成暂存提交
+- **AND** 输出离场结果
 
-配置项：
-- 键名：`template.sync_strategy`
-- 默认值：`backup`
-- 可选值：`backup`、`skip`、`overwrite`、`backup-and-replace`
+#### Scenario: 未完成任务的离场
+- **WHEN** 用户在任务分支执行 `aide bye`
+- **AND** 当前任务尚未进入正式结束阶段
+- **THEN** 系统完成必要的暂存提交
+- **AND** 切回常驻分支
+- **AND** 明确说明任务只是暂停而不是结束
 
-策略行为：
-| 策略 | 行为 |
-|------|------|
-| `backup` | 下载为 `.bak` 文件，保留原文件 |
-| `skip` | 跳过已存在的文件 |
-| `overwrite` | 直接覆盖已存在的文件 |
-| `backup-and-replace` | 备份原文件后用新文件替换 |
+#### Scenario: 已完成任务的离场
+- **WHEN** 用户在任务分支执行 `aide bye`
+- **AND** 当前任务已满足正式结束条件
+- **THEN** 系统引导或串联进入任务收尾闭环
+- **AND** 不把“简单切回常驻分支”误判为任务正式结束
 
-#### Scenario: 配置读取默认值
-- **WHEN** 配置文件未设置 `template.sync_strategy`
-- **THEN** 使用默认值 `backup`
+### Requirement: 任务管理命令集
 
-#### Scenario: 配置读取自定义值
-- **WHEN** 配置文件设置 `template.sync_strategy = "overwrite"`
-- **THEN** 使用策略 `overwrite`
+系统 SHALL 提供 `aide verify`、`aide confirm` 与 `aide archive` 命令，分别用于审验草案、敲定任务和归档任务。
 
-### Requirement: aide init 模板同步
+#### Scenario: `aide verify` 审验任务草案
+- **WHEN** 用户执行 `aide verify`
+- **THEN** 系统检查草案目录中的必需文件、阶段声明、图解规则与关键格式要求
+- **AND** 明确输出通过、失败与警告项
 
-系统 SHALL 在 `aide init` 时同步模板文件。
+#### Scenario: `aide confirm` 敲定任务
+- **WHEN** 用户执行 `aide confirm`
+- **AND** 草案审验通过
+- **THEN** 系统分配任务编号、重命名草案目录、重置任务描述文件、创建任务分支并更新分支映射
 
-同步行为：
-- 来源：`~/.aide/agent-aide/templates/`
-- 目标：项目 `aide-memory/templates/`
-- 根据 `template.sync_strategy` 配置处理已存在文件
-- 全局仓库不存在时跳过模板同步并输出警告
+#### Scenario: `aide archive` 归档任务
+- **WHEN** 用户执行 `aide archive <n>`
+- **THEN** 系统将任务目录移至 `archived-tasks/`
+- **AND** 更新分支映射与归档状态
+- **AND** 输出归档结果
 
-#### Scenario: 模板同步成功（文件不存在）
-- **WHEN** 用户执行 `aide init`
-- **AND** 项目 `aide-memory/templates/` 目录不存在或为空
-- **AND** 全局仓库存在且包含 templates 目录
-- **THEN** 复制所有模板文件到项目目录
+### Requirement: 阶段管理命令集
 
-#### Scenario: 模板同步策略 backup
-- **WHEN** 用户执行 `aide init`
-- **AND** 模板文件已存在
-- **AND** 配置 `template.sync_strategy = "backup"`
-- **THEN** 下载新模板为 `.bak` 文件
-- **AND** 保留原文件不变
+系统 SHALL 提供 `aide flow status`、`next`、`back`、`list` 与 `show` 命令，用于展示和推进阶段级 workflow。
 
-#### Scenario: 模板同步策略 skip
-- **WHEN** 用户执行 `aide init`
-- **AND** 模板文件已存在
-- **AND** 配置 `template.sync_strategy = "skip"`
-- **THEN** 跳过已存在的文件
-- **AND** 仅复制不存在的新文件
+#### Scenario: `aide flow status` 展示阶段流
+- **WHEN** 用户执行 `aide flow status`
+- **THEN** 系统展示当前任务的阶段序列
+- **AND** 标记已完成、当前和待执行阶段
+- **AND** 在适用时展示当前 preset 与循环模式信息
 
-#### Scenario: 模板同步策略 overwrite
-- **WHEN** 用户执行 `aide init`
-- **AND** 模板文件已存在
-- **AND** 配置 `template.sync_strategy = "overwrite"`
-- **THEN** 直接覆盖已存在的文件
+#### Scenario: `aide flow next` 推进到下一阶段
+- **WHEN** 用户执行 `aide flow next`
+- **THEN** 系统按既定阶段流程推进到下一阶段
+- **AND** 在适用时保留阶段循环与返工后的状态信息
 
-#### Scenario: 模板同步策略 backup-and-replace
-- **WHEN** 用户执行 `aide init`
-- **AND** 模板文件已存在
-- **AND** 配置 `template.sync_strategy = "backup-and-replace"`
-- **THEN** 将原文件备份为 `.bak` 文件
-- **AND** 用新模板文件替换原文件
+#### Scenario: `aide flow back` 执行返工回退
+- **WHEN** 用户执行 `aide flow back <phase>`
+- **THEN** 系统回退到目标阶段
+- **AND** 明确提示必须重新经过的后续阶段
+- **AND** 保留返工所需的可追溯信息
 
-#### Scenario: 全局仓库不存在
-- **WHEN** 用户执行 `aide init`
-- **AND** `~/.aide/agent-aide/` 目录不存在
-- **THEN** 输出警告信息
-- **AND** 跳过模板同步
+#### Scenario: `aide flow list` 与 `show` 展示阶段定义
+- **WHEN** 用户执行 `aide flow list` 或 `aide flow show <phase>`
+- **THEN** 系统展示当前任务可用的阶段定义或指定阶段详情
+- **AND** 使用与当前阶段体系一致的命名和顺序
 
-### Requirement: aide init 核心文件同步
+### Requirement: CLI 输出一致性约束
 
-系统 SHALL 在 `aide init` 时从全局仓库同步核心文件到项目目录。
+系统 SHALL 对 aide CLI 的状态输出采用一致的路径、时间与符号规范。
 
-同步文件：
-- `AGENT.md`：Agent 角色说明文档
-- `aide-process-overview.md`：Aide 工作流程总览
+#### Scenario: 输出路径使用绝对路径
+- **WHEN** `aide` 命令输出项目路径、配置路径或任务相关路径
+- **THEN** 系统使用绝对路径表达这些位置
 
-同步行为：
-- 来源：`~/.aide/agent-aide/aide-memory/`
-- 目标：项目 `aide-memory/`
-- 文件不存在时才复制（不覆盖已有文件）
-- 全局仓库不存在时使用内置默认内容
+#### Scenario: 输出时间使用统一口径
+- **WHEN** 系统展示任务最后提交时间或最近活跃时间
+- **THEN** 系统使用统一的目标时区口径输出完整时间与相对时间
 
-#### Scenario: 核心文件同步（全局仓库存在）
-- **WHEN** 用户执行 `aide init`
-- **AND** 项目 `aide-memory/AGENT.md` 不存在
-- **AND** 全局仓库 `~/.aide/agent-aide/aide-memory/AGENT.md` 存在
-- **THEN** 复制该文件到项目目录
+#### Scenario: 输出符号保持一致
+- **WHEN** 系统输出成功、警告、失败与进行中状态
+- **THEN** 系统统一使用既定符号规范
 
-#### Scenario: 核心文件同步（全局仓库不存在）
-- **WHEN** 用户执行 `aide init`
-- **AND** 全局仓库不存在
-- **THEN** 使用内置默认内容创建文件
+### Requirement: 配置键与命令行为一致性
 
-#### Scenario: 核心文件已存在
-- **WHEN** 用户执行 `aide init`
-- **AND** 项目 `aide-memory/AGENT.md` 已存在
-- **THEN** 保留现有文件，不覆盖
+系统 SHALL 保证用户可见的配置键、配置文档与 CLI 实际消费路径保持一致。
 
-### Requirement: 默认仓库地址更新
-
-系统 SHALL 使用 HTTPS 协议作为默认仓库地址。
-
-默认值变更：
-- 原地址：`git@github.com:sayurinana/agent-aide.git`（SSH）
-- 新地址：`https://github.com/sayurinana/agent-aide.git`（HTTPS）
-
-#### Scenario: 新安装使用 HTTPS 地址
-- **WHEN** 用户首次执行 `aide init --global`
-- **AND** 配置文件不存在
-- **THEN** 生成的配置使用 HTTPS 仓库地址
-
-#### Scenario: 已有配置保持不变
-- **WHEN** 用户已有配置文件
-- **AND** 配置中 `plugin.repo_url` 已设置
-- **THEN** 保持用户原有配置不变
-
-### Requirement: aide init Codex 插件同步
-
-系统 SHALL 在 `aide init` 时同步插件到 Codex 目录结构。
-
-同步行为：
-- 来源：`~/.aide/agent-aide/aide-plugin/`
-- 目标：
-  - Commands：`~/.codex/prompts/`（全局目录）
-  - Skills：`.agents/skills/`（项目目录）
-- 默认启用，无需额外配置
-- 如果目标目录不存在，自动创建
-- 如果全局插件仓库不存在，输出警告并跳过
-- 同步失败不影响整体初始化流程
-
-#### Scenario: Codex 插件同步成功（项目初始化）
-
-- **WHEN** 用户执行 `aide init`
-- **AND** 全局插件仓库 `~/.aide/agent-aide/aide-plugin/` 存在
-- **THEN** 复制 commands 到 `~/.codex/prompts/`
-- **AND** 复制 skills 到 `.agents/skills/`
-- **AND** 输出成功提示信息
-
-#### Scenario: Codex 插件同步成功（全局初始化）
-
-- **WHEN** 用户执行 `aide init --global`
-- **AND** 全局插件仓库 `~/.aide/agent-aide/aide-plugin/` 存在
-- **THEN** 复制 commands 到 `~/.codex/prompts/`
-- **AND** 输出成功提示信息
-
-#### Scenario: 全局插件仓库不存在
-
-- **WHEN** 用户执行 `aide init`
-- **AND** `~/.aide/agent-aide/aide-plugin/` 目录不存在
-- **THEN** 输出警告信息
-- **AND** 跳过 Codex 插件同步
-- **AND** 继续完成其他初始化步骤
-
-#### Scenario: 目标目录创建失败
-
-- **WHEN** 用户执行 `aide init`
-- **AND** 无法创建 `~/.codex/prompts/` 或 `.agents/skills/` 目录
-- **THEN** 输出警告信息
-- **AND** 跳过该目录的同步
-- **AND** 继续完成其他初始化步骤
-
-#### Scenario: 文件复制失败
-
-- **WHEN** 用户执行 `aide init`
-- **AND** 文件复制过程中发生错误
-- **THEN** 输出警告信息
-- **AND** 继续完成其他初始化步骤
-
-#### Scenario: 目标目录已存在文件
-
-- **WHEN** 用户执行 `aide init`
-- **AND** `~/.codex/prompts/` 或 `.agents/skills/` 目录已存在文件
-- **THEN** 删除已有目录并重新复制
-- **AND** 确保同步后的文件与源文件一致
-
+#### Scenario: 用户根据配置文档读取命令配置
+- **WHEN** 用户或 Agent 通过配置文档或 `aide config` 查询键值
+- **THEN** 所见键路径应与 CLI 实际读取行为一致
+- **AND** 不出现文档平铺键名与程序嵌套键名长期并存的歧义

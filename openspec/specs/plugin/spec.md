@@ -1,133 +1,84 @@
 # plugin Specification
 
 ## Purpose
-TBD - created by archiving change add-plugin-sync. Update Purpose after archive.
+定义 agent-aide 插件仓库的同步、项目级命令与技能分发，以及 Claude/Codex 双宿主的插件资产落盘边界。
+
 ## Requirements
-### Requirement: 插件仓库克隆
 
-`aide init --global` SHALL 在初始化全局配置时，检测并克隆 agent-aide 仓库：
+### Requirement: 全局插件仓库同步
 
-1. 检测系统是否安装 Git 命令行工具
-   - 若未安装：输出警告 `⚠ Git 未安装，跳过插件仓库同步`，继续执行后续步骤
-   - 若已安装：继续下一步
+`aide` SHALL 在全局初始化或显式同步时维护 agent-aide 插件仓库，使其成为项目级 command 与 skill 分发的统一来源。
 
-2. 读取全局配置中的 `plugin.repo_url` 值
-   - 若配置项不存在：使用硬编码默认值 `git@github.com:sayurinana/agent-aide.git`
-   - 若配置项存在：使用配置值
+#### Scenario: 全局仓库首次同步
+- **WHEN** 用户执行全局初始化或显式同步
+- **AND** 全局插件仓库不存在
+- **THEN** 系统克隆默认或配置指定的仓库地址
+- **AND** 使后续项目级分发可用
 
-3. 检查 `$HOME/.aide/agent-aide/` 目录是否存在
-   - 若不存在：执行 `git clone <repo_url> "$HOME/.aide/agent-aide"`
-   - 若已存在且为 git 仓库：执行 `git -C "$HOME/.aide/agent-aide" pull`
-   - 若已存在但非 git 仓库：输出警告，跳过同步
+#### Scenario: 全局仓库更新同步
+- **WHEN** 用户执行全局初始化或显式同步
+- **AND** 全局插件仓库已存在
+- **THEN** 系统更新该仓库
+- **AND** 不破坏已有可用分发能力
 
-4. 克隆或更新成功后，输出 `✓ 插件仓库已同步到 ~/.aide/agent-aide/`
+#### Scenario: Git 不可用时跳过同步
+- **WHEN** 用户执行全局初始化或显式同步
+- **AND** Git 未安装或不可用
+- **THEN** 系统输出可理解的警告
+- **AND** 继续执行不依赖仓库同步的其他初始化步骤
 
-#### Scenario: 全局初始化时首次克隆插件仓库
+### Requirement: 项目级命令与技能分发
 
-- **WHEN** 运行 `aide init --global`
-- **AND** Git 已安装
-- **AND** `$HOME/.aide/agent-aide/` 不存在
-- **THEN** 执行 `git clone <repo_url> "$HOME/.aide/agent-aide"`
-- **AND** 输出 `✓ 插件仓库已同步到 ~/.aide/agent-aide/`
+`aide init` SHALL 将全局仓库中的 commands 与 skills 分发到项目宿主目录，并确保 Claude 与 Codex 两类宿主都获得可用产物。
 
-#### Scenario: 全局初始化时更新已有仓库
+#### Scenario: Claude 宿主分发
+- **WHEN** 用户执行 `aide init`
+- **THEN** 系统将命令与技能同步到项目 `.claude/` 目录
+- **AND** 保证项目内命令入口与技能目录可直接被 Claude Code 使用
 
-- **WHEN** 运行 `aide init --global`
-- **AND** Git 已安装
-- **AND** `$HOME/.aide/agent-aide/` 已存在且为 git 仓库
-- **THEN** 执行 `git -C "$HOME/.aide/agent-aide" pull`
-- **AND** 输出 `✓ 插件仓库已同步到 ~/.aide/agent-aide/`
+#### Scenario: Codex 宿主分发
+- **WHEN** 用户执行 `aide init`
+- **THEN** 系统将命令与技能同步到 Codex 需要的目标位置
+- **AND** 保证 Codex 宿主可获得与 Claude 侧一致的 workflow 资产
 
-#### Scenario: 全局初始化时 Git 未安装
+### Requirement: 宿主分发边界
 
-- **WHEN** 运行 `aide init --global`
-- **AND** Git 未安装
-- **THEN** 输出 `⚠ Git 未安装，跳过插件仓库同步`
-- **AND** 继续执行后续初始化步骤
+插件分发 capability SHALL 只负责资产同步与宿主落盘，不负责 command 与 skill 的业务语义定义。
 
-#### Scenario: 全局初始化时使用自定义仓库地址
+#### Scenario: 分发与业务语义解耦
+- **WHEN** 系统同步 command 或 skill 文件
+- **THEN** `plugin` capability 仅约束来源、目标、覆盖策略与失败处理
+- **AND** 具体 command/skill 的行为语义由其他 capability 规范
 
-- **WHEN** 运行 `aide init --global`
-- **AND** 全局配置中 `plugin.repo_url = "git@github.com:user/custom-aide.git"`
-- **THEN** 使用配置值 `git@github.com:user/custom-aide.git` 作为克隆地址
+### Requirement: 插件同步失败与覆盖策略
 
-#### Scenario: 克隆失败时输出错误
+插件同步 SHALL 明确失败处理和覆盖策略，使初始化流程在不同宿主环境下具备稳定可预期的行为。
 
-- **WHEN** 运行 `aide init --global`
-- **AND** `git clone` 命令失败（网络错误、权限问题等）
-- **THEN** 输出 `✗ 插件仓库同步失败: <错误信息>`
-- **AND** 继续执行后续初始化步骤
+#### Scenario: 同步失败不阻断主流程
+- **WHEN** 插件同步过程出现网络、权限或目标目录错误
+- **THEN** 系统输出可理解的错误或警告
+- **AND** 在允许的情况下继续完成其他初始化步骤
 
-### Requirement: 项目插件同步
+#### Scenario: 目标已存在文件时执行既定策略
+- **WHEN** 目标目录中已存在旧版 commands 或 skills
+- **THEN** 系统按规定的覆盖或替换策略处理这些文件
+- **AND** 最终宿主目录中的资产与当前全局仓库保持一致
 
-`aide init` SHALL 在初始化项目时，将 commands 和 skills 从全局仓库同步到项目目录：
+### Requirement: 插件配置项一致性
 
-1. 检查 `$HOME/.aide/agent-aide/aide-plugin/` 目录是否存在
-   - 若不存在：输出警告 `⚠ 全局插件仓库不存在，跳过插件同步。请先执行 aide init --global`
-   - 若存在：继续下一步
+系统 SHALL 使用一致的插件配置项控制仓库地址与同步策略，并在文档中明确这些配置如何影响实际分发行为。
 
-2. 创建项目 `.claude/` 目录（若不存在）
+#### Scenario: 默认配置使用 HTTPS 仓库地址
+- **WHEN** 用户首次生成默认插件配置
+- **THEN** 默认仓库地址使用 HTTPS 协议
+- **AND** 不再以 SSH 地址作为 current truth 默认值
 
-3. 复制 `$HOME/.aide/agent-aide/aide-plugin/commands/` 到项目 `.claude/commands/`
-   - 若目标已存在：覆盖现有文件
-
-4. 复制 `$HOME/.aide/agent-aide/aide-plugin/skills/` 到项目 `.claude/skills/`
-   - 若目标已存在：覆盖现有文件
-
-5. 输出 `✓ 已同步 commands 和 skills 到 .claude/`
-
-#### Scenario: 项目初始化时同步插件
-
-- **WHEN** 运行 `aide init`
-- **AND** `$HOME/.aide/agent-aide/aide-plugin/` 存在
-- **THEN** 创建项目 `.claude/` 目录
-- **AND** 复制 `commands/` 到 `.claude/commands/`
-- **AND** 复制 `skills/` 到 `.claude/skills/`
-- **AND** 输出 `✓ 已同步 commands 和 skills 到 .claude/`
-
-#### Scenario: 项目初始化时全局仓库不存在
-
-- **WHEN** 运行 `aide init`
-- **AND** `$HOME/.aide/agent-aide/` 不存在
-- **THEN** 输出 `⚠ 全局插件仓库不存在，跳过插件同步。请先执行 aide init --global`
-- **AND** 继续执行其他初始化步骤
-
-#### Scenario: 项目初始化时覆盖已有文件
-
-- **WHEN** 运行 `aide init`
-- **AND** 项目 `.claude/commands/` 已存在
-- **AND** `$HOME/.aide/agent-aide/aide-plugin/` 存在
-- **THEN** 覆盖 `.claude/commands/` 中的文件
-- **AND** 输出 `✓ 已同步 commands 和 skills 到 .claude/`
-
-### Requirement: 插件配置项
-
-配置文件 SHALL 包含 `[plugin]` 配置段，支持以下配置项：
-
-| 配置项 | 类型 | 默认值 | 说明 |
-|--------|------|--------|------|
-| `repo_url` | String | `git@github.com:sayurinana/agent-aide.git` | agent-aide 仓库 Git 地址 |
-| `sync_on_init` | Boolean | `true` | 项目初始化时是否同步插件 |
-
-配置说明文档 `config.md` SHALL 包含 `[plugin]` 段的详细说明。
-
-#### Scenario: 默认配置包含 plugin 段
-
-- **WHEN** 运行 `aide init` 首次初始化
-- **THEN** 生成的 `config.toml` 包含 `[plugin]` 节
-- **AND** `plugin.repo_url = "git@github.com:sayurinana/agent-aide.git"`
-- **AND** `plugin.sync_on_init = true`
-
-#### Scenario: 配置文档包含 plugin 说明
-
-- **WHEN** 运行 `aide init` 首次初始化
-- **THEN** 生成的 `config.md` 包含 `[plugin]` 节的详细说明
-- **AND** 说明包含 `repo_url` 的用途和修改方法
+#### Scenario: 使用自定义插件仓库配置
+- **WHEN** 用户在配置中指定自定义插件仓库地址
+- **THEN** 后续同步使用该地址
+- **AND** 项目级分发仍遵循相同的宿主落盘规则
 
 #### Scenario: 禁用自动同步
-
-- **WHEN** 配置中 `plugin.sync_on_init = false`
-- **AND** 运行 `aide init`
-- **THEN** 跳过插件同步步骤
-- **AND** 不输出插件同步相关提示
-
+- **WHEN** 配置中关闭自动插件同步
+- **THEN** 系统跳过初始化时的自动分发
+- **AND** 不影响用户后续显式触发同步

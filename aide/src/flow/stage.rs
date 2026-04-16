@@ -90,29 +90,28 @@ impl FlowPreset {
             Self::Standard => Some(vec![
                 FlowPhaseSpec::new(FlowPhase::BuildTask),
                 FlowPhaseSpec::looping(FlowPhase::ImplVerify),
-                FlowPhaseSpec::new(FlowPhase::Integration),
                 FlowPhaseSpec::new(FlowPhase::Review),
-                FlowPhaseSpec::new(FlowPhase::DocsUpdate),
                 FlowPhaseSpec::new(FlowPhase::Confirm),
                 FlowPhaseSpec::new(FlowPhase::Finish),
             ]),
             Self::Lite => Some(vec![
                 FlowPhaseSpec::new(FlowPhase::BuildTask),
-                FlowPhaseSpec::looping(FlowPhase::ImplVerify),
+                FlowPhaseSpec::new(FlowPhase::ImplVerify),
                 FlowPhaseSpec::new(FlowPhase::Confirm),
                 FlowPhaseSpec::new(FlowPhase::Finish),
             ]),
             Self::Docs => Some(vec![
                 FlowPhaseSpec::new(FlowPhase::BuildTask),
-                FlowPhaseSpec::looping(FlowPhase::ImplVerify),
-                FlowPhaseSpec::new(FlowPhase::DocsUpdate),
+                FlowPhaseSpec::new(FlowPhase::ImplVerify),
+                FlowPhaseSpec::new(FlowPhase::Review),
                 FlowPhaseSpec::new(FlowPhase::Confirm),
                 FlowPhaseSpec::new(FlowPhase::Finish),
             ]),
             Self::Research => Some(vec![
                 FlowPhaseSpec::new(FlowPhase::BuildTask),
-                FlowPhaseSpec::looping(FlowPhase::ImplVerify),
-                FlowPhaseSpec::new(FlowPhase::Review),
+                FlowPhaseSpec::new(FlowPhase::MakeGraphics),
+                FlowPhaseSpec::new(FlowPhase::ImplVerify),
+                FlowPhaseSpec::new(FlowPhase::DocsUpdate),
                 FlowPhaseSpec::new(FlowPhase::Confirm),
                 FlowPhaseSpec::new(FlowPhase::Finish),
             ]),
@@ -170,6 +169,8 @@ pub struct StageTransition {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub from_phase: Option<String>,
     pub to_phase: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -197,6 +198,18 @@ impl StageFlowStatus {
 
     pub fn current_phase_name(&self) -> &'static str {
         self.current_phase().display_name()
+    }
+
+    pub fn preset_name(&self) -> &'static str {
+        self.preset.as_str()
+    }
+
+    pub fn has_loop_phase(&self) -> bool {
+        self.phases.iter().any(|spec| spec.loop_enabled)
+    }
+
+    pub fn is_current_phase_looping(&self) -> bool {
+        self.current_phase().loop_enabled
     }
 
     pub fn downstream_phases_after(&self, index: usize) -> Vec<String> {
@@ -365,6 +378,7 @@ impl StageFlowManager {
             action: "next".into(),
             from_phase: Some(from_phase),
             to_phase: status.current_phase_name().to_string(),
+            reason: None,
         });
 
         self.persist(&task.task_dir, &status)?;
@@ -374,7 +388,7 @@ impl StageFlowManager {
         })
     }
 
-    pub fn back(&self, phase: &str) -> Result<(StageResolution, Vec<String>), String> {
+    pub fn back(&self, phase: &str, reason: Option<&str>) -> Result<(StageResolution, Vec<String>), String> {
         let task = self.require_current_task()?;
         let mut status = self.load_or_sync_status(&task)?;
         let target = parse_phase_selector(phase)?;
@@ -392,6 +406,7 @@ impl StageFlowManager {
 
         let downstream = status.downstream_phases_after(target_index);
         let from_phase = status.current_phase_name().to_string();
+        let reason = normalize_reason(reason);
         status.current_phase_index = target_index;
         status.updated_at = now_iso();
         status.transitions.push(StageTransition {
@@ -399,6 +414,7 @@ impl StageFlowManager {
             action: "back".into(),
             from_phase: Some(from_phase),
             to_phase: status.current_phase_name().to_string(),
+            reason,
         });
 
         self.persist(&task.task_dir, &status)?;
@@ -466,6 +482,7 @@ impl StageFlowManager {
                             action: "init".into(),
                             from_phase: None,
                             to_phase: phases[0].display_name().to_string(),
+                            reason: None,
                         }],
                     },
                     true,
@@ -614,6 +631,10 @@ fn parse_phase_token(token: &str) -> Result<FlowPhaseSpec, String> {
 
 fn parse_phase_selector(value: &str) -> Result<FlowPhase, String> {
     FlowPhase::parse(value).ok_or_else(|| format!("未知阶段：{value}"))
+}
+
+fn normalize_reason(reason: Option<&str>) -> Option<String> {
+    reason.map(str::trim).filter(|value| !value.is_empty()).map(str::to_string)
 }
 
 fn normalize_task_id(task_id: &str) -> String {
