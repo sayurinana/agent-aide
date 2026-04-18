@@ -84,6 +84,11 @@
 - **THEN** 系统使用与任务目录和任务状态一致的任务标识
 - **AND** 不把阶段名误作为任务详情查询参数
 
+#### Scenario: 运行验证使用独立 aide 工作目录
+- **WHEN** 系统需要验证 `aide hi`、`go`、`bye`、`flow`、`verify`、`confirm` 或 `archive` 的真实运行效果
+- **THEN** 验证在 `/repo/test-aide` 这一独立 aide 工作目录中进行
+- **AND** 不把当前 `agent-aide` 仓库目录视为这些命令的默认运行验证环境
+
 ### Requirement: CLI 输出一致性约束
 
 系统 SHALL 对 aide CLI 的状态输出采用一致的路径、时间与详细信息格式规范。

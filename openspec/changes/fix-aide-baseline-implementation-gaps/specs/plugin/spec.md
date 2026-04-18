@@ -8,6 +8,7 @@
 - **WHEN** 用户执行 `aide init`
 - **THEN** 系统以 `aide-plugin` 源内容同时更新 `.claude/`、`.agents/skills/` 与 Codex 目标目录
 - **AND** 保证不同宿主看到的是同一套 current truth
+- **AND** 如需验证分发后的真实运行效果，应在 `/repo/test-aide` 等独立目标目录中完成，而不是直接以 `agent-aide` 当前目录作为验收环境
 
 #### Scenario: 重新同步时替换受管旧资产
 - **WHEN** 系统重新同步 command 或 skill 资产

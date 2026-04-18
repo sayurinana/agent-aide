@@ -4,7 +4,7 @@
 
 `task-optimized.md` 已经把 aide 体系的 current truth 讲清楚，但当前仓库仍有一批关键行为没有真正实现或没有完全对齐，主要集中在 **aide 程序、commands、skills** 三类源实现：preset/loop/返工追溯、`aide hi/go/bye/flow` 关键路径、finish/archive 生命周期闭环、解析指导路径、阶段 skill 契约，以及旧体系术语残留等。
 
-此前变更范围把项目内已经生成的运行期数据也一并纳入了修复目标，容易把“实现缺口”和“本地数据状态”混在一起。用户现已明确：本项目中的 `aide-memory/`、宿主分发副本等 **由 aide 产生或同步出的运行/分发产物不属于本次修复对象**。因此，本 change 改为聚焦 **aide 程序 + commands + skills 的实现闭环**，而不是补齐当前仓库里已生成的数据实例。
+此前变更范围把项目内已经生成的运行期数据也一并纳入了修复目标，容易把“实现缺口”和“本地数据状态”混在一起。用户现已明确：本项目中的 `aide-memory/`、宿主分发副本等 **由 aide 产生或同步出的运行/分发产物不属于本次修复对象**。因此，本 change 改为聚焦 **aide 程序 + commands + skills 的实现闭环**，而不是补齐当前仓库里已生成的数据实例。如果需要验证 aide 程序在真实工作目录中的运行效果，应统一在 `/repo/test-aide` 下进行；当前 `agent-aide` 仓库尚未作为 aide 工作目录使用，因此不以本目录下的 aide 运行结果作为验收依据。
 
 ## What Changes
 
@@ -46,8 +46,9 @@
 - Explicitly out of scope:
   - 当前仓库里已经生成的 `aide-memory/` 运行数据
   - 当前仓库里的 `.claude/`、`.agents/` 等宿主分发副本现状
+  - 在当前 `agent-aide` 目录直接把 aide 程序运行效果作为验收对象
 - Validation:
   - `openspec validate fix-aide-baseline-implementation-gaps --strict --no-interactive`
   - Rust 单测 / CLI 集成测试
-  - 基于临时夹具的 `hi/go/bye/flow/verify/confirm/archive` 关键命令冒烟验证
-  - 基于临时夹具的 `init` / `make-memory` / `load-memory` 行为验证
+  - 基于 `/repo/test-aide` 的 `hi/go/bye/flow/verify/confirm/archive` 关键命令冒烟验证
+  - 基于临时夹具与 `/repo/test-aide` 的 `init` / `make-memory` / `load-memory` 行为验证

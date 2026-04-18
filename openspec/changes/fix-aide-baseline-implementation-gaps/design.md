@@ -10,7 +10,7 @@
 4. `config` / `init` / 模板来源 / 解析指导路径仍残留旧阶段、旧命令、旧 fallback 文本与 `task-parser` 命名；
 5. `aide init` 的源与分发逻辑、`make-memory` / `load-memory` 的缺失提示与边界行为尚未稳定落地。
 
-与此同时，用户已经明确：当前项目里曾由 aide 生成或同步出的运行期数据（如 `aide-memory/`、宿主分发副本）不应再被当作本次 change 的修复对象。也就是说，本次设计要解决的是**程序、commands、skills 的实现缺口**，而不是为当前仓库补齐一份演示性运行数据。
+与此同时，用户已经明确：当前项目里曾由 aide 生成或同步出的运行期数据（如 `aide-memory/`、宿主分发副本）不应再被当作本次 change 的修复对象。也就是说，本次设计要解决的是**程序、commands、skills 的实现缺口**，而不是为当前仓库补齐一份演示性运行数据。进一步地，若需要验证 aide 程序在真实工作目录中的运行效果，应统一在 `/repo/test-aide` 下执行；当前 `agent-aide` 仓库本身暂不作为 aide 工作目录。
 
 ## Goals / Non-Goals
 
@@ -20,12 +20,13 @@
 - 先修复 flow 状态内核，再推进 CLI 行为与生命周期闭环，减少跨模块返工
 - 统一 commands/skills 源实现、模板来源与旧术语清理，避免“程序修了但入口说明仍是旧体系”
 - 让 `make-memory` / `load-memory` 在缺失或占位运行数据场景下给出正确提示与入口
-- 通过夹具验证 `init`、CLI 与阶段行为，而不是依赖当前仓库里现成的运行数据
+- 通过 `/repo/test-aide` 与测试夹具验证 `init`、CLI 与阶段行为，而不是依赖当前仓库里现成的运行数据
 
 ### Non-Goals
 
 - 不恢复或补齐当前仓库中已删除的 `aide-memory/`、`.claude/`、`.agents/` 等运行/分发产物
 - 不把当前仓库里的运行数据现状当作 current truth 的验收对象
+- 不在当前 `agent-aide` 目录直接验收 aide 程序运行效果；相关运行验证统一在 `/repo/test-aide` 完成
 - 不重新设计 capability 边界；边界沿用现有 six capabilities
 - 不引入新的 workflow 阶段或新的宿主分发模型
 - 不在本次 change 中扩展与当前缺口无关的新功能
@@ -100,13 +101,13 @@
 ### Batch 4：分发逻辑与回归验证
 - 以 `aide-plugin` 为源验证 `init` / 分发逻辑
 - 验证 `make-memory` / `load-memory` 在缺失或占位运行数据下的提示行为
-- 运行 OpenSpec、Rust 测试与关键 CLI 冒烟验证
+- 运行 OpenSpec、Rust 测试与关键 CLI 冒烟验证，其中 aide 程序运行效果统一在 `/repo/test-aide` 验证
 
 ## Risks / Trade-offs
 
 ### Risk 1：把运行产物和源实现混淆，导致范围再次膨胀
 
-缓解：在 proposal、tasks、测试策略里显式声明当前仓库运行数据不作为修复对象；需要验证生成行为时统一使用测试夹具。
+缓解：在 proposal、tasks、测试策略里显式声明当前仓库运行数据不作为修复对象；需要验证 aide 程序运行效果时统一在 `/repo/test-aide` 与测试夹具中完成。
 
 ### Risk 2：flow-status 字段扩展可能影响旧任务数据
 
@@ -121,4 +122,5 @@
 - `openspec validate fix-aide-baseline-implementation-gaps --strict --no-interactive`
 - 针对 `aide flow`、`aide hi/go/bye`、`aide verify/confirm/archive` 的 Rust 测试
 - 针对 `build-task`、`make-graphics`、`rework`、`finish`、`aide` 等源实现文档与旧术语的搜索校验
-- 基于临时夹具验证 `init` / `make-memory` / `load-memory` 行为，而不是依赖当前仓库运行数据
+- 基于 `/repo/test-aide` 验证 `aide hi/go/bye/flow/verify/confirm/archive` 等真实运行路径
+- 基于临时夹具与 `/repo/test-aide` 验证 `init` / `make-memory` / `load-memory` 行为，而不是依赖当前仓库运行数据

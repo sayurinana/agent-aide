@@ -5,7 +5,7 @@
 - [ ] 0.1 由主 Agent 先通过 command 入口确认当前状态与进入路径，再开始对应批次实施
 - [ ] 0.2 由主 Agent 将修复工作拆分给专家执行单元，并按边界控制并行范围
 - [ ] 0.3 每批完成后先由主 Agent 审阅与汇总，再决定进入下一批或触发返工
-- [ ] 0.4 不把当前仓库 `aide-memory/`、`.claude/`、`.agents/` 等已生成运行/分发产物作为修复目标，相关行为以源实现与夹具验证为准
+- [ ] 0.4 不把当前仓库 `aide-memory/`、`.claude/`、`.agents/` 等已生成运行/分发产物作为修复目标，相关行为以源实现、夹具验证与 `/repo/test-aide` 运行验证为准
 
 ## 1. 修复 flow 状态内核
 
@@ -32,4 +32,4 @@
 - [ ] 4.1 以 `aide-plugin` 为真相源修正 `aide init` / 分发逻辑或相关测试，不依赖本仓库已生成副本
 - [ ] 4.2 验证 `make-memory` / `load-memory` 在缺失或占位 runtime data 下的提示与入口行为
 - [ ] 4.3 运行 `openspec validate fix-aide-baseline-implementation-gaps --strict --no-interactive`
-- [ ] 4.4 运行 Rust 单测、CLI 集成测试与关键命令冒烟验证，使用临时夹具覆盖 `hi/go/bye/flow/verify/confirm/archive` 等路径
+- [ ] 4.4 运行 Rust 单测、CLI 集成测试与关键命令冒烟验证；其中 aide 程序运行效果在 `/repo/test-aide` 覆盖 `hi/go/bye/flow/verify/confirm/archive` 等路径，必要时再配合临时夹具验证 `init` 等生成行为
