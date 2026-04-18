@@ -7,7 +7,9 @@ use crate::core::project::find_project_root;
 use crate::flow::branch::{BranchInfo, BranchesData, load_branches_data, save_branches_data};
 use crate::flow::git::GitIntegration;
 use crate::flow::hooks::{PlantUmlProcessResult, process_specific_plantuml_files};
-use crate::flow::stage::{FlowPhase, parse_phase_specs_from_todo};
+use crate::flow::stage::{
+    FlowPhase, StageFlowManager, StageFlowStatus, parse_phase_specs_from_todo,
+};
 use crate::utils::now_iso;
 
 const TASK_NOW_DIR_NAME: &str = "task-now";
@@ -176,6 +178,234 @@ pub fn handle_confirm() -> bool {
     true
 }
 
+pub fn handle_finish() -> bool {
+    let ctx = match TaskCommandContext::load(true) {
+        Ok(ctx) => ctx,
+        Err(err) => {
+            output::err(&err);
+            return false;
+        }
+    };
+
+    let mut branches = match load_task_branches(&ctx) {
+        Ok(data) => data,
+        Err(err) => {
+            output::err(&err);
+            return false;
+        }
+    };
+
+    let Some(branch) = find_branch_record_by_name(&branches, ctx.current_branch()).cloned() else {
+        output::err(&format!(
+            "当前分支 {} 不是受管任务分支，无法执行 finish。请先切换到任务分支。",
+            ctx.current_branch()
+        ));
+        return false;
+    };
+
+    if branch.status != "active" {
+        output::err(&format!(
+            "任务 {} 当前状态为 {}，只有 active 任务才能执行 finish。",
+            branch.task_id, branch.status
+        ));
+        return false;
+    }
+
+    let task_dir = ctx.task_dir(branch.number);
+    if !task_dir.exists() {
+        output::err(&format!(
+            "未找到任务目录：{}。任务目录、分支记录与当前状态不一致。",
+            task_dir.display()
+        ));
+        return false;
+    }
+
+    let flow = match load_finish_flow_status(&ctx, &branch) {
+        Ok(Some(flow)) => flow,
+        Ok(None) => {
+            output::err(&format!(
+                "未找到任务 {} 的阶段状态记录，无法确认是否满足 finish 条件。",
+                branch.task_id
+            ));
+            return false;
+        }
+        Err(err) => {
+            output::err(&err);
+            return false;
+        }
+    };
+
+    if let Err(err) = ensure_finish_ready(&branch, &flow, &task_dir) {
+        output::err(&err);
+        return false;
+    }
+
+    output::info(&format!("正式收尾任务 #{}", branch.number));
+
+    let merge_summary = branch.task_summary.clone();
+    let mut branch_manager = crate::flow::branch::BranchManager::new(&ctx.root, &ctx.cfg);
+    let (success, merge_msg) = match branch_manager.finish_branch_merge(&merge_summary, None, None)
+    {
+        Ok(result) => result,
+        Err(err) => {
+            output::err(&err);
+            return false;
+        }
+    };
+
+    if success {
+        output::ok(&merge_msg);
+    } else {
+        output::warn(&merge_msg);
+    }
+
+    if let Err(err) = reload_branch_after_finish(&ctx, &mut branches, branch.number) {
+        output::err(&err);
+        return false;
+    }
+
+    match find_branch_record(&branches, branch.number) {
+        Some(updated) if matches!(updated.status.as_str(), "finished" | "merged-to-temp") => {}
+        Some(updated) => {
+            output::err(&format!(
+                "finish 后任务状态异常：{}。期望为 finished 或 merged-to-temp。",
+                updated.status
+            ));
+            return false;
+        }
+        None => {
+            output::err(&format!(
+                "finish 后丢失任务 #{} 的分支记录，无法确认状态。",
+                branch.number
+            ));
+            return false;
+        }
+    }
+
+    output::ok(&format!("任务 #{} 已完成正式收尾", branch.number));
+    true
+}
+
+fn load_finish_flow_status(
+    ctx: &TaskCommandContext,
+    branch: &BranchInfo,
+) -> Result<Option<StageFlowStatus>, String> {
+    let manager = StageFlowManager::new(&ctx.root);
+
+    if let Some(resolution) = manager.resolve_status()?
+        && (resolution.status.task_id == branch.task_id
+            || resolution.status.task_number == branch.number)
+    {
+        return Ok(Some(resolution.status));
+    }
+
+    if let Some(resolution) = manager.show(&branch.task_id)? {
+        return Ok(Some(resolution.status));
+    }
+
+    manager
+        .show(&branch.number.to_string())
+        .map(|item| item.map(|resolution| resolution.status))
+}
+
+fn ensure_finish_ready(
+    branch: &BranchInfo,
+    flow: &StageFlowStatus,
+    task_dir: &Path,
+) -> Result<(), String> {
+    if flow.current_phase_name() != FlowPhase::Finish.as_str() {
+        return Err(format!(
+            "当前任务尚未进入 finish 阶段，当前阶段为 {}。请先在任务分支完成确认并推进到 finish。",
+            flow.current_phase_name()
+        ));
+    }
+
+    let pending_todos = load_pending_todo_count(task_dir)?;
+    if pending_todos > 0 {
+        return Err(format!(
+            "任务 {} 尚未完成，todo.md 中还有 {} 个未完成任务点，不能执行 finish。",
+            branch.task_id, pending_todos
+        ));
+    }
+
+    Ok(())
+}
+
+fn load_pending_todo_count(task_dir: &Path) -> Result<usize, String> {
+    let todo_path = task_dir.join("todo.md");
+    if !todo_path.exists() {
+        return Err(format!(
+            "未找到 {}，无法确认任务是否已完成。",
+            todo_path.display()
+        ));
+    }
+
+    let content = fs::read_to_string(&todo_path)
+        .map_err(|e| format!("读取 todo.md 失败: {}: {e}", todo_path.display()))?;
+    Ok(count_pending_todos(&content))
+}
+
+fn count_pending_todos(content: &str) -> usize {
+    content
+        .lines()
+        .filter(|line| {
+            let trimmed = line.trim_start();
+            trimmed.starts_with("- [ ]") || trimmed.starts_with("* [ ]")
+        })
+        .count()
+}
+
+fn find_branch_record(branches: &BranchesData, number: i64) -> Option<&BranchInfo> {
+    branches
+        .branches
+        .iter()
+        .rev()
+        .find(|branch| branch.number == number)
+}
+
+fn find_branch_record_by_name<'a>(
+    branches: &'a BranchesData,
+    branch_name: &str,
+) -> Option<&'a BranchInfo> {
+    branches
+        .branches
+        .iter()
+        .rev()
+        .find(|branch| branch.branch_name == branch_name)
+}
+
+fn ensure_branch_ready_for_archive(branch: &BranchInfo) -> Result<(), String> {
+    match branch.status.as_str() {
+        "finished" | "merged-to-temp" => Ok(()),
+        "active" => Err(format!(
+            "任务 {} 尚未 finish，当前状态为 active，不能直接归档。请先在任务分支执行 aide finish。",
+            branch.task_id
+        )),
+        "archived" => Err(format!(
+            "任务 {} 已归档，无需重复执行 archive。",
+            branch.task_id
+        )),
+        other => Err(format!(
+            "任务 {} 当前状态为 {}，尚未满足归档前置条件。请先完成正式收尾。",
+            branch.task_id, other
+        )),
+    }
+}
+
+fn reload_branch_after_finish(
+    ctx: &TaskCommandContext,
+    branches: &mut BranchesData,
+    number: i64,
+) -> Result<(), String> {
+    *branches = load_task_branches(ctx)?;
+    if find_branch_record(branches, number).is_none() {
+        return Err(format!(
+            "finish 后丢失任务 #{number} 的分支记录，无法确认状态。"
+        ));
+    }
+    Ok(())
+}
+
 pub fn handle_archive(task_number: Option<i64>) -> bool {
     let ctx = match TaskCommandContext::load(true) {
         Ok(ctx) => ctx,
@@ -198,12 +428,35 @@ pub fn handle_archive(task_number: Option<i64>) -> bool {
         }
     };
 
+    let mut branches = match load_task_branches(&ctx) {
+        Ok(data) => data,
+        Err(err) => {
+            output::err(&err);
+            return false;
+        }
+    };
+
+    let Some(branch) = find_branch_record(&branches, number).cloned() else {
+        output::err(&format!(
+            "branches.json 中缺少任务 #{number} 的分支记录，无法继续归档。请先修复任务状态与分支映射。"
+        ));
+        return false;
+    };
+
+    if let Err(err) = ensure_branch_ready_for_archive(&branch) {
+        output::err(&err);
+        return false;
+    }
+
     output::info(&format!("归档任务 #{number}"));
 
     let source_dir = ctx.task_dir(number);
     let target_dir = ctx.archived_task_dir(number);
     if !source_dir.exists() {
-        output::err(&format!("未找到任务目录：{}", source_dir.display()));
+        output::err(&format!(
+            "未找到待归档的任务目录：{}。任务目录、状态与分支记录不一致。",
+            source_dir.display()
+        ));
         return false;
     }
     if target_dir.exists() {
@@ -224,29 +477,14 @@ pub fn handle_archive(task_number: Option<i64>) -> bool {
         "移动 tasks/task-{number}/ → archived-tasks/task-{number}/"
     ));
 
-    let mut branches = match load_task_branches(&ctx) {
-        Ok(data) => data,
-        Err(err) => {
-            output::err(&err);
-            return false;
-        }
-    };
-
-    let mut found = false;
-    for branch in branches.branches.iter_mut().rev() {
-        if branch.number == number {
-            branch.status = "archived".into();
-            if branch.finished_at.is_none() {
-                branch.finished_at = Some(now_iso());
+    for item in branches.branches.iter_mut().rev() {
+        if item.number == number {
+            item.status = "archived".into();
+            if item.finished_at.is_none() {
+                item.finished_at = Some(now_iso());
             }
-            found = true;
             break;
         }
-    }
-    if !found {
-        output::warn(&format!(
-            "branches.json 中未找到任务 #{number} 的记录，已仅按目录完成归档"
-        ));
     }
 
     if let Err(err) = save_task_branches(&ctx, &branches) {
@@ -603,7 +841,7 @@ fn validate_graphics(
                 Ok(PlantUmlProcessResult::Compiled { .. }) => {
                     report.ok("PlantUML 文件编译通过");
                 }
-                Ok(PlantUmlProcessResult::ToolUnavailable) => {
+                Ok(PlantUmlProcessResult::ToolUnavailable { .. }) => {
                     report.error("未找到 PlantUML，可先运行 aide init --global 安装");
                 }
                 Ok(PlantUmlProcessResult::NoFiles) => {
@@ -846,6 +1084,8 @@ fn path_to_repo_relative(root: &Path, path: &Path) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::flow::stage::{FlowPhaseSpec, FlowPreset};
+    use tempfile::TempDir;
 
     #[test]
     fn test_parse_graphics_directive_required() {
@@ -879,5 +1119,81 @@ mod tests {
                 "finish"
             ]
         );
+    }
+
+    #[test]
+    fn test_count_pending_todos_counts_unchecked_items() {
+        let content = "# 待办\n- [ ] 第一项\n- [x] 第二项\n* [ ] 第三项\n";
+        assert_eq!(count_pending_todos(content), 2);
+    }
+
+    #[test]
+    fn test_ensure_branch_ready_for_archive_rejects_active_task() {
+        let branch = BranchInfo {
+            number: 3,
+            branch_name: "task-3".into(),
+            source_branch: "dev".into(),
+            start_commit: "abc123".into(),
+            end_commit: None,
+            task_id: "task-3".into(),
+            task_summary: "实现用户认证功能".into(),
+            started_at: "2026-03-20T15:30:45+08:00".into(),
+            finished_at: None,
+            status: "active".into(),
+            temp_branch: None,
+        };
+
+        let err = ensure_branch_ready_for_archive(&branch).unwrap_err();
+        assert!(err.contains("尚未 finish"));
+    }
+
+    #[test]
+    fn test_ensure_finish_ready_requires_finish_phase_and_completed_todos() {
+        let tmp = TempDir::new().unwrap();
+        let task_dir = tmp.path().join("task-3");
+        fs::create_dir_all(&task_dir).unwrap();
+        fs::write(task_dir.join("todo.md"), "# 待办\n- [ ] 未完成\n").unwrap();
+
+        let branch = BranchInfo {
+            number: 3,
+            branch_name: "task-3".into(),
+            source_branch: "dev".into(),
+            start_commit: "abc123".into(),
+            end_commit: None,
+            task_id: "task-3".into(),
+            task_summary: "实现用户认证功能".into(),
+            started_at: "2026-03-20T15:30:45+08:00".into(),
+            finished_at: None,
+            status: "active".into(),
+            temp_branch: None,
+        };
+
+        let flow = StageFlowStatus {
+            task_id: "task-3".into(),
+            task_number: 3,
+            task_summary: "实现用户认证功能".into(),
+            task_branch: "task-3".into(),
+            preset: FlowPreset::Standard,
+            phases: vec![
+                FlowPhaseSpec::new(FlowPhase::BuildTask),
+                FlowPhaseSpec::looping(FlowPhase::ImplVerify),
+                FlowPhaseSpec::new(FlowPhase::Confirm),
+                FlowPhaseSpec::new(FlowPhase::Finish),
+            ],
+            current_phase_index: 0,
+            created_at: now_iso(),
+            updated_at: now_iso(),
+            transitions: Vec::new(),
+        };
+
+        let err = ensure_finish_ready(&branch, &flow, &task_dir).unwrap_err();
+        assert!(err.contains("尚未进入 finish 阶段"));
+
+        let flow = StageFlowStatus {
+            current_phase_index: 3,
+            ..flow
+        };
+        let err = ensure_finish_ready(&branch, &flow, &task_dir).unwrap_err();
+        assert!(err.contains("还有 1 个未完成任务点"));
     }
 }

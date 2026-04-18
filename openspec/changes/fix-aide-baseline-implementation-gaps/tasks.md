@@ -2,23 +2,23 @@
 
 ## 0. 实施方式约束
 
-- [ ] 0.1 由主 Agent 先通过 command 入口确认当前状态与进入路径，再开始对应批次实施
-- [ ] 0.2 由主 Agent 将修复工作拆分给专家执行单元，并按边界控制并行范围
-- [ ] 0.3 每批完成后先由主 Agent 审阅与汇总，再决定进入下一批或触发返工
-- [ ] 0.4 不把当前仓库 `aide-memory/`、`.claude/`、`.agents/` 等已生成运行/分发产物作为修复目标，相关行为以源实现、夹具验证与 `/repo/test-aide` 运行验证为准
+- [x] 0.1 由主 Agent 先通过 command 入口确认当前状态与进入路径，再开始对应批次实施
+- [x] 0.2 由主 Agent 将修复工作拆分给专家执行单元，并按边界控制并行范围
+- [x] 0.3 每批完成后先由主 Agent 审阅与汇总，再决定进入下一批或触发返工
+- [x] 0.4 不把当前仓库 `aide-memory/`、`.claude/`、`.agents/` 等已生成运行/分发产物作为修复目标，相关行为以源实现、夹具验证与 `/repo/test-aide` 运行验证为准
 
 ## 1. 修复 flow 状态内核
 
-- [ ] 1.1 对齐 `full/standard/lite/docs/research` 的 preset 定义、detect 结果与 `flow status/show` 展示
-- [ ] 1.2 为 `flow-status` 增加返工原因追溯，并保持旧状态文件兼容读取/写回
-- [ ] 1.3 补齐 `aide flow back/status/show` 的单测与 CLI 集成测试
+- [x] 1.1 对齐 `full/standard/lite/docs/research` 的 preset 定义、detect 结果与 `flow status/show` 展示
+- [x] 1.2 为 `flow-status` 增加返工原因追溯，并保持旧状态文件兼容读取/写回
+- [x] 1.3 补齐 `aide flow back/status/show` 的单测与 CLI 集成测试
 
 ## 2. 修复核心 CLI 与任务生命周期闭环
 
-- [ ] 2.1 完善 `aide hi` 的 situation 判断，覆盖草案残留、任务并存、其他分支与常驻分支检查
-- [ ] 2.2 完善 `aide go` / `aide go -v` 的唯一任务、多任务、无任务与失败路径详细回显
-- [ ] 2.3 区分 `aide bye` 的暂停离场与正式结束，补齐 `finish/archive` 的生命周期闭环
-- [ ] 2.4 统一 CLI 的绝对路径、UTC+8 时间口径与 PlantUML 变更优先处理反馈
+- [x] 2.1 完善 `aide hi` 的 situation 判断，覆盖草案残留、任务并存、其他分支与常驻分支检查
+- [x] 2.2 完善 `aide go` / `aide go -v` 的唯一任务、多任务、无任务与失败路径详细回显
+- [x] 2.3 区分 `aide bye` 的暂停离场与正式结束，补齐 `finish/archive` 的生命周期闭环
+- [x] 2.4 统一 CLI 的绝对路径、UTC+8 时间口径与 PlantUML 变更优先处理反馈
 
 ## 3. 收口 aide 程序、commands 与 skills 源实现
 

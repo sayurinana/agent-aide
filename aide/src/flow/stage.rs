@@ -6,6 +6,7 @@ use serde::{Deserialize, Serialize};
 use crate::core::config::{AIDE_MEMORY_DIR, ConfigManager};
 use crate::flow::branch::{BranchInfo, load_branches_data};
 use crate::flow::git::GitIntegration;
+use crate::flow::types::FlowStatus as LegacyFlowStatus;
 use crate::utils::now_iso;
 
 const STATUS_FILE_NAME: &str = "flow-status.json";
@@ -73,6 +74,10 @@ impl FlowPreset {
             Self::Research => "research",
             Self::Custom => "custom",
         }
+    }
+
+    pub fn display_name(&self) -> &'static str {
+        self.as_str()
     }
 
     pub fn phases(&self) -> Option<Vec<FlowPhaseSpec>> {
@@ -200,8 +205,29 @@ impl StageFlowStatus {
         self.current_phase().display_name()
     }
 
+    pub fn task_label(&self) -> String {
+        self.task_id.clone()
+    }
+
     pub fn preset_name(&self) -> &'static str {
-        self.preset.as_str()
+        self.preset.display_name()
+    }
+
+    pub fn loop_phase_names(&self) -> Vec<&'static str> {
+        self.phases
+            .iter()
+            .filter(|spec| spec.loop_enabled)
+            .map(FlowPhaseSpec::display_name)
+            .collect()
+    }
+
+    pub fn loop_summary(&self) -> String {
+        let loop_phases = self.loop_phase_names();
+        if loop_phases.is_empty() {
+            "无".to_string()
+        } else {
+            loop_phases.join("、")
+        }
     }
 
     pub fn has_loop_phase(&self) -> bool {
@@ -250,7 +276,7 @@ impl StageFlowStorage {
     }
 
     pub fn load_root_status(&self) -> Result<Option<StageFlowStatus>, String> {
-        load_status_file(&self.root_status_path)
+        load_root_status_file(&self.root_status_path)
     }
 
     pub fn save_root_status(&self, status: &StageFlowStatus) -> Result<(), String> {
@@ -263,6 +289,40 @@ impl StageFlowStorage {
                 return load_status_file(&path);
             }
         }
+        Ok(None)
+    }
+
+    pub fn load_task_status_by_selector(
+        &self,
+        selector: &TaskSelector,
+    ) -> Result<Option<StageFlowStatus>, String> {
+        for candidate in selector.candidate_ids() {
+            if let Some(status) = self.load_task_status(&candidate)? {
+                return Ok(Some(status));
+            }
+        }
+
+        if let Some(number) = selector.number {
+            for path in [
+                self.tasks_dir
+                    .join(format!("task-{number}"))
+                    .join(STATUS_FILE_NAME),
+                self.archived_tasks_dir
+                    .join(format!("task-{number}"))
+                    .join(STATUS_FILE_NAME),
+            ] {
+                if path.exists() {
+                    return load_status_file(&path);
+                }
+            }
+        }
+
+        if let Some(status) = self.load_legacy_root_status()? {
+            if selector.matches_status(&status) {
+                return Ok(Some(status));
+            }
+        }
+
         Ok(None)
     }
 
@@ -295,6 +355,12 @@ impl StageFlowStorage {
             }
         }
 
+        if items.is_empty() {
+            if let Some(status) = self.load_legacy_root_status()? {
+                items.push(status);
+            }
+        }
+
         items.sort_by(|left, right| right.task_number.cmp(&left.task_number));
         Ok(items)
     }
@@ -304,6 +370,30 @@ impl StageFlowStorage {
             .into_iter()
             .map(|path| path.parent().unwrap_or(Path::new("")).to_path_buf())
             .find(|dir| dir.exists())
+    }
+
+    pub fn locate_task_dir_by_selector(&self, selector: &TaskSelector) -> Option<PathBuf> {
+        for candidate in selector.candidate_ids() {
+            if let Some(dir) = self.locate_task_dir(&candidate) {
+                return Some(dir);
+            }
+        }
+
+        selector.number.and_then(|number| {
+            [
+                self.tasks_dir.join(format!("task-{number}")),
+                self.archived_tasks_dir.join(format!("task-{number}")),
+            ]
+            .into_iter()
+            .find(|dir| dir.exists())
+        })
+    }
+
+    fn load_legacy_root_status(&self) -> Result<Option<StageFlowStatus>, String> {
+        let Some(legacy) = load_legacy_status_file(&self.root_status_path)? else {
+            return Ok(None);
+        };
+        Ok(Some(convert_legacy_status(legacy)))
     }
 
     fn status_candidates(&self, task_id: &str) -> Vec<PathBuf> {
@@ -348,15 +438,15 @@ impl StageFlowManager {
             Err(err) => return Err(err),
         }
 
-        let root_status = self.storage.load_root_status()?;
-        let Some(status) = root_status else {
+        let Some(status) = self.storage.load_root_status()? else {
             return Ok(None);
         };
 
+        let selector = TaskSelector::from_status(&status);
         let task_dir = self
             .storage
-            .locate_task_dir(&status.task_id)
-            .unwrap_or_else(|| self.cfg.tasks_dir.join(&status.task_id));
+            .locate_task_dir_by_selector(&selector)
+            .unwrap_or_else(|| self.cfg.tasks_dir.join(status.task_label()));
 
         Ok(Some(StageResolution { status, task_dir }))
     }
@@ -388,7 +478,11 @@ impl StageFlowManager {
         })
     }
 
-    pub fn back(&self, phase: &str, reason: Option<&str>) -> Result<(StageResolution, Vec<String>), String> {
+    pub fn back(
+        &self,
+        phase: &str,
+        reason: Option<&str>,
+    ) -> Result<(StageResolution, Vec<String>), String> {
         let task = self.require_current_task()?;
         let mut status = self.load_or_sync_status(&task)?;
         let target = parse_phase_selector(phase)?;
@@ -432,14 +526,14 @@ impl StageFlowManager {
     }
 
     pub fn show(&self, task_id: &str) -> Result<Option<StageResolution>, String> {
-        let normalized = normalize_task_id(task_id);
-        let Some(status) = self.storage.load_task_status(&normalized)? else {
+        let selector = parse_task_selector(task_id);
+        let Some(status) = self.storage.load_task_status_by_selector(&selector)? else {
             return Ok(None);
         };
         let task_dir = self
             .storage
-            .locate_task_dir(&normalized)
-            .unwrap_or_else(|| self.cfg.tasks_dir.join(&normalized));
+            .locate_task_dir_by_selector(&selector)
+            .unwrap_or_else(|| self.cfg.tasks_dir.join(status.task_label()));
         Ok(Some(StageResolution { status, task_dir }))
     }
 
@@ -463,8 +557,9 @@ impl StageFlowManager {
             .and_then(|content| extract_summary_title(&content))
             .unwrap_or_else(|| task.branch.task_summary.clone());
 
+        let selector = TaskSelector::from_branch(&task.branch);
         let (mut status, is_new_status) =
-            match self.storage.load_task_status(&task.branch.task_id)? {
+            match self.storage.load_task_status_by_selector(&selector)? {
                 Some(existing) => (existing, false),
                 None => (
                     StageFlowStatus {
@@ -496,7 +591,8 @@ impl StageFlowManager {
             .position(|spec| spec.phase == current_phase)
             .unwrap_or(previous_index.min(phases.len().saturating_sub(1)));
 
-        let needs_update = status.task_summary != task_summary
+        let needs_update = status.task_id != task.branch.task_id
+            || status.task_summary != task_summary
             || status.task_branch != task.branch.branch_name
             || status.task_number != task.branch.number
             || status.preset != preset
@@ -554,6 +650,63 @@ impl StageFlowManager {
 struct CurrentTask {
     branch: BranchInfo,
     task_dir: PathBuf,
+}
+
+#[derive(Debug, Clone)]
+pub struct TaskSelector {
+    raw: String,
+    normalized_task_id: String,
+    number: Option<i64>,
+}
+
+impl TaskSelector {
+    fn new(raw: &str) -> Self {
+        let trimmed = raw.trim();
+        let number = parse_task_number(trimmed);
+        let normalized_task_id = normalize_task_id(trimmed);
+        Self {
+            raw: trimmed.to_string(),
+            normalized_task_id,
+            number,
+        }
+    }
+
+    fn from_branch(branch: &BranchInfo) -> Self {
+        Self {
+            raw: branch.task_id.clone(),
+            normalized_task_id: normalize_task_id(&branch.task_id),
+            number: Some(branch.number),
+        }
+    }
+
+    fn from_status(status: &StageFlowStatus) -> Self {
+        Self {
+            raw: status.task_id.clone(),
+            normalized_task_id: normalize_task_id(&status.task_id),
+            number: Some(status.task_number),
+        }
+    }
+
+    fn candidate_ids(&self) -> Vec<String> {
+        let mut items = Vec::new();
+        push_unique(&mut items, self.raw.clone());
+        push_unique(&mut items, self.normalized_task_id.clone());
+        if let Some(number) = self.number {
+            push_unique(&mut items, number.to_string());
+            push_unique(&mut items, format!("task-{number}"));
+        }
+        items
+    }
+
+    fn matches_status(&self, status: &StageFlowStatus) -> bool {
+        let status_number = status.task_number.to_string();
+        self.candidate_ids().into_iter().any(|candidate| {
+            candidate == status.task_id
+                || candidate == normalize_task_id(&status.task_id)
+                || candidate == status_number
+                || self.number == Some(status.task_number)
+        })
+    }
 }
 
 pub fn parse_phase_specs_from_todo(content: &str) -> Result<Vec<FlowPhaseSpec>, String> {
@@ -633,8 +786,30 @@ fn parse_phase_selector(value: &str) -> Result<FlowPhase, String> {
     FlowPhase::parse(value).ok_or_else(|| format!("未知阶段：{value}"))
 }
 
+fn parse_task_selector(task_id: &str) -> TaskSelector {
+    TaskSelector::new(task_id)
+}
+
+fn parse_task_number(value: &str) -> Option<i64> {
+    let trimmed = value.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+
+    if let Ok(number) = trimmed.parse::<i64>() {
+        return Some(number);
+    }
+
+    trimmed
+        .strip_prefix("task-")
+        .and_then(|rest| rest.parse::<i64>().ok())
+}
+
 fn normalize_reason(reason: Option<&str>) -> Option<String> {
-    reason.map(str::trim).filter(|value| !value.is_empty()).map(str::to_string)
+    reason
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(str::to_string)
 }
 
 fn normalize_task_id(task_id: &str) -> String {
@@ -656,6 +831,12 @@ fn extract_summary_title(content: &str) -> Option<String> {
     })
 }
 
+fn push_unique(items: &mut Vec<String>, value: String) {
+    if !value.is_empty() && !items.iter().any(|item| item == &value) {
+        items.push(value);
+    }
+}
+
 fn load_status_file(path: &Path) -> Result<Option<StageFlowStatus>, String> {
     if !path.exists() {
         return Ok(None);
@@ -666,6 +847,159 @@ fn load_status_file(path: &Path) -> Result<Option<StageFlowStatus>, String> {
     let status = serde_json::from_str::<StageFlowStatus>(&raw)
         .map_err(|e| format!("解析阶段状态失败: {}: {e}", path.display()))?;
     Ok(Some(status))
+}
+
+fn load_root_status_file(path: &Path) -> Result<Option<StageFlowStatus>, String> {
+    match load_status_file(path) {
+        Ok(Some(status)) => Ok(Some(status)),
+        Ok(None) => load_legacy_status_file(path).map(|legacy| legacy.map(convert_legacy_status)),
+        Err(_) => load_legacy_status_file(path).map(|legacy| legacy.map(convert_legacy_status)),
+    }
+}
+
+fn load_legacy_status_file(path: &Path) -> Result<Option<LegacyFlowStatus>, String> {
+    if !path.exists() {
+        return Ok(None);
+    }
+
+    let raw = fs::read_to_string(path)
+        .map_err(|e| format!("读取旧阶段状态失败: {}: {e}", path.display()))?;
+    let status = serde_json::from_str::<LegacyFlowStatus>(&raw)
+        .map_err(|e| format!("解析旧阶段状态失败: {}: {e}", path.display()))?;
+    Ok(Some(status))
+}
+
+fn convert_legacy_status(legacy: LegacyFlowStatus) -> StageFlowStatus {
+    let phases = legacy_phase_specs(&legacy);
+    let preset = FlowPreset::detect(&phases);
+    let current_phase_index = legacy_phase_index(&legacy, &phases);
+    let task_number = parse_task_number(&legacy.task_id).unwrap_or(0);
+    let task_branch = legacy
+        .task_branch
+        .clone()
+        .unwrap_or_else(|| format!("task-{task_number}"));
+    let task_summary = legacy
+        .history
+        .first()
+        .map(|entry| entry.summary.clone())
+        .filter(|value| !value.trim().is_empty())
+        .unwrap_or_else(|| legacy.task_id.clone());
+    let updated_at = legacy
+        .history
+        .last()
+        .map(|entry| entry.timestamp.clone())
+        .unwrap_or_else(|| legacy.started_at.clone());
+
+    let transitions = legacy
+        .history
+        .into_iter()
+        .scan(None::<String>, |from_phase, entry| {
+            let mapped_phase = map_legacy_phase_name(&entry.phase).as_str().to_string();
+            let transition = StageTransition {
+                timestamp: entry.timestamp,
+                action: map_legacy_action(&entry.action).to_string(),
+                from_phase: from_phase.clone(),
+                to_phase: mapped_phase.clone(),
+                reason: legacy_reason(&entry.action, &entry.summary),
+            };
+            *from_phase = Some(mapped_phase);
+            Some(transition)
+        })
+        .collect();
+
+    StageFlowStatus {
+        task_id: normalize_task_id(&legacy.task_id),
+        task_number,
+        task_summary,
+        task_branch,
+        preset,
+        phases,
+        current_phase_index,
+        created_at: legacy.started_at.clone(),
+        updated_at,
+        transitions,
+    }
+}
+
+fn legacy_phase_specs(legacy: &LegacyFlowStatus) -> Vec<FlowPhaseSpec> {
+    let mapped = legacy
+        .history
+        .iter()
+        .map(|entry| map_legacy_phase_name(&entry.phase))
+        .chain(std::iter::once(map_legacy_phase_name(
+            &legacy.current_phase,
+        )))
+        .collect::<Vec<_>>();
+
+    let has_docs = mapped.iter().any(|phase| *phase == FlowPhase::DocsUpdate);
+    let has_make_graphics = mapped.iter().any(|phase| *phase == FlowPhase::MakeGraphics);
+    let has_integration = mapped.iter().any(|phase| *phase == FlowPhase::Integration);
+    let has_review = mapped.iter().any(|phase| *phase == FlowPhase::Review);
+    let has_loop = legacy
+        .history
+        .iter()
+        .any(|entry| entry.action == "back-step");
+
+    if has_make_graphics || has_integration {
+        return FlowPreset::Full.phases().unwrap_or_default();
+    }
+    if has_docs {
+        return FlowPreset::Research.phases().unwrap_or_default();
+    }
+    if has_review {
+        if has_loop {
+            return FlowPreset::Standard.phases().unwrap_or_default();
+        }
+        return FlowPreset::Docs.phases().unwrap_or_default();
+    }
+
+    vec![
+        FlowPhaseSpec::new(FlowPhase::BuildTask),
+        if has_loop {
+            FlowPhaseSpec::looping(FlowPhase::ImplVerify)
+        } else {
+            FlowPhaseSpec::new(FlowPhase::ImplVerify)
+        },
+        FlowPhaseSpec::new(FlowPhase::Confirm),
+        FlowPhaseSpec::new(FlowPhase::Finish),
+    ]
+}
+
+fn legacy_phase_index(legacy: &LegacyFlowStatus, phases: &[FlowPhaseSpec]) -> usize {
+    let current_phase = map_legacy_phase_name(&legacy.current_phase);
+    phases
+        .iter()
+        .position(|spec| spec.phase == current_phase)
+        .unwrap_or(phases.len().saturating_sub(1))
+}
+
+fn map_legacy_phase_name(phase: &str) -> FlowPhase {
+    match phase.trim() {
+        "task-optimize" => FlowPhase::BuildTask,
+        "flow-design" => FlowPhase::MakeGraphics,
+        "impl" => FlowPhase::ImplVerify,
+        "verify" => FlowPhase::Review,
+        "docs" => FlowPhase::DocsUpdate,
+        "confirm" => FlowPhase::Confirm,
+        "finish" => FlowPhase::Finish,
+        other => FlowPhase::parse(other).unwrap_or(FlowPhase::BuildTask),
+    }
+}
+
+fn map_legacy_action(action: &str) -> &str {
+    match action {
+        "start" => "init",
+        "next-part" => "next",
+        "back-part" => "back",
+        other => other,
+    }
+}
+
+fn legacy_reason(action: &str, summary: &str) -> Option<String> {
+    match action {
+        "back-part" | "back-step" if !summary.trim().is_empty() => Some(summary.trim().to_string()),
+        _ => None,
+    }
 }
 
 fn save_status_file(path: &Path, status: &StageFlowStatus) -> Result<(), String> {
@@ -688,6 +1022,8 @@ fn is_false(value: &bool) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::flow::types::{FlowStatus, HistoryEntry};
+    use tempfile::TempDir;
 
     #[test]
     fn test_parse_phase_specs_from_todo_supports_loop_marker() {
@@ -738,5 +1074,115 @@ mod tests {
             FlowPreset::detect(&FlowPreset::Research.phases().unwrap()),
             FlowPreset::Research
         );
+    }
+
+    #[test]
+    fn test_parse_task_selector_supports_number_and_task_id() {
+        let selector = parse_task_selector("3");
+        assert_eq!(selector.number, Some(3));
+        assert_eq!(
+            selector.candidate_ids(),
+            vec!["3".to_string(), "task-3".to_string()]
+        );
+
+        let selector = parse_task_selector("task-12");
+        assert_eq!(selector.number, Some(12));
+        assert_eq!(
+            selector.candidate_ids(),
+            vec!["task-12".to_string(), "12".to_string()]
+        );
+    }
+
+    #[test]
+    fn test_convert_legacy_status_preserves_reason_and_maps_phases() {
+        let legacy = FlowStatus {
+            task_id: "2026-04-01T10-00-00".into(),
+            current_phase: "impl".into(),
+            current_step: 2,
+            started_at: "2026-04-01T10:00:00+08:00".into(),
+            history: vec![
+                HistoryEntry {
+                    timestamp: "2026-04-01T10:00:00+08:00".into(),
+                    action: "start".into(),
+                    phase: "task-optimize".into(),
+                    step: 0,
+                    summary: "实现用户认证功能".into(),
+                    git_commit: None,
+                },
+                HistoryEntry {
+                    timestamp: "2026-04-01T10:20:00+08:00".into(),
+                    action: "next-part".into(),
+                    phase: "flow-design".into(),
+                    step: 1,
+                    summary: "补图解".into(),
+                    git_commit: None,
+                },
+                HistoryEntry {
+                    timestamp: "2026-04-01T10:30:00+08:00".into(),
+                    action: "back-part".into(),
+                    phase: "task-optimize".into(),
+                    step: 2,
+                    summary: "需求边界变化".into(),
+                    git_commit: None,
+                },
+            ],
+            source_branch: None,
+            start_commit: None,
+            task_branch: Some("task-9".into()),
+        };
+
+        let status = convert_legacy_status(legacy);
+        assert_eq!(status.task_id, "task-2026-04-01T10-00-00");
+        assert_eq!(status.task_number, 0);
+        assert_eq!(status.task_summary, "实现用户认证功能");
+        assert_eq!(status.current_phase_name(), "impl-verify");
+        assert_eq!(status.preset, FlowPreset::Full);
+        assert_eq!(status.transitions.len(), 3);
+        assert_eq!(status.transitions[2].action, "back");
+        assert_eq!(
+            status.transitions[2].reason.as_deref(),
+            Some("需求边界变化")
+        );
+    }
+
+    #[test]
+    fn test_stage_storage_loads_legacy_root_status_when_no_task_status_exists() {
+        let tmp = TempDir::new().unwrap();
+        let aide_dir = tmp.path().join(AIDE_MEMORY_DIR);
+        fs::create_dir_all(&aide_dir).unwrap();
+
+        let legacy = FlowStatus {
+            task_id: "2026-04-01T10-00-00".into(),
+            current_phase: "confirm".into(),
+            current_step: 1,
+            started_at: "2026-04-01T10:00:00+08:00".into(),
+            history: vec![HistoryEntry {
+                timestamp: "2026-04-01T10:00:00+08:00".into(),
+                action: "start".into(),
+                phase: "task-optimize".into(),
+                step: 0,
+                summary: "旧任务".into(),
+                git_commit: None,
+            }],
+            source_branch: None,
+            start_commit: None,
+            task_branch: Some("task-7".into()),
+        };
+        fs::write(
+            aide_dir.join("flow-status.json"),
+            format!("{}\n", serde_json::to_string_pretty(&legacy).unwrap()),
+        )
+        .unwrap();
+
+        let storage = StageFlowStorage::new(tmp.path());
+        let selector = parse_task_selector("2026-04-01T10-00-00");
+        let status = storage
+            .load_task_status_by_selector(&selector)
+            .unwrap()
+            .unwrap();
+
+        assert_eq!(status.task_summary, "旧任务");
+        assert_eq!(status.task_id, "task-2026-04-01T10-00-00");
+        assert_eq!(status.current_phase_name(), "confirm");
     }
 }

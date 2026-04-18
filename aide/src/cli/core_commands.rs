@@ -2,14 +2,23 @@ use std::collections::BTreeMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use chrono::{DateTime, Local};
+use chrono::DateTime;
 
 use crate::core::config::{self, ConfigManager};
 use crate::core::output;
 use crate::core::project::find_project_root;
 use crate::flow::branch::BranchesData;
 use crate::flow::git::GitIntegration;
-use crate::flow::hooks::{PlantUmlProcessResult, process_plantuml_files};
+use crate::flow::hooks::{PlantUmlProcessResult, PlantUmlScanMode, process_plantuml_files};
+use crate::flow::stage::{StageFlowManager, StageFlowStatus};
+use crate::utils::{utc8_now, utc8_offset};
+
+#[derive(Debug, Clone)]
+struct HiStatusContext {
+    active_flow: Option<StageFlowStatus>,
+    draft_warning: Option<String>,
+    resident_branch_missing: bool,
+}
 
 pub fn handle_hi(verbose: bool) -> bool {
     let ctx = match CommandContext::load() {
@@ -29,25 +38,26 @@ pub fn handle_hi(verbose: bool) -> bool {
     };
 
     let plantuml_result = process_plantuml_files(&ctx.root, &ctx.config, false);
+    let status_ctx = build_hi_status_context(&ctx);
 
     println!("项目：{}", ctx.root.display());
 
     if ctx.current_branch == ctx.resident_branch {
         println!("分支：{} (常驻分支)", ctx.current_branch);
         println!();
-        render_resident_status(&ctx, &tasks);
+        render_resident_status(&ctx, &tasks, &status_ctx);
     } else if let Some(task) = find_task_for_branch(&tasks, &ctx.current_branch) {
         println!("分支：{} (任务分支)", ctx.current_branch);
         println!();
-        render_task_status(&ctx, &task);
+        render_task_status(&ctx, &task, &status_ctx);
     } else {
         println!("分支：{} (其他分支)", ctx.current_branch);
         println!();
-        output::warn("当前分支不属于 aide 管理范围");
+        render_other_branch_status(&ctx, &status_ctx);
     }
 
     if verbose {
-        render_verbose_details(&ctx, &plantuml_result);
+        render_verbose_details(&ctx, &plantuml_result, &status_ctx);
     }
 
     true
@@ -66,6 +76,9 @@ pub fn handle_go(task_number: Option<i64>, verbose: bool) -> bool {
         Ok(tasks) => tasks,
         Err(err) => {
             output::err(&err);
+            if verbose {
+                print_go_verbose_failure(&ctx, &Err(err.clone()));
+            }
             return false;
         }
     };
@@ -74,6 +87,9 @@ pub fn handle_go(task_number: Option<i64>, verbose: bool) -> bool {
         Ok(task) => task,
         Err(err) => {
             output::err(&err);
+            if verbose {
+                print_go_verbose_failure(&ctx, &Err(err.clone()));
+            }
             return false;
         }
     };
@@ -81,17 +97,27 @@ pub fn handle_go(task_number: Option<i64>, verbose: bool) -> bool {
     match ctx.git.branch_exists(&target.branch_name) {
         Ok(true) => {}
         Ok(false) => {
-            output::err(&format!("未找到任务分支 {}", target.branch_name));
+            let err = format!("未找到任务分支 {}", target.branch_name);
+            output::err(&err);
+            if verbose {
+                print_go_verbose_failure(&ctx, &Err(err));
+            }
             return false;
         }
         Err(err) => {
             output::err(&err);
+            if verbose {
+                print_go_verbose_failure(&ctx, &Err(err.clone()));
+            }
             return false;
         }
     }
 
     if let Err(err) = prepare_repo_for_go(&ctx) {
         output::err(&err);
+        if verbose {
+            print_go_verbose_failure(&ctx, &Err(err.clone()));
+        }
         return false;
     }
 
@@ -99,6 +125,9 @@ pub fn handle_go(task_number: Option<i64>, verbose: bool) -> bool {
     if ctx.current_branch != target.branch_name {
         if let Err(err) = ctx.git.checkout(&target.branch_name) {
             output::err(&err);
+            if verbose {
+                print_go_verbose_failure(&ctx, &Err(err.clone()));
+            }
             return false;
         }
     }
@@ -143,13 +172,15 @@ pub fn handle_bye() -> bool {
         }
     };
 
-    if find_task_for_branch(&tasks, &ctx.current_branch).is_none() {
+    let task = if let Some(task) = find_task_for_branch(&tasks, &ctx.current_branch) {
+        task
+    } else {
         output::warn(&format!(
             "当前分支 {} 不属于 aide 管理范围，未执行清理",
             ctx.current_branch
         ));
         return true;
-    }
+    };
 
     match ctx.git.branch_exists(&ctx.resident_branch) {
         Ok(true) => {}
@@ -166,6 +197,27 @@ pub fn handle_bye() -> bool {
     if let Err(err) = commit_dirty_for_bye(&ctx) {
         output::err(&err);
         return false;
+    }
+
+    if let Some(flow_status) = load_task_flow_status(&ctx, &task) {
+        if flow_status.current_phase_name() == "finish" {
+            output::warn(&format!(
+                "任务 #{} 已进入 finish 阶段；aide bye 只会暂停离场，不会代替正式结束。返回常驻分支后请执行 aide archive，必要时先在任务分支执行 aide finish。",
+                task.number
+            ));
+        } else {
+            output::info(&format!(
+                "本次 bye 仅作暂停离场：任务 #{} 当前阶段为 {}，后续可继续通过 aide go {} 返回。",
+                task.number,
+                flow_status.current_phase_name(),
+                task.number
+            ));
+        }
+    } else {
+        output::info(&format!(
+            "本次 bye 仅作暂停离场：后续可通过 aide go {} 返回任务 #{}。",
+            task.number, task.number
+        ));
     }
 
     output::info(&format!("切换到常驻分支 {}", ctx.resident_branch));
@@ -185,6 +237,7 @@ struct CommandContext {
     git: GitIntegration,
     current_branch: String,
     resident_branch: String,
+    description_file: PathBuf,
 }
 
 impl CommandContext {
@@ -200,6 +253,11 @@ impl CommandContext {
         git.ensure_repo()?;
         let current_branch = git.get_current_branch()?;
         let resident_branch = config::get_config_string_or(&config, "branch.resident", "dev");
+        let description_file = root.join(config::get_config_string_or(
+            &config,
+            "task.description_file",
+            "task-now.md",
+        ));
 
         Ok(Self {
             root,
@@ -208,6 +266,7 @@ impl CommandContext {
             git,
             current_branch,
             resident_branch,
+            description_file,
         })
     }
 }
@@ -413,12 +472,27 @@ fn commit_dirty_changes(
     Ok(())
 }
 
-fn render_resident_status(ctx: &CommandContext, tasks: &[ManagedTask]) {
+fn render_resident_status(
+    ctx: &CommandContext,
+    tasks: &[ManagedTask],
+    status_ctx: &HiStatusContext,
+) {
     match ctx.git.is_clean() {
         Ok(true) if tasks.is_empty() => output::ok("当前状态干净"),
         Ok(false) => output::warn("当前有未提交变更"),
         Ok(true) => {}
         Err(err) => output::warn(&format!("读取 Git 状态失败: {err}")),
+    }
+
+    if status_ctx.resident_branch_missing {
+        output::warn(&format!(
+            "配置中的常驻分支 {} 当前不存在，请先创建或修正配置",
+            ctx.resident_branch
+        ));
+    }
+
+    if let Some(message) = &status_ctx.draft_warning {
+        output::warn(message);
     }
 
     if tasks.is_empty() {
@@ -439,6 +513,10 @@ fn render_resident_status(ctx: &CommandContext, tasks: &[ManagedTask]) {
         println!();
     }
 
+    if tasks.len() > 1 {
+        output::warn("当前存在多个未归档任务，进入时请显式指定编号");
+    }
+
     if let Some(task) = tasks
         .iter()
         .max_by_key(|task| task.last_commit_iso.as_deref())
@@ -447,7 +525,7 @@ fn render_resident_status(ctx: &CommandContext, tasks: &[ManagedTask]) {
     }
 }
 
-fn render_task_status(ctx: &CommandContext, task: &ManagedTask) {
+fn render_task_status(ctx: &CommandContext, task: &ManagedTask, status_ctx: &HiStatusContext) {
     println!("→ 任务 #{}：{}", task.number, task.summary);
     println!();
     println!("任务进度：");
@@ -458,19 +536,53 @@ fn render_task_status(ctx: &CommandContext, task: &ManagedTask) {
     println!("  未完成：{} 个", stats.pending);
     println!();
 
+    if let Some(flow) = status_ctx.active_flow.as_ref() {
+        println!("阶段状态：");
+        println!("  当前阶段：{}", flow.current_phase_name());
+        println!("  预设：{}", flow.preset_name());
+        println!("  循环阶段：{}", flow.loop_summary());
+        println!();
+    }
+
+    if let Some(message) = &status_ctx.draft_warning {
+        output::warn(message);
+    }
+
     match &task.last_commit_iso {
         Some(commit) => println!("最后提交：{}", format_commit_time(commit)),
         None => println!("最后提交：未知"),
     }
 }
 
+fn render_other_branch_status(ctx: &CommandContext, status_ctx: &HiStatusContext) {
+    output::warn("当前分支不属于 aide 管理范围");
+    if status_ctx.resident_branch_missing {
+        output::warn(&format!(
+            "配置中的常驻分支 {} 当前不存在，请先创建或修正配置",
+            ctx.resident_branch
+        ));
+    } else {
+        output::info(&format!(
+            "如需回到受管流程，可先切换到常驻分支 {}",
+            ctx.resident_branch
+        ));
+    }
+
+    if let Some(message) = &status_ctx.draft_warning {
+        output::warn(message);
+    }
+}
+
 fn render_verbose_details(
     ctx: &CommandContext,
     plantuml_result: &Result<PlantUmlProcessResult, String>,
+    status_ctx: &HiStatusContext,
 ) {
     println!();
     println!("详细信息：");
     println!("  配置文件：{}", ctx.cfg.config_path.display());
+    println!("  任务描述文件：{}", ctx.description_file.display());
+    println!("  当前时间：{}", utc8_now().format("%Y-%m-%d %H:%M:%S %:z"));
 
     match ctx.git.is_clean() {
         Ok(true) => println!("  Git 状态：干净"),
@@ -488,13 +600,130 @@ fn render_verbose_details(
         Err(err) => println!("  Git 状态：读取失败 - {err}"),
     }
 
+    println!(
+        "  草案状态：{}",
+        status_ctx
+            .draft_warning
+            .as_deref()
+            .unwrap_or("未检测到待处理草案")
+    );
+
     let plantuml_text = match plantuml_result {
         Ok(PlantUmlProcessResult::NoFiles) => "未发现 .puml / .plantuml 文件".to_string(),
-        Ok(PlantUmlProcessResult::ToolUnavailable) => "未安装，已跳过编译".to_string(),
-        Ok(PlantUmlProcessResult::Compiled { files }) => format!("已编译 {files} 个文件"),
+        Ok(PlantUmlProcessResult::ToolUnavailable { mode, files }) => format!(
+            "未安装，已跳过编译（{}，{} 个文件）",
+            describe_scan_mode(mode, matches!(mode, PlantUmlScanMode::Full)),
+            files
+        ),
+        Ok(PlantUmlProcessResult::Compiled {
+            files,
+            mode,
+            fell_back_to_full_scan,
+        }) => format!(
+            "已编译 {files} 个文件（{}）",
+            describe_scan_mode(mode, *fell_back_to_full_scan)
+        ),
         Err(err) => format!("编译失败 - {err}"),
     };
     println!("  PlantUML：{plantuml_text}");
+}
+
+fn build_hi_status_context(ctx: &CommandContext) -> HiStatusContext {
+    let draft_warning = detect_draft_warning(ctx);
+    let resident_branch_missing = ctx.git.branch_exists(&ctx.resident_branch).ok() == Some(false);
+    let active_flow = StageFlowManager::new(&ctx.root)
+        .resolve_status()
+        .ok()
+        .flatten()
+        .map(|resolution| resolution.status);
+
+    HiStatusContext {
+        active_flow,
+        draft_warning,
+        resident_branch_missing,
+    }
+}
+
+fn detect_draft_warning(ctx: &CommandContext) -> Option<String> {
+    let task_now_dir = ctx.cfg.tasks_dir.join("task-now");
+    if task_now_dir.exists() {
+        return Some(format!(
+            "检测到草案目录 {}，当前还有待处理的 task-now 草案",
+            task_now_dir.display()
+        ));
+    }
+
+    if ctx.description_file.exists() {
+        let content = fs::read_to_string(&ctx.description_file).ok()?;
+        let normalized = content.trim();
+        if contains_meaningful_task_description(normalized) {
+            return Some(format!(
+                "检测到任务描述草案文件 {} 仍有内容，如已确认请继续执行 build-task / confirm 流程",
+                ctx.description_file.display()
+            ));
+        }
+    }
+
+    None
+}
+
+fn contains_meaningful_task_description(content: &str) -> bool {
+    if content.is_empty() {
+        return false;
+    }
+
+    let ignored_markers = [
+        "# 任务口述模板",
+        "<!-- 使用本模板描述新任务，可以口语化表达 -->",
+        "## 我想做什么",
+        "## 背景",
+        "## 期望效果",
+        "## 补充说明",
+        "（在这里描述你想要实现的功能或修复的问题）",
+        "（为什么需要做这件事？有什么前因后果？）",
+        "（做完之后应该是什么样子？）",
+        "（其他需要注意的事项，可以留空）",
+    ];
+
+    content
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty())
+        .any(|line| !ignored_markers.contains(&line))
+}
+
+fn load_task_flow_status(ctx: &CommandContext, task: &ManagedTask) -> Option<StageFlowStatus> {
+    let manager = StageFlowManager::new(&ctx.root);
+    if let Ok(Some(resolution)) = manager.show(&task.dir_name) {
+        return Some(resolution.status);
+    }
+    manager
+        .show(&task.number.to_string())
+        .ok()
+        .flatten()
+        .map(|resolution| resolution.status)
+}
+
+fn print_go_verbose_failure(ctx: &CommandContext, error: &Result<(), String>) {
+    println!();
+    println!("go 失败详情：");
+    if let Err(err) = error {
+        println!("  原因：{err}");
+    }
+    let tasks = collect_managed_tasks(ctx).unwrap_or_default();
+    let status_ctx = build_hi_status_context(ctx);
+    render_resident_status(ctx, &tasks, &status_ctx);
+    let plantuml_result = process_plantuml_files(&ctx.root, &ctx.config, false);
+    render_verbose_details(ctx, &plantuml_result, &status_ctx);
+}
+
+fn describe_scan_mode(mode: &PlantUmlScanMode, fell_back_to_full_scan: bool) -> &'static str {
+    match (mode, fell_back_to_full_scan) {
+        (PlantUmlScanMode::Changed, false) => "按变更文件优先处理",
+        (PlantUmlScanMode::Full, true) => "未命中变更文件，已回退全量扫描",
+        (PlantUmlScanMode::Full, false) => "按指定文件处理",
+        (PlantUmlScanMode::Changed, true) => "按变更文件优先处理",
+    }
 }
 
 fn find_task_for_branch(tasks: &[ManagedTask], branch_name: &str) -> Option<ManagedTask> {
@@ -646,9 +875,9 @@ fn format_commit_time(commit_iso: &str) -> String {
     let Ok(parsed) = DateTime::parse_from_rfc3339(commit_iso) else {
         return commit_iso.to_string();
     };
-    let local_time = parsed.with_timezone(&Local);
-    let absolute = local_time.format("%Y-%m-%d %H:%M:%S %z").to_string();
-    let delta = Local::now().signed_duration_since(local_time);
+    let utc8_time = parsed.with_timezone(&utc8_offset());
+    let absolute = utc8_time.format("%Y-%m-%d %H:%M:%S %z").to_string();
+    let delta = utc8_now().signed_duration_since(utc8_time);
 
     let relative = if delta.num_seconds() < 60 {
         "刚刚".to_string()

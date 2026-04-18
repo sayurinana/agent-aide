@@ -35,6 +35,9 @@ enum Commands {
     /// 敲定任务草案并创建任务分支
     Confirm,
 
+    /// 完成任务正式收尾
+    Finish,
+
     /// 归档任务
     Archive {
         /// 任务编号；省略时尝试自动推断
@@ -126,6 +129,8 @@ enum FlowCommands {
     Back {
         /// 目标阶段名
         phase: String,
+        /// 可选的返工原因
+        reason: Option<String>,
     },
     /// 列出所有任务
     List,
@@ -181,6 +186,7 @@ async fn main() {
         Some(Commands::Sync) => cli::sync::handle_sync(),
         Some(Commands::Verify) => cli::task_management::handle_verify(),
         Some(Commands::Confirm) => cli::task_management::handle_confirm(),
+        Some(Commands::Finish) => cli::task_management::handle_finish(),
         Some(Commands::Archive { n }) => cli::task_management::handle_archive(n),
         Some(Commands::Hi { verbose }) => cli::core_commands::handle_hi(verbose),
         Some(Commands::Go { n, verbose }) => cli::core_commands::handle_go(n, verbose),
@@ -202,7 +208,9 @@ async fn main() {
             }
             Some(FlowCommands::Status) => cli::flow::handle_flow_status(),
             Some(FlowCommands::Next) => cli::flow::handle_flow_next(),
-            Some(FlowCommands::Back { phase }) => cli::flow::handle_flow_back(&phase),
+            Some(FlowCommands::Back { phase, reason }) => {
+                cli::flow::handle_flow_back(&phase, reason.as_deref())
+            }
             Some(FlowCommands::List) => cli::flow::handle_flow_list(),
             Some(FlowCommands::Show { task_id }) => cli::flow::handle_flow_show(&task_id),
         },

@@ -9,6 +9,7 @@ pub fn handle_flow_status() -> bool {
     match manager.resolve_status() {
         Ok(Some(resolution)) => {
             render_status(&resolution.status);
+            render_history(&resolution.status);
             true
         }
         Ok(None) => {
@@ -85,8 +86,8 @@ pub fn handle_flow_list() -> bool {
             output::info("任务列表:");
             for status in items {
                 println!(
-                    "  [#{}] {} ({})",
-                    status.task_number,
+                    "  [{}] {} ({})",
+                    status.task_label(),
                     status.task_summary,
                     status.current_phase_name()
                 );
@@ -107,21 +108,7 @@ pub fn handle_flow_show(task_id: &str) -> bool {
     match manager.show(task_id) {
         Ok(Some(resolution)) => {
             render_status(&resolution.status);
-            if !resolution.status.transitions.is_empty() {
-                println!();
-                println!("阶段变更:");
-                for item in resolution.status.transitions {
-                    match item.from_phase {
-                        Some(from_phase) => println!(
-                            "  [{}] {} -> {} ({})",
-                            item.action, from_phase, item.to_phase, item.timestamp
-                        ),
-                        None => {
-                            println!("  [{}] {} ({})", item.action, item.to_phase, item.timestamp)
-                        }
-                    }
-                }
-            }
+            render_history(&resolution.status);
             true
         }
         Ok(None) => {
@@ -136,15 +123,14 @@ pub fn handle_flow_show(task_id: &str) -> bool {
 }
 
 fn render_status(status: &StageFlowStatus) {
-    output::info(&format!(
-        "任务 #{}：{}",
-        status.task_number, status.task_summary
-    ));
+    let task_title = if status.task_number > 0 {
+        format!("任务 #{}：{}", status.task_number, status.task_summary)
+    } else {
+        format!("任务 {}：{}", status.task_label(), status.task_summary)
+    };
+    output::info(&task_title);
     println!("预设：{}", status.preset_name());
-    println!(
-        "循环阶段：{}",
-        if status.has_loop_phase() { "有" } else { "无" }
-    );
+    println!("循环阶段：{}", status.loop_summary());
     println!();
     println!("阶段流程：");
 
@@ -171,6 +157,34 @@ fn render_status(status: &StageFlowStatus) {
             }
         } else {
             println!("  {marker} {phase_label}");
+        }
+    }
+}
+
+fn render_history(status: &StageFlowStatus) {
+    if status.transitions.is_empty() {
+        return;
+    }
+
+    println!();
+    println!("阶段变更:");
+    for item in &status.transitions {
+        match (&item.from_phase, &item.reason) {
+            (Some(from_phase), Some(reason)) => println!(
+                "  [{}] {} -> {} ({}) 原因：{}",
+                item.action, from_phase, item.to_phase, item.timestamp, reason
+            ),
+            (Some(from_phase), None) => println!(
+                "  [{}] {} -> {} ({})",
+                item.action, from_phase, item.to_phase, item.timestamp
+            ),
+            (None, Some(reason)) => println!(
+                "  [{}] {} ({}) 原因：{}",
+                item.action, item.to_phase, item.timestamp, reason
+            ),
+            (None, None) => {
+                println!("  [{}] {} ({})", item.action, item.to_phase, item.timestamp)
+            }
         }
     }
 }

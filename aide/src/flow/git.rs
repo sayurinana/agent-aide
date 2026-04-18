@@ -1,3 +1,4 @@
+use std::collections::BTreeSet;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -199,6 +200,29 @@ impl GitIntegration {
             return Err(format!("路径 {path} 没有提交记录"));
         }
         Ok(value)
+    }
+
+    pub fn changed_files(&self) -> Result<Vec<String>, String> {
+        let mut files = BTreeSet::new();
+
+        for args in [
+            ["diff", "--name-only"].as_slice(),
+            ["diff", "--cached", "--name-only"].as_slice(),
+            ["ls-files", "--others", "--exclude-standard"].as_slice(),
+        ] {
+            let output = self
+                .run(args)
+                .map_err(|e| format!("读取变更文件失败: {e}"))?;
+            for line in output
+                .lines()
+                .map(str::trim)
+                .filter(|line| !line.is_empty())
+            {
+                files.insert(line.to_string());
+            }
+        }
+
+        Ok(files.into_iter().collect())
     }
 
     fn run(&self, args: &[&str]) -> Result<String, String> {

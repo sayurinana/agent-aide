@@ -7,10 +7,23 @@ use crate::flow::git::GitIntegration;
 use crate::flow::types::FlowStatus;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub enum PlantUmlScanMode {
+    Changed,
+    Full,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum PlantUmlProcessResult {
     NoFiles,
-    ToolUnavailable,
-    Compiled { files: usize },
+    ToolUnavailable {
+        mode: PlantUmlScanMode,
+        files: usize,
+    },
+    Compiled {
+        files: usize,
+        mode: PlantUmlScanMode,
+        fell_back_to_full_scan: bool,
+    },
 }
 
 pub fn run_pre_commit_hooks(
@@ -69,28 +82,31 @@ pub fn process_plantuml_files(
     config: &toml::Value,
     emit_output: bool,
 ) -> Result<PlantUmlProcessResult, String> {
-    let diagram_path = config
-        .get("flow")
-        .and_then(|f| f.get("diagram_path"))
-        .and_then(|v| v.as_str())
-        .unwrap_or("aide-memory/memory/diagram");
-
-    let diagram_dir = root.join(diagram_path);
-
-    let mut candidates: Vec<std::path::PathBuf> = Vec::new();
-
-    // 收集 .puml / .plantuml 文件
-    for dir in [&diagram_dir, &root.join("docs"), &root.join("discuss")] {
-        if dir.exists() {
-            collect_puml_files(dir, &mut candidates);
-        }
-    }
-
-    if candidates.is_empty() {
+    let all_candidates = collect_plantuml_candidates(root, config);
+    if all_candidates.is_empty() {
         return Ok(PlantUmlProcessResult::NoFiles);
     }
 
-    process_specific_plantuml_files(root, config, &candidates, emit_output)
+    let changed = collect_changed_plantuml_files(root, &all_candidates);
+    if !changed.is_empty() {
+        return process_specific_plantuml_files_with_mode(
+            root,
+            config,
+            &changed,
+            emit_output,
+            PlantUmlScanMode::Changed,
+            false,
+        );
+    }
+
+    process_specific_plantuml_files_with_mode(
+        root,
+        config,
+        &all_candidates,
+        emit_output,
+        PlantUmlScanMode::Full,
+        true,
+    )
 }
 
 pub fn process_specific_plantuml_files(
@@ -98,6 +114,24 @@ pub fn process_specific_plantuml_files(
     config: &toml::Value,
     candidates: &[PathBuf],
     emit_output: bool,
+) -> Result<PlantUmlProcessResult, String> {
+    process_specific_plantuml_files_with_mode(
+        root,
+        config,
+        candidates,
+        emit_output,
+        PlantUmlScanMode::Full,
+        false,
+    )
+}
+
+fn process_specific_plantuml_files_with_mode(
+    root: &Path,
+    config: &toml::Value,
+    candidates: &[PathBuf],
+    emit_output: bool,
+    mode: PlantUmlScanMode,
+    fell_back_to_full_scan: bool,
 ) -> Result<PlantUmlProcessResult, String> {
     if candidates.is_empty() {
         return Ok(PlantUmlProcessResult::NoFiles);
@@ -107,9 +141,16 @@ pub fn process_specific_plantuml_files(
         Some(cmd) => cmd,
         None => {
             if emit_output {
-                output::warn("未找到 PlantUML（jar 或系统命令），已跳过校验/PNG 生成");
+                output::warn(&format!(
+                    "未找到 PlantUML（jar 或系统命令），已跳过校验/PNG 生成（{}，{} 个文件）",
+                    describe_scan_mode(&mode, fell_back_to_full_scan),
+                    candidates.len()
+                ));
             }
-            return Ok(PlantUmlProcessResult::ToolUnavailable);
+            return Ok(PlantUmlProcessResult::ToolUnavailable {
+                mode,
+                files: candidates.len(),
+            });
         }
     };
 
@@ -164,11 +205,17 @@ pub fn process_specific_plantuml_files(
     }
 
     if emit_output {
-        output::ok(&format!("PlantUML 处理完成: {} 个文件", candidates.len()));
+        output::ok(&format!(
+            "PlantUML 处理完成: {} 个文件（{}）",
+            candidates.len(),
+            describe_scan_mode(&mode, fell_back_to_full_scan)
+        ));
     }
 
     Ok(PlantUmlProcessResult::Compiled {
         files: candidates.len(),
+        mode,
+        fell_back_to_full_scan,
     })
 }
 
@@ -187,6 +234,53 @@ fn collect_puml_files(dir: &Path, candidates: &mut Vec<std::path::PathBuf>) {
                 }
             }
         }
+    }
+}
+
+fn collect_plantuml_candidates(root: &Path, config: &toml::Value) -> Vec<PathBuf> {
+    let diagram_path = config
+        .get("flow")
+        .and_then(|f| f.get("diagram_path"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("aide-memory/memory/diagram");
+
+    let diagram_dir = root.join(diagram_path);
+    let mut candidates = Vec::new();
+    for dir in [&diagram_dir, &root.join("docs"), &root.join("discuss")] {
+        if dir.exists() {
+            collect_puml_files(dir, &mut candidates);
+        }
+    }
+    candidates
+}
+
+fn collect_changed_plantuml_files(root: &Path, candidates: &[PathBuf]) -> Vec<PathBuf> {
+    let git = GitIntegration::new(root);
+    let Ok(changed_files) = git.changed_files() else {
+        return Vec::new();
+    };
+
+    let changed_set: std::collections::BTreeSet<String> = changed_files.into_iter().collect();
+    candidates
+        .iter()
+        .filter_map(|path| {
+            let relative = path
+                .strip_prefix(root)
+                .ok()
+                .unwrap_or(path)
+                .to_string_lossy()
+                .replace('\\', "/");
+            changed_set.contains(&relative).then(|| path.clone())
+        })
+        .collect()
+}
+
+fn describe_scan_mode(mode: &PlantUmlScanMode, fell_back_to_full_scan: bool) -> &'static str {
+    match (mode, fell_back_to_full_scan) {
+        (PlantUmlScanMode::Changed, false) => "按变更文件优先处理",
+        (PlantUmlScanMode::Full, true) => "未命中变更文件，已回退全量扫描",
+        (PlantUmlScanMode::Full, false) => "按指定文件处理",
+        (PlantUmlScanMode::Changed, true) => "按变更文件优先处理",
     }
 }
 
